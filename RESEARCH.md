@@ -2,16 +2,19 @@
 
 This document records a deliberately adversarial search for **out-of-sample, survivorship-free
 predictive edge** in the Volume-Profile system (`vpts`). It is written to be read by a skeptic.
-The headline is a negative, and that is the point: the value delivered is a *validated* "no",
-plus a reusable harness that judges any future idea honestly.
+The value delivered is *validated* findings — mostly negatives, one qualified positive — plus a
+reusable harness that judges any future idea honestly.
 
-> **Bottom line.** Across six experiments — a walk-forward backtest and five fitted models, all
-> evaluated with purged combinatorial cross-validation and label-shuffle permutation tests — **no
-> input studied here produced a robust, statistically-significant out-of-sample edge.** The single
-> near-miss (cross-sectional rank, p≈0.10 on 20 names) **vanished when properly powered** (p≈0.86 on
-> 88 names), confirming it was a thin-cross-section artifact. On this universe, the binding
-> constraint is the *data* (survivorship + a small, liquid survivor universe), not model
-> sophistication.
+> **Bottom line.** Across eight experiments — a walk-forward backtest and seven fitted models, all
+> evaluated with purged combinatorial cross-validation and label-shuffle permutation tests — six
+> inputs produced **no** robust out-of-sample edge (including a cross-sectional near-miss that
+> vanished when properly powered). The **structural microstructure features** (synthetic delta,
+> profile shape, value-area-compression z-score, cost-basis migration) are the **exception**: a
+> small but real OOS signal (IC ≈ +0.035) that — uniquely — **survives both** widening to 88 names
+> (p = 0.005) **and** low rates of synthetic-delisted injection, degrading *gracefully* rather than
+> collapsing like everything before it. It is **modest, gross-of-cost, and survivorship-*sensitive***
+> (it loses significance above a ~15–20% delisting rate), so it is a credible research signal, **not
+> a validated tradeable edge.**
 
 ---
 
@@ -51,7 +54,7 @@ unavoidable confound throughout. There is no delisted/point-in-time data in this
 
 ---
 
-## The six experiments
+## The eight experiments
 
 | # | Experiment | OOS statistic | Significance | Verdict |
 |---|------------|---------------|--------------|---------|
@@ -61,6 +64,8 @@ unavoidable confound throughout. There is no delisted/point-in-time data in this
 | 4 | **Enriched** per-name features (momentum/vol/microstructure) | pooled IC **+0.010** (baseline +0.028) | p **0.348** | richer inputs don't help; **no edge** |
 | 5 | **Cross-sectional rank**, 20 names | combined OOS IC **+0.021** | p **0.100** | suggestive, **not significant** |
 | 6 | **Cross-sectional rank, 88 names (well-powered)** | combined OOS IC **−0.009** | p **0.856** | near-miss **washed out**; **no edge** |
+| 7 | **Structural microstructure** (synthetic delta, shape, VACR-z, decay) | OOS IC **+0.103** (8 names) → **+0.035** (88 names, 1,308 folds) | p **0.005** (both) | **real signal — survives widening** |
+| 8 | **Structural + survivorship injection** | pooled IC +0.041 → +0.013 (5 dead, 20%) → +0.001 (9 dead, 31%) | p 0.005 → **0.085** → 0.473 | **survivorship-*sensitive*; graceful decay, not a cliff** |
 
 ### 1 — The single backtest doesn't survive purged CV
 The breakout style's +14.5% (85% of names profitable, single full-period backtest) collapses under
@@ -94,18 +99,48 @@ so the decisive test is width: re-run on the **full 88-name** universe (16,873 r
 faint positive **washes out to −0.009, p=0.856** — and the strongest single factor (60-day vol,
 +0.045 on 20 names) decays to +0.013. The near-miss was a thin-cross-section artifact, not signal.
 
+### 7 → 8 — Structural microstructure: the one signal that survives stress
+Transforming the static profile into quantifiable features — **synthetic delta** (Close-Location-Value
+× volume, an OHLC order-flow estimate), volume-weighted **skew/kurtosis** and P/b/B/D **shape**,
+**value-area-compression z-score**, **POC-migration slope**, **cost-basis migration** (decayed vs
+lifetime POC), ledges and poor highs — 13 features through the same harness. This is the first input
+to clear the bars:
+
+- **8 survivors:** pooled OOS IC **+0.103**, p **0.005** (the single delta@POC feature alone is
+  −0.043; the *combination* predicts).
+- **Stress 1 — widening to 88 names:** IC shrinks to **+0.035** but, with 1,308 folds (null σ 0.006),
+  is still ≈5.8σ out, **p 0.005**. Unlike the cross-sectional near-miss it **did not wash out** —
+  proof it is not a small-sample artifact. Per-name dispersion is sensible: BABA scores **−0.424**
+  (a genuine decliner — the dip-features correctly *anti*-predict).
+- **Stress 2 — survivorship injection:** adding synthetic decline-to-pennies names degrades the
+  signal *gracefully* — +0.041 (0 dead, p 0.005) → +0.029 (1, p 0.015) → +0.013 (5 dead ≈20%,
+  **p 0.085, lost**) → +0.001 (9 dead ≈31%, p 0.473). This is **categorically unlike meta-labeling**,
+  which collapsed from p 0.005 straight to p 0.80. The structural signal survives *low, realistic*
+  large-cap delisting rates (≲10%) but **not** heavy survivorship (≳15–20%).
+
+So a meaningful fraction of the +0.035 IC is genuine and a fraction is survivorship-inflated. The
+most survivorship-*robust* components are plausibly the regime/volatility features (`vacr_z`) rather
+than the dip-buying ones (`cost_basis_migration`, `poc_loc`); decomposing that is the natural next
+experiment. The signal is **small and gross-of-cost** — a credible research lead, not a tradeable edge.
+
 ---
 
 ## Honest conclusion
 
-On 88 survivorship-biased US large-caps (2012–2017, daily), **none** of the studied inputs — the
-hand-set rules, learned factor weights, meta-labeling, enriched per-name features, or cross-sectional
-ranks — shows a robust, statistically-significant out-of-sample edge. The one apparently-significant
-result (meta-labeling) was explained by survivorship, and the one near-miss (cross-sectional rank)
-was explained by insufficient statistical power.
+On 88 survivorship-biased US large-caps (2012–2017, daily), six of eight studied inputs — the
+hand-set rules, learned factor weights, meta-labeling, enriched per-name features, and cross-sectional
+ranks — show **no** robust out-of-sample edge (the meta-labeling "edge" was survivorship; the
+cross-sectional near-miss was low power). The **structural microstructure features** are the genuine
+exception: a **small, real OOS signal** (IC ≈ +0.035) that survives universe-widening and low rates
+of delisted injection, degrading gracefully rather than collapsing. It is **modest, gross-of-cost and
+survivorship-sensitive** — strong enough to call a credible research lead, not strong enough to call a
+validated tradeable edge.
 
 **What would actually change this** (in rough order of expected value):
 
+0. **Decompose the structural signal** — which features survive survivorship injection? If `vacr_z`
+   (a regime/breakout feature, not survivorship-prone) carries it, that is a small genuine edge worth
+   pursuing; if only the dip-buying features do, it is mostly survivorship.
 1. **Survivorship-free / point-in-time data**, including delisted names — the dominant confound,
    untestable in this source. This is the real wall, not model complexity.
 2. **A wider, deeper cross-section** (hundreds–thousands of names). The 88-name washout suggests
@@ -113,18 +148,21 @@ was explained by insufficient statistical power.
 3. **Different data regimes** — intraday microstructure, or non-equity assets where Volume-Profile
    structure may carry more information.
 
-Model sophistication is **not** on that list: four straight feature/model variations through the
-same purged harness all returned ≈0. That is informative.
+Model sophistication mostly is **not** the answer — four feature/model variations returned ≈0 — but
+the *right kind* of feature (structural microstructure, not momentum/vol/rank) did surface the arc's
+one real signal. The lesson: feature *content* mattered where feature *complexity* did not.
 
 ## What is durable here
 
-The negative is the finding; the **harness** is the asset. Any new idea now plugs in and is judged
-honestly:
+The findings — six negatives and one qualified positive — are the result; the **harness** is the
+asset. Any new idea plugs in and is judged honestly:
 
 - `vpts.validation` — purged + embargoed Combinatorial Purged CV.
 - `vpts.ml` — no-look-ahead dataset/panel builders, ridge/logistic models, CPCV evaluators, and
   label-shuffle permutation tests for per-name, meta-labeling, and cross-sectional settings.
-- 121 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- `vpts.structure` — synthetic delta, profile-shape moments, footprints and time-decay, emitted as a
+  `FactorDataset` straight into the harness; plus a survivorship-injection stress test.
+- 132 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 
@@ -137,6 +175,8 @@ python examples/meta_stress_test.py                   # 3: + survivorship inject
 python examples/enriched_factor_demo.py --perms 200   # 4: enriched features + permutation
 python examples/cross_sectional_demo.py --perms 200   # 5: cross-sectional rank (20 names)
 # 6: well-powered cross-section — pass the full 88-name universe via --tickers
+python examples/structural_demo.py --perms 200        # 7: structural microstructure features
+python examples/structural_survivorship.py            # 8: structural + survivorship injection
 ```
 
 ## Limitations
