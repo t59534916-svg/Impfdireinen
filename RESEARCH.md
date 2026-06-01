@@ -7,16 +7,17 @@ reusable harness that judges any future idea honestly.
 
 > **Bottom line.** Across nine experiments — a walk-forward backtest and eight fitted models, all
 > evaluated with purged combinatorial cross-validation and label-shuffle permutation tests — no
-> input produced a **tradeable** out-of-sample edge. The **structural microstructure features**
-> (synthetic delta, profile shape, cost-basis migration) are the one to produce a *statistically*
-> real OOS correlation (IC ≈ +0.035, p = 0.005) that — uniquely — **survives widening to 88 names**
-> and low rates of delisted injection. But decomposition deflates it: the signal is carried by the
-> **survivorship-prone dip-buying features** (`cost_basis_migration`, `delta_net`), not the regime
-> features (`vacr_z` is mildly *anti*-predictive); it **collapses** under heavier survivorship
-> injection (p 0.005 → 0.47); and a naive long/short on it is **unprofitable even gross of cost**
-> (≈ −0.08%/bet). So it is a **real-but-economically-empty, survivorship-leaning statistical
-> curiosity — not an edge.** The honest conclusion stands: *no tradeable edge here; the binding
-> constraint is the data, not the model.*
+> input produced a **survivorship-robust** out-of-sample edge. The **structural microstructure
+> features** (synthetic delta, profile shape, cost-basis migration) produce a real OOS correlation
+> (IC ≈ +0.035, p = 0.005) that **survives widening to 88 names**, and — traded *properly* as a
+> long/short book that goes **flat** in the noisy middle and only bets the conviction tails — is
+> even **profitable net of 10 bps on the survivor universe** (+0.26%/bet). But that edge is a
+> **survivorship mirage**: it is carried by the dip-buying features (`cost_basis_migration`,
+> `delta_net`), and when synthetic delisted names are injected the conviction-bucket curve **inverts**
+> — the bars flagged most bullish become the *worst* performers — flipping the strategy from
+> +0.26%/bet to **−1.07%/bet**. The structural patterns that look bullish on names that *survived*
+> are exactly what precedes a death-spiral in names that *didn't*. So: *no survivorship-robust edge;
+> the binding constraint is the data, not the model.*
 
 ---
 
@@ -68,7 +69,7 @@ unavoidable confound throughout. There is no delisted/point-in-time data in this
 | 6 | **Cross-sectional rank, 88 names (well-powered)** | combined OOS IC **−0.009** | p **0.856** | near-miss **washed out**; **no edge** |
 | 7 | **Structural microstructure** (synthetic delta, shape, VACR-z, decay) | OOS IC **+0.103** (8 names) → **+0.035** (88 names, 1,308 folds) | p **0.005** (both) | **real signal — survives widening** |
 | 8 | **Structural + survivorship injection** | pooled IC +0.041 → +0.013 (5 dead, 20%) → +0.001 (9 dead, 31%) | p 0.005 → **0.085** → 0.473 | **survivorship-*sensitive*; graceful decay, not a cliff** |
-| 9 | **Structural decomposition + cost** | DIP features carry it (p 0.020→0.527 injected); REGIME n.s. (p 0.254); L/S **−0.08%/bet gross** | — | **survivorship-leaning & economically empty** |
+| 9 | **Structural decomposition + cost** | DIP features carry it (REGIME n.s., p 0.254); tails-only L/S **+0.26%/bet net (survivors) → −1.07%/bet (injected)** — curve inverts | — | **survivorship mirage: the edge inverts off survivors** |
 
 ### 1 — The single backtest doesn't survive purged CV
 The breakout style's +14.5% (85% of names profitable, single full-period backtest) collapses under
@@ -130,13 +131,22 @@ Three diagnostics settle what the +0.035 actually is — and the answer is sober
   hopeful "regime carries a genuine edge" hypothesis is **falsified**.
 - **Subgroup ablation:** the **REGIME** sub-model is **not** significant even on survivors (IC +0.009,
   p 0.254); the **DIP** sub-model is (IC +0.030, p 0.020) but **collapses** under injection (p 0.527).
-- **Cost-aware:** a naive sign-based long/short on the full model returns **−0.08%/20-day bet *gross***
-  (≈ −1%/yr) — and worse net of costs. A weak positive IC does not survive the bull-market L/S
-  construction, let alone fees.
+- **Cost-aware, traded properly:** the naive always-in-market `sign()` book loses (−0.08%/bet) — but
+  that forces a short position through half a bull market and is the wrong test. A real book goes
+  **long the top signal quintile, short the bottom, and flat the middle 60%** (in the market only ~40%
+  of the time). On survivors the conviction-bucket curve **rises monotonically** (+1.08% → +1.54%) and
+  the tails-only long/short earns **+0.46%/bet gross, +0.26%/bet net of 10 bps**. So — traded with a
+  flat middle — it *is* economically meaningful on the survivor universe.
+- **…but it is a survivorship mirage.** Inject the synthetic delisted names and the bucket curve
+  **inverts** (−0.23% → −1.09%): the bars the signal flags *most bullish* become the *worst* future
+  performers, and the same strategy flips to **−1.07%/bet net**. The dip-buying structural footprint
+  that marks a bottom in a name that *recovered* is indistinguishable from the one that marks the next
+  leg down in a name that *delisted* — survival is doing the labeling.
 
-So the structural result is **statistically real on survivors but economically empty and
-survivorship-leaning** — a genuine statistical curiosity, not a tradeable edge. The decomposition is
-the discipline working: it punctured a p = 0.005 headline before it could become a false claim.
+So the structural result is **real and even tradeable-looking on survivors, but the apparent edge is
+manufactured by survivorship** — it does not merely fade, it reverses sign. The decomposition is the
+discipline working: betting the conviction tails turned a dismissive "−0.08%, empty" into a tempting
+"+0.26% net," and only the injection test revealed that tempting number to be a survivorship artifact.
 
 **Phase C — the MFE/MAE re-framing + XGBoost don't rescue it.** Re-labeling each bar by whether a long
 bet's *Maximum Favorable Excursion* beat its *Maximum Adverse Excursion* (a volatility-scaled triple
@@ -152,16 +162,18 @@ catch. Neither the MFE/MAE framing nor gradient boosting turns the curiosity int
 ## Honest conclusion
 
 On 88 survivorship-biased US large-caps (2012–2017, daily), **none** of the studied inputs yields a
-**tradeable** out-of-sample edge. The hand-set rules, learned factor weights, meta-labeling, enriched
-per-name features and cross-sectional ranks show no robust signal at all (meta-labeling's was
+**survivorship-robust** out-of-sample edge. The hand-set rules, learned factor weights, meta-labeling,
+enriched per-name features and cross-sectional ranks show no robust signal at all (meta-labeling's was
 survivorship; the cross-sectional near-miss was low power). The **structural microstructure features**
-are the one *statistically* real OOS correlation (IC ≈ +0.035, p = 0.005) — and the only result to
-survive universe-widening — but decomposition shows it is **carried by survivorship-prone dip-buying
-features** (not regime: `vacr_z` is anti-predictive), **collapses** under heavier delisted injection,
-and is **unprofitable even gross of cost** as a long/short (≈ −0.08%/bet). It is a real statistical
-curiosity, **not an edge**. Model sophistication is not the limiting factor — feature *content* moved
-the needle from "nothing" to "detectable but empty," but the binding constraint remains the **data**
-(survivorship + a thin survivor universe of large, liquid names).
+go further than anything else: a real OOS correlation (IC ≈ +0.035, p = 0.005) that survives
+universe-widening and, traded as a long/short book that stays **flat** in the middle and bets only the
+conviction tails, is **profitable net of cost on the survivor universe** (+0.26%/bet). But that edge
+is a **survivorship mirage** — carried by the dip-buying features, it does not just fade under delisted
+injection, it **inverts**: the conviction-bucket curve flips, the most-bullish-flagged bars become the
+worst performers, and the strategy goes from +0.26% to **−1.07%/bet**. Model sophistication is not the
+limiting factor (XGBoost over-fit to a sub-0.5 OOS AUC; the linear book did better) — and neither,
+ultimately, is feature content: the **data** is the wall. Conditioning on names that *survived*
+manufactures an edge that reverses the moment you stop conditioning on survival.
 
 **What would actually change this** (in rough order of expected value):
 
