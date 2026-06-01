@@ -21,15 +21,17 @@ from vpts import (  # noqa: E402
     STRUCTURAL_FEATURES,
     VolumeProfileCalculator,
     build_structural_dataset,
+    build_structural_meta_dataset,
     classify_shape,
     close_location_value,
     cpcv_factor_eval,
+    cpcv_meta_eval,
     decayed_poc,
     detect_ledges,
     poor_high,
     synthetic_delta_stats,
 )
-from vpts.ml.models import FactorCVResult, FactorDataset  # noqa: E402
+from vpts.ml.models import FactorCVResult, FactorDataset, MetaCVResult, MetaDataset  # noqa: E402
 from vpts.profile.models import VolumeProfile  # noqa: E402
 from vpts.structure.analytics import (  # noqa: E402
     SHAPE_B,
@@ -203,6 +205,24 @@ def test_structural_dataset_feeds_cpcv() -> None:
     assert isinstance(res, FactorCVResult)
     assert res.n_paths > 0 and np.isfinite(res.oos_ic_mean)
     assert len(res.mean_weights) == 13
+
+
+def test_build_structural_meta_dataset() -> None:
+    df = _ohlcv(460, seed=5)
+    ds = build_structural_meta_dataset(df, lookback=120, horizon=20, stride=5,
+                                       vacr_window=15, side=1, symbol="SYN")
+    assert isinstance(ds, MetaDataset)
+    assert ds.feature_names == STRUCTURAL_FEATURES and ds.X.shape[1] == 13
+    assert ds.X.shape[0] == len(ds.meta_label) == len(ds.side) == len(ds.realized_return)
+    assert set(np.unique(ds.meta_label).tolist()) <= {0, 1}     # binary win/loss
+    assert set(np.unique(ds.side).tolist()) == {1}              # fixed long side
+    assert np.isfinite(ds.X).all()
+    # No look-ahead: last event leaves a full barrier horizon.
+    assert ds.timestamps is not None
+    assert ds.timestamps[-1] <= df.index[len(df) - 1 - ds.horizon]
+    # Feeds the meta harness.
+    res = cpcv_meta_eval(ds, threshold=0.55)
+    assert isinstance(res, MetaCVResult) and np.isfinite(res.oos_auc_mean)
 
 
 # --------------------------------------------------------------------------- #

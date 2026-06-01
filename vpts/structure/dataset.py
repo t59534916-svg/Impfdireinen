@@ -1,12 +1,16 @@
-"""Walk bars and assemble the structural feature matrix → a ``FactorDataset``.
+"""Walk bars and assemble the structural feature matrix → ``FactorDataset`` / ``MetaDataset``.
 
 Each decision bar gets the per-window structural features from
 :mod:`vpts.structure.analytics` plus the two rolling/time-series signals that
 need history — the **value-area compression z-score** and the **POC-migration
 slope** — computed from a trailing window of *previously sampled* bars, so there
-is no look-ahead. The output is a :class:`~vpts.ml.models.FactorDataset`, which
-plugs straight into the validated ``cpcv_factor_eval`` / ``permutation_test_factor``
-harness.
+is no look-ahead. The shared bar-walk feeds two builders:
+
+* :func:`build_structural_dataset` — features → forward return (a
+  :class:`~vpts.ml.models.FactorDataset` for the CPCV factor harness);
+* :func:`build_structural_meta_dataset` — features → **MFE/MAE triple-barrier**
+  win/loss for a long (or fixed-side) bet (a :class:`~vpts.ml.models.MetaDataset`
+  for the meta-labeling harness / an XGBoost classifier).
 """
 from __future__ import annotations
 
@@ -31,31 +35,31 @@ from vpts.structure.analytics import (
     weighted_moments,
 )
 from vpts.structure.models import STRUCTURAL_FEATURES, StructuralFeatures
-from vpts.ml.models import FactorDataset
+from vpts.ml.labeling import triple_barrier_labels
+from vpts.ml.models import FactorDataset, MetaDataset
 
 _EPS = 1e-12
 
 
-def build_structural_dataset(
+def _walk_structural(
     df: pd.DataFrame,
     *,
-    lookback: int = 120,
-    horizon: int = 20,
-    stride: int = 3,
-    vacr_window: int = 20,
-    poc_window: int = 5,
-    halflife: float = 21.0,
-    symbol: Optional[str] = None,
-    interval: Optional[str] = None,
-    profile_calculator: Optional[VolumeProfileCalculator] = None,
-) -> FactorDataset:
-    """Build a (structural features → forward return) dataset with no look-ahead.
+    lookback: int,
+    horizon: int,
+    stride: int,
+    vacr_window: int,
+    poc_window: int,
+    halflife: float,
+    symbol: Optional[str],
+    interval: Optional[str],
+    profile_calculator: Optional[VolumeProfileCalculator],
+) -> tuple[list[np.ndarray], list[int], list, list[StructuralFeatures]]:
+    """Shared no-look-ahead walk → ``(feature_vectors, event_positions, timestamps, rows)``.
 
-    Features at bar ``t`` use only the trailing ``lookback`` window and the
-    rolling history of previously sampled bars; the label is the strictly-future
-    ``horizon``-bar return. The single-feature ``baseline`` is the synthetic delta
-    at the POC. Bars before the rolling warm-up (``max(vacr_window, poc_window)``
-    sampled bars) are skipped.
+    A feature row is emitted only once the rolling warm-up
+    (``max(vacr_window, poc_window)`` previously sampled bars) is satisfied and the
+    whole vector is finite. ``event_positions`` are the bar indices ``t`` (for
+    label construction); features use only data ``<= t``.
     """
     ensure_ohlcv(df, min_bars=lookback + horizon + 2)
     pc = profile_calculator or VolumeProfileCalculator(bin_mode="auto")
@@ -65,14 +69,14 @@ def build_structural_dataset(
     volume = df["Volume"].to_numpy(float)
     atr_a = atr(df["High"], df["Low"], df["Close"], 14).to_numpy(float)
     n = len(df)
+    is_dt = isinstance(df.index, pd.DatetimeIndex)
 
     hist_vacr: list[float] = []
     hist_poc: list[float] = []
-    rows: list[StructuralFeatures] = []
     feats: list[np.ndarray] = []
-    ys: list[float] = []
-    base: list[float] = []
+    ev_pos: list[int] = []
     ts: list = []
+    rows: list[StructuralFeatures] = []
 
     for t in range(lookback - 1, n - horizon, max(1, stride)):
         window = df.iloc[t - lookback + 1 : t + 1]
@@ -122,22 +126,105 @@ def build_structural_dataset(
             is_b=1.0 if shape == SHAPE_b else 0.0,
             is_B=1.0 if shape == SHAPE_B else 0.0,
             shape_class=int(shape), poc=float(profile.poc), vacr=float(vacr_raw),
-            timestamp=df.index[t] if isinstance(df.index, pd.DatetimeIndex) else None,
+            timestamp=df.index[t] if is_dt else None,
         )
         vec = sf.to_vector()
         if not np.all(np.isfinite(vec)):
             continue
-        rows.append(sf)
         feats.append(vec)
-        ys.append(float(close[t + horizon] / close[t] - 1.0))
-        base.append(poc_d)                          # single-feature baseline = delta@POC
-        ts.append(df.index[t])
+        ev_pos.append(t)
+        ts.append(df.index[t] if is_dt else t)
+        rows.append(sf)
+    return feats, ev_pos, ts, rows
 
+
+def build_structural_dataset(
+    df: pd.DataFrame,
+    *,
+    lookback: int = 120,
+    horizon: int = 20,
+    stride: int = 3,
+    vacr_window: int = 20,
+    poc_window: int = 5,
+    halflife: float = 21.0,
+    symbol: Optional[str] = None,
+    interval: Optional[str] = None,
+    profile_calculator: Optional[VolumeProfileCalculator] = None,
+) -> FactorDataset:
+    """Structural features → strictly-future forward return (no look-ahead).
+
+    The single-feature ``baseline`` is the synthetic delta at the POC.
+    """
+    feats, ev_pos, ts, rows = _walk_structural(
+        df, lookback=lookback, horizon=horizon, stride=stride, vacr_window=vacr_window,
+        poc_window=poc_window, halflife=halflife, symbol=symbol, interval=interval,
+        profile_calculator=profile_calculator)
+    close = df["Close"].to_numpy(float)
+    ys = [float(close[t + horizon] / close[t] - 1.0) for t in ev_pos]
+    base = [r.delta_poc for r in rows]
     is_dt = isinstance(df.index, pd.DatetimeIndex) and bool(ts)
     return FactorDataset(
         X=np.array(feats, dtype=float).reshape(-1, len(STRUCTURAL_FEATURES)),
         y=np.array(ys, dtype=float),
         baseline=np.array(base, dtype=float),
+        feature_names=STRUCTURAL_FEATURES,
+        horizon=horizon,
+        stride=max(1, stride),
+        timestamps=pd.DatetimeIndex(ts) if is_dt else None,
+        symbol=symbol,
+    )
+
+
+def build_structural_meta_dataset(
+    df: pd.DataFrame,
+    *,
+    lookback: int = 120,
+    horizon: int = 20,
+    stride: int = 3,
+    vacr_window: int = 20,
+    poc_window: int = 5,
+    halflife: float = 21.0,
+    side: int = 1,
+    pt_mult: float = 2.0,
+    sl_mult: float = 2.0,
+    atr_period: int = 14,
+    symbol: Optional[str] = None,
+    interval: Optional[str] = None,
+    profile_calculator: Optional[VolumeProfileCalculator] = None,
+) -> MetaDataset:
+    """Structural features → **MFE/MAE triple-barrier** win/loss for a fixed-``side`` bet.
+
+    For each decision bar a bet is taken in ``side`` (default long); the
+    volatility-scaled triple barrier decides win (profit-take touched first) vs
+    loss (stop or adverse vertical) — i.e. whether Maximum Favorable Excursion
+    beat Maximum Adverse Excursion. An XGBoost/logistic classifier then learns
+    ``P(win)`` from the structural features. No look-ahead: features ≤ t, barriers
+    strictly after t.
+    """
+    feats, ev_pos, ts, _ = _walk_structural(
+        df, lookback=lookback, horizon=horizon, stride=stride, vacr_window=vacr_window,
+        poc_window=poc_window, halflife=halflife, symbol=symbol, interval=interval,
+        profile_calculator=profile_calculator)
+    close = df["Close"].to_numpy(float)
+    high = df["High"].to_numpy(float)
+    low = df["Low"].to_numpy(float)
+    vol = (atr(df["High"], df["Low"], df["Close"], atr_period) / df["Close"]).to_numpy(float)
+
+    ev_arr = np.array(ev_pos, dtype=int)
+    side_arr = np.full(ev_arr.size, int(side), dtype=int)
+    if ev_arr.size:
+        _, ret, win, _ = triple_barrier_labels(
+            close, high, low, vol, ev_arr, side_arr, horizon, pt_mult, sl_mult)
+    else:
+        ret = np.array([], dtype=float)
+        win = np.array([], dtype=int)
+
+    is_dt = isinstance(df.index, pd.DatetimeIndex) and bool(ts)
+    return MetaDataset(
+        X=np.array(feats, dtype=float).reshape(-1, len(STRUCTURAL_FEATURES)),
+        meta_label=win,
+        side=side_arr,
+        realized_return=ret,
         feature_names=STRUCTURAL_FEATURES,
         horizon=horizon,
         stride=max(1, stride),

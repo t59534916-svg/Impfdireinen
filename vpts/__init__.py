@@ -87,7 +87,7 @@ from vpts.structure.analytics import (
     synthetic_delta_stats,
     value_area_compression_ratio,
 )
-from vpts.structure.dataset import build_structural_dataset
+from vpts.structure.dataset import build_structural_dataset, build_structural_meta_dataset
 from vpts.structure.models import STRUCTURAL_FEATURES, StructuralFeatures
 
 __all__ = [
@@ -145,6 +145,7 @@ __all__ = [
     "CrossSectionalICResult",
     # structure (synthetic delta, profile shape, footprints, decay)
     "build_structural_dataset",
+    "build_structural_meta_dataset",
     "STRUCTURAL_FEATURES",
     "StructuralFeatures",
     "synthetic_delta_stats",
