@@ -1,5 +1,7 @@
 # Does `vpts` have a real edge? — an honest validation log
 
+> 📄 **[Download this study as a PDF](docs/Quiet-Volume-Research.pdf)**  ·  [Architecture](docs/ARCHITECTURE.md)  ·  [Changelog](CHANGELOG.md)  ·  [README](README.md)
+
 This document records a deliberately adversarial search for **out-of-sample, survivorship-free
 predictive edge** in the Volume-Profile system (`vpts`). It is written to be read by a skeptic.
 The value delivered is *validated* findings — mostly negatives, one qualified positive — plus a

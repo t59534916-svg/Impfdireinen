@@ -149,7 +149,7 @@ flowchart LR
 | 10 | Swing setup‑rater | selectivity lift +0.14%/bet | p=0.005→**0.10** | selectivity resists inversion |
 | 11 | Selectivity stress‑test | robust **9/9** params | p 0.023→**0.106** | DIP‑carried, n.s. injected → closed |
 
-Full narrative, numbers and caveats: [**`RESEARCH.md`**](RESEARCH.md).
+Full narrative, numbers and caveats: [**`RESEARCH.md`**](RESEARCH.md) · [**📄 PDF**](docs/Quiet-Volume-Research.pdf).
 
 ---
 
