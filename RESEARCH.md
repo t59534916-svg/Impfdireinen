@@ -138,6 +138,15 @@ So the structural result is **statistically real on survivors but economically e
 survivorship-leaning** — a genuine statistical curiosity, not a tradeable edge. The decomposition is
 the discipline working: it punctured a p = 0.005 headline before it could become a false claim.
 
+**Phase C — the MFE/MAE re-framing + XGBoost don't rescue it.** Re-labeling each bar by whether a long
+bet's *Maximum Favorable Excursion* beat its *Maximum Adverse Excursion* (a volatility-scaled triple
+barrier) and learning `P(win)` from the structural features gives, on identical purged-CPCV splits:
+a **logistic** OOS AUC of **0.529** (in-sample 0.689; permutation **p = 0.07, not significant**) and
+an **XGBoost** that memorizes the training set (in-sample AUC **0.943**) yet scores **0.496 OOS — below
+0.5, *worse* than logistic**, a +0.447 over-fitting gap. The nonlinear model adds nothing out of
+sample; its gaudy in-sample number is exactly the false-confidence trap rigorous evaluation exists to
+catch. Neither the MFE/MAE framing nor gradient boosting turns the curiosity into an edge.
+
 ---
 
 ## Honest conclusion
