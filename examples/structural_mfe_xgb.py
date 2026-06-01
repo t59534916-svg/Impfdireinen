@@ -41,10 +41,14 @@ from vpts.ml.meta_model import LogisticMetaModel, _auc  # noqa: E402
 from vpts.ml.models import MetaDataset  # noqa: E402
 
 try:
-    from xgboost import XGBClassifier
+    import xgboost as xgb  # native train/DMatrix API — no scikit-learn needed
     _HAS_XGB = True
 except Exception:  # pragma: no cover - optional dependency
     _HAS_XGB = False
+
+_XGB_PARAMS = {"max_depth": 3, "eta": 0.05, "subsample": 0.8, "colsample_bytree": 0.8,
+               "lambda": 1.0, "min_child_weight": 5, "objective": "binary:logistic",
+               "eval_metric": "logloss", "verbosity": 0}
 
 
 def _logistic_fp(Xtr, ytr, Xte):
@@ -52,11 +56,8 @@ def _logistic_fp(Xtr, ytr, Xte):
 
 
 def _xgb_fp(Xtr, ytr, Xte):
-    m = XGBClassifier(max_depth=3, n_estimators=120, learning_rate=0.05,
-                      subsample=0.8, colsample_bytree=0.8, reg_lambda=1.0,
-                      min_child_weight=5, eval_metric="logloss", verbosity=0)
-    m.fit(Xtr, ytr)
-    return m.predict_proba(Xte)[:, 1]
+    bst = xgb.train(_XGB_PARAMS, xgb.DMatrix(Xtr, label=ytr), num_boost_round=120)
+    return bst.predict(xgb.DMatrix(Xte))
 
 
 def _cpcv_auc(ds: MetaDataset, fit_predict) -> tuple[float, list[float]]:
