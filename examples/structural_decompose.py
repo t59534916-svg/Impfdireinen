@@ -136,30 +136,34 @@ def main() -> int:
     # ---- C: cost-aware return when the strategy can go long / short / FLAT ---- #
     # sign()-betting forces exposure every bar (shorts half a bull market). A real
     # strategy only bets the conviction tails and stays flat in the noisy middle.
-    print(f"\nC) Conviction buckets (survivors): quintile {args.horizon}-bar fwd return, "
-          "long top / short bottom / FLAT middle")
-    curves, ao, spread, lo_net, ls_net, fim = [], [], [], [], [], []
-    for ds, cv in surv:
-        try:
-            r = cpcv_factor_quantile_returns(ds, cv=cv, n_buckets=5, cost_bps=10.0)
-        except ValueError:
-            continue
-        curves.append(r.bucket_returns_pct); ao.append(r.always_on_ls_pct)
-        spread.append(r.long_short_spread_pct); lo_net.append(r.long_only_net_pct)
-        ls_net.append(r.long_short_net_pct); fim.append(r.frac_in_market)
-    curve = np.mean(np.array(curves), axis=0)
-    print("   bucket fwd return : " + "  ".join(f"{c:+.2f}" for c in curve)
-          + " %   (low → high signal)")
-    print(f"   always-on L/S     : {np.mean(ao):+.3f}% / bet   (in market 100% of the time)")
-    print(f"   tails-only L/S    : {np.mean(spread):+.3f}% / bet   "
-          f"(in market {np.mean(fim) * 100:.0f}% of the time)")
-    print(f"   net @ 10bps       : long-only {np.mean(lo_net):+.3f}%  | "
-          f"long/short {np.mean(ls_net):+.3f}%   per bet")
+    def buckets(built):
+        cur, ao, sp, lo, ls, fim = [], [], [], [], [], []
+        for ds, cv in built:
+            try:
+                r = cpcv_factor_quantile_returns(ds, cv=cv, n_buckets=5, cost_bps=10.0)
+            except ValueError:
+                continue
+            cur.append(r.bucket_returns_pct); ao.append(r.always_on_ls_pct)
+            sp.append(r.long_short_spread_pct); lo.append(r.long_only_net_pct)
+            ls.append(r.long_short_net_pct); fim.append(r.frac_in_market)
+        return (np.mean(np.array(cur), axis=0), np.mean(ao), np.mean(sp),
+                np.mean(lo), np.mean(ls), np.mean(fim))
 
-    print("\nRead: signal carried by survivorship-prone DIP features (REGIME n.s.). Going FLAT in the "
-          "middle and only betting the tails is the fair test — if the bucket curve isn't monotone "
-          "and tails-only stays <= cost, there is no tradeable edge. (Synthetic delisted; gross IC; "
-          "non-overlap cost approx; research decomposition.)")
+    print(f"\nC) Conviction buckets: quintile {args.horizon}-bar fwd return, "
+          "long top / short bottom / FLAT middle (10bps round-trip)")
+    for tag, built in (("survivors", surv), ("+all delisted", both)):
+        cur, ao, sp, lo, ls, fim = buckets(built)
+        print(f"  [{tag}]")
+        print("   bucket fwd return : " + "  ".join(f"{c:+.2f}" for c in cur)
+              + " %   (low → high signal)")
+        print(f"   always-on L/S     : {ao:+.3f}% / bet   (in market 100%)")
+        print(f"   tails-only L/S    : {sp:+.3f}% / bet   (in market {fim * 100:.0f}%)  "
+              f"-> net long/short {ls:+.3f}% / bet")
+
+    print("\nRead: the fair test is long/short with a FLAT middle — only bet the conviction tails. If "
+          "tails-only is positive net on survivors but collapses with delisted names injected, the "
+          "edge is survivorship; if it holds, it is a (small) genuine lead. (Synthetic delisted; gross "
+          "of survivorship drag; non-overlap cost approx; research decomposition.)")
     return 0
 
 

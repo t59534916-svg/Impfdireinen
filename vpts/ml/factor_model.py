@@ -234,19 +234,25 @@ def cpcv_factor_quantile_returns(
     cv = cv or CombinatorialPurgedCV(
         n_groups=6, n_test_groups=2, purge=dataset.purge_samples, embargo_pct=0.01)
 
-    sig_all: list[float] = []
+    sig_all: list[float] = []     # per-fold standardized signal (comparable across folds)
     y_all: list[float] = []
+    ao_sum, ao_n = 0.0, 0         # raw-sign always-on L/S (matches cpcv_factor_eval)
     for split in cv.split(m):
         tr, te = split.train_idx, split.test_idx
         if tr.size < max(10, X.shape[1] + 2) or te.size < 3:
             continue
         model = RidgeFactorModel(alpha).fit(X[tr], y[tr])
-        sig_all.extend(model.signal(X[te]).tolist())
+        s = model.signal(X[te])
+        ao_sum += float(np.sum(np.sign(s) * y[te]))
+        ao_n += te.size
+        sd = s.std()
+        s = (s - s.mean()) / sd if sd > 0 else s - s.mean()   # fold-fair conviction ranking
+        sig_all.extend(s.tolist())
         y_all.extend(y[te].tolist())
 
     sig = np.asarray(sig_all, float)
     yy = np.asarray(y_all, float)
-    if sig.size < n_buckets * 3 or sig.std() == 0:
+    if sig.size < n_buckets * 3 or sig.std() == 0 or ao_n == 0:
         raise ValueError("not enough usable OOS samples for bucket analysis.")
 
     edges = np.quantile(sig, np.linspace(0, 1, n_buckets + 1))
@@ -256,7 +262,7 @@ def cpcv_factor_quantile_returns(
     top, bottom = float(bucket_ret[-1]), float(bucket_ret[0])
     spread = top - bottom
     in_market = float(np.mean((idx == 0) | (idx == n_buckets - 1)))
-    always_on = float(np.mean(np.sign(sig) * yy))
+    always_on = ao_sum / ao_n
     spear = _corr(np.arange(n_buckets, dtype=float),
                   np.argsort(np.argsort(bucket_ret)).astype(float))
     rt = cost_bps / 1e4
