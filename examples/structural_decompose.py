@@ -33,7 +33,12 @@ import numpy as np  # noqa: E402
 from github_data_scan import GITHUB_TICKERS, github_loader  # noqa: E402
 from structural_survivorship import _build, Built  # noqa: E402
 from survivorship_stress import synthetic_delisted_ohlcv  # noqa: E402
-from vpts import STRUCTURAL_FEATURES, DataFetchError, cpcv_factor_eval  # noqa: E402
+from vpts import (  # noqa: E402
+    STRUCTURAL_FEATURES,
+    DataFetchError,
+    cpcv_factor_eval,
+    cpcv_factor_quantile_returns,
+)
 from vpts.ml.models import FactorDataset  # noqa: E402
 
 DIP = ("delta_net", "delta_poc", "poc_loc", "cost_basis_migration")
@@ -128,19 +133,33 @@ def main() -> int:
         ic_b, _ = _pooled(both, names); p_b = _perm_p(both, names, args.perms)
         print(f"   {tag:>10}   IC {ic_s:+.3f} (p={p_s:.3f})     IC {ic_b:+.3f} (p={p_b:.3f})")
 
-    # ---- C: cost-aware net long/short return per bet (survivor universe) ---- #
-    print("\nC) Cost-aware full-model L/S return per "
-          f"{args.horizon}-bar bet (survivors)")
-    _, gross = _pooled(surv, None)
-    bets_yr = 252.0 / args.horizon
-    print(f"   gross L/S return/bet : {gross:+.3f}%   (~{gross * bets_yr:+.1f}%/yr, non-overlap approx)")
-    for bps in (5, 10, 20):
-        net = gross - bps / 100.0           # round-trip cost in %
-        print(f"   net @ {bps:>2}bps round-trip: {net:+.3f}%/bet  (~{net * bets_yr:+.1f}%/yr)")
+    # ---- C: cost-aware return when the strategy can go long / short / FLAT ---- #
+    # sign()-betting forces exposure every bar (shorts half a bull market). A real
+    # strategy only bets the conviction tails and stays flat in the noisy middle.
+    print(f"\nC) Conviction buckets (survivors): quintile {args.horizon}-bar fwd return, "
+          "long top / short bottom / FLAT middle")
+    curves, ao, spread, lo_net, ls_net, fim = [], [], [], [], [], []
+    for ds, cv in surv:
+        try:
+            r = cpcv_factor_quantile_returns(ds, cv=cv, n_buckets=5, cost_bps=10.0)
+        except ValueError:
+            continue
+        curves.append(r.bucket_returns_pct); ao.append(r.always_on_ls_pct)
+        spread.append(r.long_short_spread_pct); lo_net.append(r.long_only_net_pct)
+        ls_net.append(r.long_short_net_pct); fim.append(r.frac_in_market)
+    curve = np.mean(np.array(curves), axis=0)
+    print("   bucket fwd return : " + "  ".join(f"{c:+.2f}" for c in curve)
+          + " %   (low → high signal)")
+    print(f"   always-on L/S     : {np.mean(ao):+.3f}% / bet   (in market 100% of the time)")
+    print(f"   tails-only L/S    : {np.mean(spread):+.3f}% / bet   "
+          f"(in market {np.mean(fim) * 100:.0f}% of the time)")
+    print(f"   net @ 10bps       : long-only {np.mean(lo_net):+.3f}%  | "
+          f"long/short {np.mean(ls_net):+.3f}%   per bet")
 
-    print("\nRead: REGIME features surviving injection => a small genuine (non-survivorship) "
-          "signal; only DIP surviving => mostly survivorship. Costs eating the gross L/S => "
-          "not tradeable even if genuine. (Synthetic delisted; gross IC; research decomposition.)")
+    print("\nRead: signal carried by survivorship-prone DIP features (REGIME n.s.). Going FLAT in the "
+          "middle and only betting the tails is the fair test — if the bucket curve isn't monotone "
+          "and tails-only stays <= cost, there is no tradeable edge. (Synthetic delisted; gross IC; "
+          "non-overlap cost approx; research decomposition.)")
     return 0
 
 

@@ -53,6 +53,7 @@ from vpts.ml.factor_model import (
     RidgeFactorModel,
     build_factor_dataset,
     cpcv_factor_eval,
+    cpcv_factor_quantile_returns,
     permutation_test_factor,
 )
 from vpts.ml.features import ENRICHED_FEATURES, build_enriched_factor_dataset
@@ -71,6 +72,7 @@ from vpts.ml.meta_model import (
 from vpts.ml.models import (
     CrossSectionalICResult,
     CrossSectionalPanel,
+    FactorBucketResult,
     FactorCVResult,
     FactorDataset,
     FactorPermutationResult,
@@ -132,9 +134,11 @@ __all__ = [
     "ENRICHED_FEATURES",
     "RidgeFactorModel",
     "cpcv_factor_eval",
+    "cpcv_factor_quantile_returns",
     "permutation_test_factor",
     "FactorDataset",
     "FactorCVResult",
+    "FactorBucketResult",
     "FactorPermutationResult",
     # ml (cross-sectional rank factors)
     "build_cross_sectional_panel",
