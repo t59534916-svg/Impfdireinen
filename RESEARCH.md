@@ -5,7 +5,7 @@ predictive edge** in the Volume-Profile system (`vpts`). It is written to be rea
 The value delivered is *validated* findings — mostly negatives, one qualified positive — plus a
 reusable harness that judges any future idea honestly.
 
-> **Bottom line.** Across ten experiments — a walk-forward backtest and nine fitted models, all
+> **Bottom line.** Across eleven experiments — a walk-forward backtest and ten fitted models, all
 > evaluated with purged combinatorial cross-validation and label-shuffle permutation tests — no
 > input produced a **survivorship-robust, tradeable** out-of-sample edge. The **structural
 > microstructure features** (synthetic delta, profile shape, cost-basis migration) produce a real OOS
@@ -16,9 +16,10 @@ reusable harness that judges any future idea honestly.
 > when synthetic delisted names are injected (+0.26%/bet → **−1.07%/bet**) — the patterns that look
 > bullish on names that *survived* are what precedes a death-spiral in names that *didn't*. The one
 > component that *doesn't* invert is the **meta-labeling selectivity** of a swing setup-rater (which
-> entries are higher-R:R): its expectancy lift is +0.14%/bet (p = 0.005) on survivors and stays mildly
-> positive injected (+0.09%) — but **loses significance** (p = 0.10) and still can't make the realistic
-> universe profitable. So: *no survivorship-robust tradeable edge; the binding constraint is the data,
+> entries are higher-R:R). It earned a dedicated stress-test, which found the survivors lift **robust
+> across 9/9 parameter settings** and significant (p = 0.023) — but **carried by the same dip-buying
+> features** (not regime) and **not significant once delisted names are present** (p = 0.106), so that
+> thread is closed too. So: *no survivorship-robust tradeable edge; the binding constraint is the data,
 > not the model.*
 
 ---
@@ -59,7 +60,7 @@ unavoidable confound throughout. There is no delisted/point-in-time data in this
 
 ---
 
-## The ten experiments
+## The eleven experiments
 
 | # | Experiment | OOS statistic | Significance | Verdict |
 |---|------------|---------------|--------------|---------|
@@ -73,6 +74,7 @@ unavoidable confound throughout. There is no delisted/point-in-time data in this
 | 8 | **Structural + survivorship injection** | pooled IC +0.041 → +0.013 (5 dead, 20%) → +0.001 (9 dead, 31%) | p 0.005 → **0.085** → 0.473 | **survivorship-*sensitive*; graceful decay, not a cliff** |
 | 9 | **Structural decomposition + cost** | DIP features carry it (REGIME n.s., p 0.254); tails-only L/S **+0.26%/bet net (survivors) → −1.07%/bet (injected)** — curve inverts | — | **survivorship mirage: the edge inverts off survivors** |
 | 10 | **Swing setup-rater (MFE/MAE meta-labeling)** | direction +0.17%→−0.58%/trade (survivorship); selectivity LIFT +0.14%/bet (surv) → +0.09% (injected) | p 0.005 → **0.10** | **selectivity resists inversion but loses significance & stays unprofitable injected** |
+| 11 | **Selectivity stress-test** (grid + decomposition + power) | survivors lift positive in **9/9** param cells; carried by **DIP** (+0.08) not REGIME (−0.02); injected lift +0.075% | p 0.023 → **0.106** | **robust but DIP-carried & n.s. injected — thread closed** |
 
 ### 1 — The single backtest doesn't survive purged CV
 The breakout style's +14.5% (85% of names profitable, single full-period backtest) collapses under
@@ -183,6 +185,26 @@ universe (−0.49%/trade), because no amount of setup-selection repairs a surviv
 The rater is a clean, usable *interface* (a 0–100 rating + expected R-multiple per setup); on this
 data it is not a validated edge.
 
+### 11 — Stress-testing the selectivity: robust, but DIP-carried and not significant injected
+The selectivity lift was the one thread that resisted inversion, so it earned a dedicated, adversarial
+follow-up — three pre-registered tests, *thread closes unless it passes all three* (31 survivors + 12
+synthetic delisted, top-20% rated, 10 bps):
+
+1. **Robustness grid** — vary horizon ∈ {5,10,15}, R:R ∈ {1.5,2,3}:1, selection ∈ {10,20,30}%. The
+   survivors lift is **positive in all 9/9 cells** (+0.075% … +0.116%): *not* a lucky parameter pick. ✓
+2. **Feature decomposition** — the lift is carried by the **DIP** (dip-buying) subgroup (+0.079% on
+   survivors) with **REGIME contributing nothing** (−0.016%). It is the *same survivorship-prone
+   feature family* that drove the directional mirage, not a survivorship-agnostic regime signal. ✗
+3. **Significance at power** — survivors lift +0.075% is significant (**p = 0.023**), but with delisted
+   names injected the same +0.075% lift sits in a wider null and is **not significant (p = 0.106)**. ✗
+
+So the selectivity is **genuinely robust on survivors** yet fails the two tests that decide whether it
+is *survivorship-free*: it lives in the dip-buying features, and it cannot clear its shuffled null once
+delisted names are present (and, from §10, never makes the realistic universe profitable). By the
+pre-stated bar, the thread is **closed** — honestly, on evidence gathered to *disconfirm* it. That the
+lift *degrades* (p 0.023 → 0.106) rather than *inverting* (like the direction) is the one durable
+nuance: meta-labeling selectivity is the least-survivorship-fragile thing here — just not enough.
+
 ---
 
 ## Honest conclusion
@@ -203,8 +225,10 @@ to *whether* to be long: its expectancy lift is significant on survivors (p = 0.
 significance (p = 0.10) and never makes the realistic universe profitable. Model sophistication is not
 the limiting factor (XGBoost over-fit to a sub-0.5 OOS AUC; the linear book did better) — and neither,
 ultimately, is feature content: the **data** is the wall. Conditioning on names that *survived*
-manufactures an edge that reverses the moment you stop conditioning on survival; the only signal that
-survives that test (meta-labeling selectivity) is too weak, on this universe, to trade.
+manufactures an edge that reverses the moment you stop conditioning on survival; the most resilient
+signal (meta-labeling **selectivity**) was pushed hard in a dedicated stress-test — robust across 9/9
+parameter settings on survivors, but carried by the same dip-buying features and not significant once
+delisted names are present, so it too is closed. Eleven experiments, one consistent wall.
 
 **What would actually change this** (in rough order of expected value):
 
@@ -248,6 +272,7 @@ python examples/structural_survivorship.py            # 8: structural + survivor
 python examples/structural_decompose.py               # 9: per-feature + subgroup + cost decomposition
 python examples/structural_mfe_xgb.py                 # 9: MFE/MAE triple-barrier + XGBoost (optional)
 python examples/structural_swing_rater.py             # 10: swing setup-rater (R:R + selectivity)
+python examples/structural_selectivity.py             # 11: selectivity stress-test (grid/decomp/power)
 ```
 
 ## Limitations
