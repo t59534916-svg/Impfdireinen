@@ -322,7 +322,7 @@ $$\text{(II.20)}\qquad p \;\longrightarrow\; \frac{\tau_f\mu_f + \tau_{\hat s}\,
 
 ## II.L4 — Equilibrium concepts
 
-**Definition (noisy REE, Block M-GS).** A price function $P:(s,u)\mapsto p$ and demands $(x_I, x_U)$ such that (i) $x_I$ and $x_U$ are optimal given beliefs computed by Bayes' rule from the *true* joint law of $(f,s,u,P(s,u))$; (ii) (II.10) holds for a.e. $(s,u)$; (iii) endogenous $\varphi^*$ satisfies (II.14). Existence in the linear class: explicit construction (II.13) — for any $\varphi\in(0,1]$ a linear REE exists and is unique *within the linear class* (Hellwig 1980; Grossman–Stiglitz 1980). Global uniqueness is not guaranteed in general; for a class of related economies existence/uniqueness beyond the Gaussian case is established in Breon-Drish (2015, *REStud*) — *citation from memory; year and scope should be verified before quoting*.
+**Definition (noisy REE, Block M-GS).** A price function $P:(s,u)\mapsto p$ and demands $(x_I, x_U)$ such that (i) $x_I$ and $x_U$ are optimal given beliefs computed by Bayes' rule from the *true* joint law of $(f,s,u,P(s,u))$; (ii) (II.10) holds for a.e. $(s,u)$; (iii) endogenous $\varphi^*$ satisfies (II.14). Existence in the linear class: explicit construction (II.13) — for any $\varphi\in(0,1]$ a linear REE exists and is unique *within the linear class* (Hellwig 1980; Grossman–Stiglitz 1980). Global uniqueness is not guaranteed in general; Breon-Drish (2015, *REStud* 82(3), 868–921) gives a constructive existence proof and uniqueness within continuous-price-function equilibria for a class nesting GS/Hellwig without joint normality.
 
 **Definition (Kyle equilibrium).** A pair $(X, p(\cdot))$ such that $X$ solves (II.6) given $p(\cdot)$, and $p(\cdot)$ satisfies (II.7) given $X$ — a Bayesian–Nash equilibrium between the insider and a competitive dealer sector. (II.17) is its unique linear representative.
 
@@ -384,7 +384,7 @@ $$\text{(III.3)}\qquad V^H_t = \mathbb E_t\!\int_t^\infty \phi(C_s, V^H_s)\,ds,\
 $$\text{(III.4)}\qquad 0 = \max_{C,\alpha}\ \Big\{\phi(C, V^H) + \mathcal L^{W,v} V^H\Big\},\qquad
 \text{[FOC]: } \phi_C = V^H_W,\quad
 \alpha:\ \text{(III.13) below}.$$
-**[FOC]** ($\mathcal L^{W,v}$ = generator of wealth and state dynamics.) The utility-gradient representation of the kernel for SDU is $m_t = \exp\big(\int_0^t \phi_V(C_s,V_s)\,ds\big)\,\phi_C(C_t, V_t)$ (Duffie–Skiadas 1994, *J. Math. Econ.* — *citation from memory*).
+**[FOC]** ($\mathcal L^{W,v}$ = generator of wealth and state dynamics.) The utility-gradient representation of the kernel for SDU is $m_t = \exp\big(\int_0^t \phi_V(C_s,V_s)\,ds\big)\,\phi_C(C_t, V_t)$ (Duffie–Skiadas 1994, *J. Math. Econ.* 23, 107–131).
 
 **(b) Intermediaries $I$** (specialists): CRRA-$\gamma_I$ over their consumption stream; uniquely able to hold the full risky menu; households can take equity stakes in intermediaries only up to a multiple of inside capital:
 
@@ -409,7 +409,7 @@ $$\text{(III.9)}\qquad \frac{w_i(j)}{w_i(0)} = \exp\!\big(b_{p,i}\, \ln P_j + b_
 **[EC]** — an **econometric specification**, deliberately tagged as such: within this model it is *not* derived from an optimization problem (Koijen–Yogo 2019, *JPE*, derive it from a restricted mean–variance problem with characteristics-spanned beliefs and then estimate it via instruments; here it is grafted on as institutional demand). The condition $b_{p,i}<1$ makes excess demand downward-sloping in price, which underwrites uniqueness of the demand-system fixed point (Koijen–Yogo 2019). The aggregate price elasticity $\zeta$ implied by (III.9) is *finite and empirically small*; the flow-to-price multiplier is
 
 $$\text{(III.10)}\qquad \mathcal M = \frac{1}{\zeta},\qquad \text{empirically } \mathcal M \approx 5 \ \text{at the aggregate level},$$
-**[EC]** (Gabaix–Koijen, "In Search of the Origins of Financial Fluctuations: The Inelastic Markets Hypothesis," NBER working paper, c. 2021 — *working-paper status; magnitude quoted from memory; verify before use*). The frictionless blocks of this model imply $\zeta$ orders of magnitude larger; this unresolved tension is reported, not smoothed, in the Self-Consistency section.
+**[EC]** (Gabaix–Koijen, "In Search of the Origins of Financial Fluctuations: The Inelastic Markets Hypothesis," NBER WP 28967, 2021 — still a working paper; the $\approx\$5$-per-$\$1$-flow multiplier is their granular-instrumental-variables estimate, and the GIV methodology itself is published as Gabaix–Koijen 2024, *JPE*). The frictionless blocks of this model imply $\zeta$ orders of magnitude larger; this unresolved tension is reported, not smoothed, in the Self-Consistency section.
 
 **(e) Noise order flow:** cumulative exogenous flow $dq^u_t = \sigma_q\,dB^u_t$ **[P]** (*known false as optimization; same defense and same budget caveat as (II.9)*).
 
@@ -429,7 +429,7 @@ $$\text{(III.12)}\qquad p^{obs}_t = p^e_t + \varsigma_t,\qquad p^e_t \ \text{a m
 
 **Definition (Radner equilibrium with constraints).** Processes $\{P_t, r_t\}$ and plans $\{C^k_t,\theta^k_t\}_{k\in\{H,I,A\}}$ such that (i) each agent's plan solves its HJB problem (III.4)/(III.6)-program/(III.7) given prices and constraints (III.5), (III.7); (ii) institutional demand follows (III.9); (iii) all markets clear (III.11) for all $t$; (iv) all agents share the (correct) law of motion of the aggregate state $(D_t, v_t, W^I_t, W^A_t)$.
 
-Existence: for the frictionless complete-markets exchange-economy core, equilibrium existence in continuous time is classical (Duffie–Huang 1985, *Econometrica* — dynamic implementation of Arrow–Debreu; Karatzas–Lehoczky–Shreve 1990, *Math. OR* — *citation from memory*). With the constraint (III.5) and heterogeneous agents, no general existence/uniqueness theorem applies; equilibria are constructed as solutions to the PDE system in the state $(v_t, \omega^I_t \equiv W^I_t/(W^I_t+W^H_t))$ and verified numerically (He–Krishnamurthy 2013; Brunnermeier–Sannikov 2014). **Multiplicity is real, not hypothetical**: margin-spiral economies admit multiple equilibria for the same fundamentals (Brunnermeier–Pedersen 2009), and the selection used here — the equilibrium branch continuous in fundamentals at $\xi=0$ — is a *convention*, flagged again in the Boundary section.
+Existence: for the frictionless complete-markets exchange-economy core, equilibrium existence in continuous time is classical (Duffie–Huang 1985, *Econometrica* — dynamic implementation of Arrow–Debreu; Karatzas–Lehoczky–Shreve 1990, *Math. OR* 15, 80–128). With the constraint (III.5) and heterogeneous agents, no general existence/uniqueness theorem applies; equilibria are constructed as solutions to the PDE system in the state $(v_t, \omega^I_t \equiv W^I_t/(W^I_t+W^H_t))$ and verified numerically (He–Krishnamurthy 2013; Brunnermeier–Sannikov 2014). **Multiplicity is real, not hypothetical**: margin-spiral economies admit multiple equilibria for the same fundamentals (Brunnermeier–Pedersen 2009), and the selection used here — the equilibrium branch continuous in fundamentals at $\xi=0$ — is a *convention*, flagged again in the Boundary section.
 
 ## III.L5 — Frictions as explicit deltas
 
@@ -440,7 +440,7 @@ $\ P_t = \mathbb E_t[m_{t+1}X_{t+1}]$ — equation (II.23)'s level form.
 
 $$\text{(III.19)}\qquad \mathbb E_t\big[m_{t+1}\,(D_{t+1} + (1-\chi)P_{t+1})\big] \;\le\; (1+\chi)\,P_t,
 \qquad \mathbb E_t\big[m_{t+1}\,(D_{t+1}+(1+\chi)P_{t+1})\big] \;\ge\; (1-\chi)\,P_t .$$
-**[FOC, inequality form]** The Euler *equation* becomes a **band**; inside it the agent does not trade (the no-trade region of Constantinides 1986, *JPE*; Davis–Norman 1990, *Math. OR*, characterize the continuous-time cone). Pricing with bid–ask spreads admits a sublinear extension of the FTAP (Jouini–Kallal 1995, *JET* — *from memory*).
+**[FOC, inequality form]** The Euler *equation* becomes a **band**; inside it the agent does not trade (the no-trade region of Constantinides 1986, *JPE*; Davis–Norman 1990, *Math. OR*, characterize the continuous-time cone). The FTAP extends to bid–ask spreads: no arbitrage is equivalent to the existence of an equivalent measure under which some process *lying between the bid and ask price processes* is a martingale (Jouini–Kallal 1995, *JET* 66, 178–197) — the band form of (III.19) is the agent-level shadow of that theorem.
 
 **Δ2. Margin / leverage limits.** Already derived as (III.8): the delta to the frictionless Euler equation is the additive term $\xi_t h_j\,dt$. Two assets with **identical cash flows** but margins $h_1<h_2$ must satisfy, by differencing (III.8),
 
@@ -503,7 +503,7 @@ What this construction cannot capture, and why — concretely.
 
 1. **Non-stationarity and regime change.** Every parameter ($g,\kappa,\bar v,\sigma_v,\ell,\iota,\sigma_u,\vartheta$, the demand coefficients $b_{p,i}$) is a constant of a single stationary law $\mathbb P$. Decimalization, electronic and high-frequency market making, post-2008 dealer regulation, and QE each *moved* the "constants" of Parts II–III ($\lambda$, spreads, $\zeta$, $\vartheta$). Regime-switching extensions (Hamilton 1989, *Econometrica*) remain stationary meta-models — a known switching law is just a bigger $\mathbb P$. Genuine structural change — policy regimes altering decision rules (Lucas 1976, *Carnegie-Rochester*) — is outside the model class, by construction.
 
-2. **Reflexivity and adaptation-to-measurement.** The GS fixed point (II.14) already shows informativeness is self-limiting; the stronger empirical fact is that the *map itself decays under observation*: published return predictors lose a large fraction of their premium after publication (McLean–Pontiff 2016, *JF*, document post-publication declines on the order of half — magnitudes quoted from memory). Formally, the model would need an equilibrium over the space of *models agents hold*, with the act of estimating an equation like (III.9) shifting the coefficients of (III.9). Nothing in L0–L6 has that structure (informal antecedents: Soros's reflexivity; Lo 2004, *J. Portfolio Management*, adaptive markets). Any econometric use of this document's [EC] equations is conditional on the strategy not yet having eaten its own signal.
+2. **Reflexivity and adaptation-to-measurement.** The GS fixed point (II.14) already shows informativeness is self-limiting; the stronger empirical fact is that the *map itself decays under observation*: across 97 published return predictors, portfolio returns are 26% lower out-of-sample and 58% lower post-publication (McLean–Pontiff 2016, *JF* 71, 5–32). Formally, the model would need an equilibrium over the space of *models agents hold*, with the act of estimating an equation like (III.9) shifting the coefficients of (III.9). Nothing in L0–L6 has that structure (informal antecedents: Soros's reflexivity; Lo 2004, *J. Portfolio Management*, adaptive markets). Any econometric use of this document's [EC] equations is conditional on the strategy not yet having eaten its own signal.
 
 3. **Knightian / model uncertainty.** All agents know $\mathbb P$ exactly — including the jump measure $\ell(dz)$ governing events that may never have occurred in sample. Under ambiguity, the Euler equation becomes a worst-case condition over a prior set (maxmin: Gilboa–Schmeidler 1989, *JME*; robust control: Hansen–Sargent 2008, *Robustness*), and ambiguity premia are observationally entangled with the risk premia of (III.18); this model cannot separate them, and *no* model can without auxiliary identifying assumptions.
 
@@ -549,7 +549,7 @@ Run against the construction; tensions are reported, not smoothed.
 
 # References
 
-Confidence key: ★ = standard result, attribution confident from memory; ◐ = attribution confident, details (year/journal/exact scope) should be verified; ○ = reconstructed from memory or unverified status — verify before citing onward.
+Confidence key: ★ = standard result, attribution confident (entries marked "Verified" were checked against the published record on 2026-06-10); ◐ = attribution confident, details (year/journal/exact scope) not independently re-verified; ○ = reconstructed from memory — none remain after the verification pass.
 
 - ★ Arrow, K. & G. Debreu (1954), "Existence of an Equilibrium for a Competitive Economy," *Econometrica*. — Existence, welfare theorems (I.L4).
 - ★ Back, K. (1992), "Insider Trading in Continuous Time," *RFS*. — Continuous-time Kyle (III.L3).
@@ -558,7 +558,7 @@ Confidence key: ★ = standard result, attribution confident from memory; ◐ = 
 - ★ Barro, R. (2006), "Rare Disasters and Asset Prices in the Twentieth Century," *QJE*.
 - ★ Black, F. (1986), "Noise," *JF*. — The noise-trader apology (II.9).
 - ★ Breeden, D. (1979), "An Intertemporal Asset Pricing Model…," *JFE*. — Consumption CAPM.
-- ○ Breon-Drish, B. (2015), "On Existence and Uniqueness of Equilibrium in a Class of Noisy Rational Expectations Models," *REStud*. — Year/scope from memory.
+- ★ Breon-Drish, B. (2015), "On Existence and Uniqueness of Equilibrium in a Class of Noisy Rational Expectations Models," *REStud* 82(3), 868–921. — Verified: constructive existence; uniqueness within continuous-price equilibria; relaxes normality in GS/Hellwig.
 - ★ Brunnermeier, M. & L. Pedersen (2009), "Market Liquidity and Funding Liquidity," *RFS*. — Margin spirals, multiplicity (Δ2, Δ4).
 - ★ Brunnermeier, M. & Y. Sannikov (2014), "A Macroeconomic Model with a Financial Sector," *AER*. — Global dynamics, volatility paradox.
 - ◐ Cass, D. & J. Stiglitz (1970), "The Structure of Investor Preferences and Asset Returns…," *JET*. — Fund separation.
@@ -574,12 +574,12 @@ Confidence key: ★ = standard result, attribution confident from memory; ◐ = 
 - ★ Duffie, D. & L. Epstein (1992), "Stochastic Differential Utility," *Econometrica*.
 - ◐ Duffie, D. & C.-F. Huang (1985), "Implementing Arrow–Debreu Equilibria by Continuous Trading of Few Long-Lived Securities," *Econometrica*.
 - ★ Duffie, D., J. Pan & K. Singleton (2000), "Transform Analysis and Asset Pricing for Affine Jump-Diffusions," *Econometrica*.
-- ○ Duffie, D. & C. Skiadas (1994), "Continuous-Time Security Pricing: A Utility Gradient Approach," *J. Math. Econ.* — Details from memory.
+- ★ Duffie, D. & C. Skiadas (1994), "Continuous-Time Security Pricing: A Utility Gradient Approach," *J. Math. Econ.* 23, 107–131. — Verified.
 - ★ Engle, R. (1982), "Autoregressive Conditional Heteroscedasticity…," *Econometrica*.
 - ★ Epstein, L. & S. Zin (1989), "Substitution, Risk Aversion, and the Temporal Behavior of Consumption and Asset Returns: A Theoretical Framework," *Econometrica*; and (1991) empirical companion, *JPE*.
 - ★ Fama, E. (1970), "Efficient Capital Markets: A Review of Theory and Empirical Work," *JF*. — Joint hypothesis.
 - ★ Gabaix, X., P. Gopikrishnan, V. Plerou & H.E. Stanley (2003), "A Theory of Power-Law Distributions in Financial Market Fluctuations," *Nature*.
-- ○ Gabaix, X. & R. Koijen (c. 2021), "In Search of the Origins of Financial Fluctuations: The Inelastic Markets Hypothesis," NBER working paper. — Working-paper status and multiplier magnitude unverified here.
+- ★ Gabaix, X. & R. Koijen (2021), "In Search of the Origins of Financial Fluctuations: The Inelastic Markets Hypothesis," NBER WP 28967. — Verified: still a working paper; the ≈$5 multiplier is their GIV estimate. The GIV methodology is published as Gabaix & Koijen (2024), "Granular Instrumental Variables," *JPE*.
 - ★ Gârleanu, N. & L. Pedersen (2011), "Margin-Based Asset Pricing and Deviations from the Law of One Price," *RFS*.
 - ★ Gilboa, I. & D. Schmeidler (1989), "Maxmin Expected Utility with Non-Unique Prior," *JME*.
 - ★ Glosten, L. & P. Milgrom (1985), "Bid, Ask and Transaction Prices in a Specialist Market with Heterogeneously Informed Traders," *JFE*.
@@ -589,19 +589,19 @@ Confidence key: ★ = standard result, attribution confident from memory; ◐ = 
 - ★ Hansen, L.P. & T. Sargent (2008), *Robustness*, Princeton UP.
 - ★ Harrison, J.M. & D. Kreps (1978), "Speculative Investor Behavior in a Stock Market with Heterogeneous Expectations," *QJE*; (1979), "Martingales and Arbitrage in Multiperiod Securities Markets," *JET*.
 - ★ Harrison, J.M. & S. Pliska (1981), "Martingales and Stochastic Integrals in the Theory of Continuous Trading," *Stochastic Processes and their Applications*.
-- ◐ Hasbrouck, J. (1993), "Assessing the Quality of a Security Market: A New Approach to Transaction-Cost Measurement," *RFS*.
+- ★ Hasbrouck, J. (1993), "Assessing the Quality of a Security Market: A New Approach to Transaction-Cost Measurement," *RFS* 6(1), 191–212. — Verified: random-walk (efficient price) + stationary pricing-error decomposition, as used in (III.12).
 - ★ He, Z. & A. Krishnamurthy (2013), "Intermediary Asset Pricing," *AER*.
 - ★ He, Z., B. Kelly & A. Manela (2017), "Intermediary Asset Pricing: New Evidence from Many Asset Classes," *JFE*.
 - ★ Hellwig, M. (1980), "On the Aggregation of Information in Competitive Markets," *JET*.
 - ★ Heston, S. (1993), "A Closed-Form Solution for Options with Stochastic Volatility…," *RFS*.
-- ◐ Jouini, E. & H. Kallal (1995), "Martingales and Arbitrage in Securities Markets with Transaction Costs," *JET*.
-- ○ Karatzas, I., J. Lehoczky & S. Shreve (1990), "Existence and Uniqueness of Multi-Agent Equilibrium in a Stochastic, Dynamic Consumption/Investment Model," *Mathematics of Operations Research*. — Details from memory.
-- ◐ Kocherlakota, N. (1990), "Disentangling the Coefficient of Relative Risk Aversion from the Elasticity of Intertemporal Substitution: An Irrelevance Result," *JF*.
+- ★ Jouini, E. & H. Kallal (1995), "Martingales and Arbitrage in Securities Markets with Transaction Costs," *JET* 66, 178–197. — Verified.
+- ★ Karatzas, I., J. Lehoczky & S. Shreve (1990), "Existence and Uniqueness of Multi-Agent Equilibrium in a Stochastic, Dynamic Consumption/Investment Model," *Mathematics of Operations Research* 15, 80–128. — Verified.
+- ★ Kocherlakota, N. (1990), "Disentangling the Coefficient of Relative Risk Aversion from the Elasticity of Intertemporal Substitution: An Irrelevance Result," *JF* 45, 175–190. — Verified.
 - ★ Koijen, R. & M. Yogo (2019), "A Demand System Approach to Asset Pricing," *JPE*.
 - ★ Kyle, A. (1985), "Continuous Auctions and Insider Trading," *Econometrica*; (1989), "Informed Speculation with Imperfect Competition," *REStud*.
 - ★ Lo, A. (2004), "The Adaptive Markets Hypothesis," *Journal of Portfolio Management*.
 - ★ Lucas, R. (1976), "Econometric Policy Evaluation: A Critique," *Carnegie-Rochester Conference Series*; (1978), "Asset Prices in an Exchange Economy," *Econometrica*.
-- ★ McLean, R.D. & J. Pontiff (2016), "Does Academic Research Destroy Stock Return Predictability?" *JF*. — Decay magnitudes quoted from memory.
+- ★ McLean, R.D. & J. Pontiff (2016), "Does Academic Research Destroy Stock Return Predictability?" *JF* 71, 5–32. — Verified: 97 predictors; returns 26% lower out-of-sample, 58% lower post-publication.
 - ★ Mehra, R. & E. Prescott (1985), "The Equity Premium: A Puzzle," *JME*.
 - ★ Merton, R. (1971), "Optimum Consumption and Portfolio Rules in a Continuous-Time Model," *JET*; (1973), "An Intertemporal Capital Asset Pricing Model," *Econometrica*; (1976), "Option Pricing when Underlying Stock Returns Are Discontinuous," *JFE*.
 - ★ Miller, E. (1977), "Risk, Uncertainty, and Divergence of Opinion," *JF*.
