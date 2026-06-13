@@ -281,6 +281,27 @@ def fig_session_map():
     _save(fig, "fig9_session_map.png")
 
 
+def fig_fundamental_law():
+    BR = np.logspace(0, 3.7, 400)
+    fig, ax = plt.subplots(figsize=(7.4, 4.3))
+    for ic, col, ls in [(0.02, GREY, ":"), (0.05, NAVY, "-"), (0.10, MAROON, "--"), (0.20, GREEN, "-.")]:
+        ax.plot(BR, ic * np.sqrt(BR), color=col, ls=ls, lw=2, label=f"IC = {ic:.2f}")
+    ax.axhline(1.0, color=GOLD, lw=1.4, alpha=0.85)
+    ax.text(1.1, 1.04, "IR = 1.0  (institutional-grade)", color=GOLD, fontsize=8.4)
+    ax.axhline(0.5, color=GREY, lw=1, ls=":")
+    ax.set_xscale("log")
+    ax.plot([1000], [0.05 * np.sqrt(1000)], "o", color=NAVY, ms=7)
+    ax.annotate("IC 0.05  (≈53% directional)\n× breadth 1000  →  IR ≈ 1.6\nthe 'coin-flip' edge, industrialised",
+                (1000, 1.58), (40, 1.75), fontsize=8.3, color=NAVY,
+                arrowprops=dict(arrowstyle="->", color=NAVY))
+    ax.set_xlabel("breadth — number of independent bets per year  (log scale)")
+    ax.set_ylabel("information ratio  IR = IC × √breadth")
+    ax.set_title("The Fundamental Law: a tiny per-bet edge × breadth = a great fund")
+    ax.legend(fontsize=8.6, loc="upper left", title="skill per bet (IC)")
+    ax.set_ylim(0, 2.5)
+    _save(fig, "fig10_fundamental_law.png")
+
+
 if __name__ == "__main__":
     fig_pq_wedge()
     fig_pricing_kernel()
@@ -291,4 +312,5 @@ if __name__ == "__main__":
     fig_deflated_sharpe()
     fig_gbm_vs_jump()
     fig_session_map()
+    fig_fundamental_law()
     print("all figures written to", OUT)

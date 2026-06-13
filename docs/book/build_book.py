@@ -141,7 +141,10 @@ cross-validation, the deflated Sharpe ratio) that the theory demands. Chapter 4
 is an evidence-based SWOT of AI and machine-learning architectures for
 *directional* stock forecasting, concluding that honest out-of-sample directional
 accuracy is ~50–55% across every model family. Chapter 5 turns the defensible
-recipe into a dependency-free, unit-tested implementation. Chapter 6 states the
+recipe into a dependency-free, unit-tested implementation. Chapter 6 supplies the
+constructive counterpart — the Fundamental Law of Active Management, which shows
+the very edge the empirical chapters call tiny becomes a world-class information
+ratio once multiplied by breadth, plus why such edges survive. Chapter 7 states the
 synthesis. The unifying claim, proved from two directions, is that *markets price
 risk, not odds; models estimate odds, not edge; and the unidentified pricing
 kernel is exactly what makes both asset pricing hard and machine-learning
@@ -169,11 +172,11 @@ stochastic calculus to gradient-boosted trees — so read it for your purpose, n
 cover to cover. Its aim is **constructive**: to identify which model fits which
 sector, regime, and horizon, and to supply a filter severe enough that scarce time
 is not spent on what cannot work. It is critical because the domain punishes
-credulity, not because it is pessimistic — its conclusion (Chapter 6) is that
-markets *are* beatable, rarely and specifically, and the severity is in service of
-finding where.
+credulity, not because it is pessimistic — its conclusion is that markets *are*
+beatable, rarely and specifically (Chapter 6 supplies the positive theory; Chapter
+7 the synthesis), and the severity is in service of finding where.
 
-- **The thesis in two pages:** the Preface and the opening of Chapter 6.
+- **The thesis in two pages:** the Plain-Language Summary, then the opening of Chapter 6.
 - **What a price means (theory):** Chapter 2 — assumes comfort with expected
   utility and Itô calculus; its boundary and self-consistency sections need no
   calculus.
@@ -286,7 +289,12 @@ CHAPTERS = [
          lead=("fig6_gbrt_demo.png", "5.1",
                "The implemented recipe on synthetic data: with a planted signal it is found; with none, the OOS IC, the directional edge, and the deflated Sharpe all collapse."),
          body="CH5", src=None, strip_title=False, inline=[]),
-    dict(id="ch6", num="6", title="Synthesis — and the Boundary of the Whole Enterprise",
+    dict(id="ch6", num="6", title="The Positive Theory of Edge — Where Skill Comes From",
+         abstract="The Fundamental Law (IR = IC·√breadth), breadth, capacity and decay, Kelly sizing, and why edges survive — the constructive counterpart to the failure modes.",
+         lead=("fig10_fundamental_law.png", "6.1",
+               "The Fundamental Law of Active Management: a per-bet edge of IC≈0.05 — the ~53% directional level the empirical chapters call near-futile — becomes an institutional information ratio once multiplied by breadth. The pessimistic and the constructive fact are the same fact at two scales."),
+         src=DOCS / "EDGE_METHODOLOGY.md", strip_title=True, inline=[]),
+    dict(id="ch7", num="7", title="Synthesis — and the Boundary of the Whole Enterprise",
          abstract="The seven cross-cutting insights and what no method can repair.",
          body="CH6", src=None, strip_title=False, inline=[]),
 ]
@@ -580,6 +588,7 @@ def build():
         <li>The mathematics of analysing financial time series</li>
         <li>A SWOT of AI architectures for directional forecasting</li>
         <li>An implemented model with an honest significance gate</li>
+        <li>A positive theory of where edge comes from — and why it survives</li>
       </ul>
       <div style="position:absolute; bottom:24mm;">
         <div class="by">Compiled by Claude Code &nbsp;·&nbsp; {DATE}</div>
@@ -587,7 +596,9 @@ def build():
       </div>
     </section>"""
 
-    # front matter (preface + reader's guide)
+    # front matter (plain-language summary + preface + reader's guide)
+    primer = re.sub(r"^#\s+.*\n", "", (DOCS / "PRIMER.md").read_text(), count=1)
+    summary = f'<section class="frontmatter"><h1>Plain-Language Summary</h1>{md_to_html(primer)}</section>'
     front = f'<section class="frontmatter"><h1>Preface</h1>{md_to_html(PREFACE)}</section>'
     guide = f'<section class="frontmatter"><h1>Reader’s Guide</h1>{md_to_html(READER_GUIDE)}</section>'
 
@@ -602,7 +613,7 @@ def build():
     toc = f'<section class="toc"><h1>Contents</h1><ol>{toc_items}</ol></section>'
 
     # chapters
-    parts = [cover, front, guide, toc]
+    parts = [cover, summary, front, guide, toc]
     for c in CHAPTERS:
         if c["src"]:
             text = c["src"].read_text()
