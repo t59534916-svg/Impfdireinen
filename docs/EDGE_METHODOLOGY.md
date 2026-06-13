@@ -29,7 +29,10 @@ $$\text{(2)}\qquad \mathrm{IR}\;\approx\;\mathrm{TC}\cdot\mathrm{IC}\,\sqrt{\mat
 the ideal portfolio and the one you can actually implement after constraints.
 
 **The reconciliation.** The empirical chapters establish that honest directional
-IC sits around 0.02–0.10 (the "~50–55% accuracy" restated as a correlation). Read
+IC sits around 0.02–0.10 — the "~50–55% accuracy" restated as a correlation, via
+the rule of thumb $\mathrm{IC}\approx 2\,(\text{hit rate})-1$ (so 52.5% maps to
+$\mathrm{IC}\approx0.05$ and 55% to $\mathrm{IC}\approx0.10$; the bridge is a
+heuristic, the exact map depends on the signal's distribution). Read
 through (1), that is not a verdict of futility — it is a *per-bet* skill that
 compounds with breadth:
 

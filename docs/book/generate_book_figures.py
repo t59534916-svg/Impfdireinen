@@ -291,7 +291,7 @@ def fig_fundamental_law():
     ax.axhline(0.5, color=GREY, lw=1, ls=":")
     ax.set_xscale("log")
     ax.plot([1000], [0.05 * np.sqrt(1000)], "o", color=NAVY, ms=7)
-    ax.annotate("IC 0.05  (≈53% directional)\n× breadth 1000  →  IR ≈ 1.6\nthe 'coin-flip' edge, industrialised",
+    ax.annotate("IC 0.05  (≈52–53% directional)\n× breadth 1000  →  IR ≈ 1.6\nthe 'coin-flip' edge, industrialised",
                 (1000, 1.58), (40, 1.75), fontsize=8.3, color=NAVY,
                 arrowprops=dict(arrowstyle="->", color=NAVY))
     ax.set_xlabel("breadth — number of independent bets per year  (log scale)")

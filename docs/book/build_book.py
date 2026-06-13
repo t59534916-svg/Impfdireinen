@@ -292,7 +292,7 @@ CHAPTERS = [
     dict(id="ch6", num="6", title="The Positive Theory of Edge — Where Skill Comes From",
          abstract="The Fundamental Law (IR = IC·√breadth), breadth, capacity and decay, Kelly sizing, and why edges survive — the constructive counterpart to the failure modes.",
          lead=("fig10_fundamental_law.png", "6.1",
-               "The Fundamental Law of Active Management: a per-bet edge of IC≈0.05 — the ~53% directional level the empirical chapters call near-futile — becomes an institutional information ratio once multiplied by breadth. The pessimistic and the constructive fact are the same fact at two scales."),
+               "The Fundamental Law of Active Management: a per-bet edge of IC≈0.05 — the ~52–53% directional level the empirical chapters call near-futile — becomes an institutional information ratio once multiplied by breadth. The pessimistic and the constructive fact are the same fact at two scales."),
          src=DOCS / "EDGE_METHODOLOGY.md", strip_title=True, inline=[]),
     dict(id="ch7", num="7", title="Synthesis — and the Boundary of the Whole Enterprise",
          abstract="The seven cross-cutting insights and what no method can repair.",
