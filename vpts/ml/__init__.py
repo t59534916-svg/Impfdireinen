@@ -19,11 +19,25 @@ from vpts.ml.factor_model import (
     permutation_test_factor,
 )
 from vpts.ml.features import ENRICHED_FEATURES, build_enriched_factor_dataset
+from vpts.ml.gbrt import (
+    GBRTCrossSectionalResult,
+    GradientBoostedTrees,
+    gbrt_cross_sectional_eval,
+)
 from vpts.ml.labeling import build_meta_dataset, triple_barrier_labels
 from vpts.ml.meta_model import (
     LogisticMetaModel,
     cpcv_meta_eval,
     permutation_test_meta,
+)
+from vpts.ml.significance import (
+    DirectionalSkill,
+    SharpeSignificance,
+    deflated_sharpe_ratio,
+    directional_skill,
+    expected_max_sharpe,
+    probabilistic_sharpe_ratio,
+    sharpe_ratio,
 )
 from vpts.ml.models import (
     CrossSectionalICResult,
@@ -57,6 +71,18 @@ __all__ = [
     "permutation_test_cross_sectional",
     "CrossSectionalPanel",
     "CrossSectionalICResult",
+    # gradient-boosted trees (nonlinear cross-sectional ranking)
+    "GradientBoostedTrees",
+    "gbrt_cross_sectional_eval",
+    "GBRTCrossSectionalResult",
+    # significance gate (deflated Sharpe + up-rate directional skill)
+    "sharpe_ratio",
+    "expected_max_sharpe",
+    "probabilistic_sharpe_ratio",
+    "deflated_sharpe_ratio",
+    "SharpeSignificance",
+    "directional_skill",
+    "DirectionalSkill",
     # triple-barrier meta-labeling
     "triple_barrier_labels",
     "build_meta_dataset",
