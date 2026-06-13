@@ -497,7 +497,194 @@ $$\text{(III.18)}\qquad \mu_j + \int J_j(z)\ell(dz) - r_t = \underbrace{\gamma\,
 
 ---
 
-# Boundary of the formalization
+# Part IV — Level 3+: Options, the risk-neutral density, and the physical law
+
+This part is the payoff for everything built above. Options are the instrument through which the abstract objects of Parts I–III — Arrow prices, the SDF, the measures $\mathbb P$ and $\mathbb Q$ — become *observable*. The organizing question is the one the title of the section poses: **what do derivative prices reveal about the likelihood of future states, and about expected future returns?** The disciplined answer requires separating two densities that are constantly conflated in practice:
+
+- $f^{\mathbb P}$ — the **physical** (statistical, real-world) density: the actual likelihood of future outcomes. This is what "expectations/likelihood" colloquially means.
+- $f^{\mathbb Q}$ — the **risk-neutral** (pricing) density: a risk-adjusted, marginal-utility-weighted pseudo-density that prices claims.
+
+The bridge between them is the pricing kernel of Parts I–III. Part IV derives exactly what options pin down ($f^{\mathbb Q}$, completely and model-free), what they bound ($\mathbb P$-moments), and what they cannot identify without auxiliary, empirically-false restrictions ($f^{\mathbb P}$ itself). It runs L0–L6; the closing sections are extended to cover it.
+
+**Notation additions (Part IV).** $\mathbb Q$ = risk-neutral measure; $M_{t,T}\equiv m_T/m_t$ = SDF over $[t,T]$; $B(t,T)\equiv e^{-\int_t^T r_s\,ds}$ = bond price; $F_{t,T}\equiv S_t/B(t,T)$ = forward; $C(K),P(K)$ = call/put prices at strike $K$; $f^{\mathbb P}_t,f^{\mathbb Q}_t$ = physical/risk-neutral densities of $S_T$ conditional on $\mathcal F_t$; $m_t(x)\equiv\mathbb E[M_{t,T}\mid S_T=x]$ = kernel **projected** onto the underlying; $\sigma^{BS}(K,T)$ = Black–Scholes implied volatility; $w(K,T)\equiv \sigma^{BS}(K,T)^2(T-t)$ = total implied variance; $\mathrm{VRP}$ = variance risk premium; $\mathrm{SVIX}^2$ = Martin's option-implied return-variance index; $\varphi(x),\eta,\mathsf M^{\mathrm{mart}}$ = eigenfunction, eigenvalue, and martingale (permanent) component of the SDF factorization. *Glyph note: $\varphi$ here is the recovery eigenfunction, distinct from the informed-mass $\varphi$ of Part II — they never appear together.*
+
+## IV.L0 — Environment
+
+Inherit the Part III environment exactly: underlying $S_t$ (the equity claim, $S_t \equiv P_t$ from III.L6) with $\mathbb P$-dynamics (III.1)–(III.2) — jump-diffusion with stochastic variance $v_t$. Add a menu of **European options**: claims paying $g(S_T)$ at a fixed maturity $T$, for arbitrary measurable $g$; the leading cases are the call $g(S)=(S-K)^+$ and put $g(S)=(K-S)^+$ at strikes $K$ ranging over a continuum (idealization **[P]**, *status: known false* — strikes are discrete and bounded; this is what makes empirical $f^{\mathbb Q}$ estimation an interpolation/extrapolation problem rather than a read-off).
+
+$$\text{(IV.0)}\qquad O_t(g,T) \;=\; \text{price at }t\text{ of the claim paying } g(S_T)\text{ at } T,\qquad \bar\theta_{\text{opt}} = 0 \ \text{(options in zero net supply)}.$$
+**[P]** Zero net supply — every long is someone's short; this matters for the demand-pressure friction (IV.L5).
+
+## IV.L1 — Information: options are not redundant
+
+The decisive structural fact. In the complete-markets corner (Part I, or the GBM corner of III.L6), options are **redundant**: spanned by dynamic trading in $(S, \text{bond})$, they add no payoffs and carry no independent information. Under stochastic volatility and jumps (III.1)–(III.2) the market is **incomplete** — the Brownian $B^v$ and the jump measure $N(dt,dz)$ are extra risk sources that the stock and bond alone do not span — so options are *genuinely new assets* that complete (or partially complete) the market by spanning variance and jump risk.
+
+$$\text{(IV.1)}\qquad \dim(\text{traded risks with } S,\text{bond}) < \dim(\text{state }(S,v,N)) \ \Longrightarrow\ \text{options span the gap}.$$
+**[P / structural]** *Status: holds* (the empirical non-redundancy of options is the entire basis of the variance- and jump-risk-premium literatures). This is **why option prices carry information about the kernel's pricing of volatility and jumps** that the underlying alone cannot reveal — the thread running through all of IV.L6.
+
+## IV.L2 — Participants: the option in the marginal investor's problem
+
+No new agents. The option is priced by the same marginal investor whose Euler equation produced the kernel (III.13)/(III.16). For any agent $k$ marginal in the option, the first-order condition of the III.L2 program applied to the claim $g(S_T)$ gives
+
+$$\text{(IV.2)}\qquad m_t\,O_t(g,T) \;=\; \mathbb E_t\big[m_T\, g(S_T)\big]
+\quad\Longleftrightarrow\quad
+O_t(g,T) \;=\; \mathbb E_t\!\big[ M_{t,T}\, g(S_T)\big],\qquad M_{t,T}\equiv \frac{m_T}{m_t}.$$
+**[FOC]** Derived from the same Euler/martingale condition (III.16); the kernel is the *endogenous* one of (III.13). When perfect hedging fails (incompleteness), the option market-maker is a constrained intermediary in the sense of III.L2(b)/(c) — the demand-based wedge this creates is IV.L5.
+
+## IV.L3 — Price formation: from the kernel to the risk-neutral density
+
+### (i) Risk-neutral valuation
+
+Define the bond and the change of measure. With $r_s$ the *endogenous* short rate (III.15),
+
+$$\text{(IV.3)}\qquad B(t,T) \equiv \mathbb E_t[M_{t,T}] = e^{-\int_t^T r_s\,ds},\qquad
+\frac{d\mathbb Q}{d\mathbb P}\Big|_{\mathcal F_T} \equiv \frac{M_{t,T}}{B(t,T)} \;>\;0 .$$
+**[ID + EQ]** Positivity is the FTAP content (III.L6): $m>0 \Rightarrow$ a legitimate Radon–Nikodym derivative with $\mathbb E_t^{\mathbb P}[d\mathbb Q/d\mathbb P]=1$. Substituting into (IV.2),
+
+$$\text{(IV.4)}\qquad O_t(g,T) \;=\; B(t,T)\,\mathbb E_t^{\mathbb Q}\big[g(S_T)\big].$$
+**[EQ]** Risk-neutral valuation: the price is the discounted $\mathbb Q$-expectation of the payoff. Consistency with the underlying (checked in IV.L4) requires $e^{-\int r}S$ to be a $\mathbb Q$-martingale, i.e. $\mathbb E_t^{\mathbb Q}[S_T]=F_{t,T}$ — **the $\mathbb Q$-mean of the future price is the forward, not the expected future price.** Already here the central caution appears: even the *center* of the option-implied density is the risk-free-growth forward, displaced from $\mathbb E_t^{\mathbb P}[S_T]$ by the risk premium.
+
+### (ii) Breeden–Litzenberger: options reveal the entire $\mathbb Q$-density
+
+Take $g(S)=(S-K)^+$ in (IV.4) and differentiate in the strike $K$ (Leibniz; $\partial_K(S-K)^+ = -\mathbf 1\{S>K\}$):
+
+$$\text{(IV.5)}\qquad \frac{\partial C(K)}{\partial K} = -B(t,T)\,\mathbb Q_t(S_T> K),\qquad
+\boxed{\ \frac{\partial^2 C(K)}{\partial K^2} = B(t,T)\, f^{\mathbb Q}_t(K)\ }.$$
+**[ID]** (Breeden–Litzenberger 1978, *J. Business* 51, 621–651.) **A complete strip of call prices across strikes at maturity $T$ reveals the entire risk-neutral density of $S_T$ — model-free, no Black–Scholes assumed.** The butterfly spread $\partial^2_K C\,dK$ is precisely the price today of an Arrow–Debreu claim on $\{S_T\in[K,K+dK]\}$: this is the Part I state price $q(\omega)$ of (I.4) **made observable** by the options market. Options are the empirical window onto the state-price vector the whole document is built on.
+
+### (iii) Implied volatility as a re-encoding of $f^{\mathbb Q}$
+
+Define implied volatility $\sigma^{BS}(K,T)$ as the number solving $C^{\text{mkt}}(K,T)=C^{BS}\!\big(S_t,K,T,r,\sigma^{BS}\big)$.
+
+$$\text{(IV.6)}\qquad C^{\text{mkt}}(K,T) = C^{BS}(S_t,K,T,r,\sigma^{BS}(K,T)).$$
+**[ID / definition]** It is a strictly monotone reparametrization of $C(K,T)$, hence a bijective re-encoding of $f^{\mathbb Q}$ (Dupire/Derman–Kani local-vol theory makes the map explicit). Reading the surface:
+- **Flat surface** $\iff f^{\mathbb Q}$ lognormal $\iff$ the GBM/Black–Scholes corner of III.L6. Every non-flatness is a measured departure of $f^{\mathbb Q}$ from lognormality.
+- **Skew/smirk** (puts richer than calls, $\sigma^{BS}$ decreasing in $K$) $\iff$ negative $\mathbb Q$-skewness $\iff$ crash-risk pricing (the dominant feature of index options post-1987).
+- **Smile curvature** $\iff$ excess $\mathbb Q$-kurtosis (fat tails).
+- **Term structure of ATM $\sigma^{BS}$** $\iff$ term structure of expected $\mathbb Q$-variance.
+
+### (iv) Black–Scholes as the kernel-free corner
+
+In the GBM-complete corner the option is replicable by a dynamic $(\Delta_t, \text{bond})$ portfolio; Itô plus no-arbitrage gives the PDE
+
+$$\text{(IV.7)}\qquad \frac{\partial O}{\partial t} + r S\frac{\partial O}{\partial S} + \tfrac12\sigma^2 S^2\frac{\partial^2 O}{\partial S^2} - rO = 0,$$
+**[derived]** in which the **physical drift $\mu$ does not appear** — the kernel drops out of the *option price* because the payoff is spanned. Reconciliation with the equilibrium valuation (IV.2): $\mu$ enters both the $\mathbb P$-dynamics and the kernel, and in a complete market these offsetting appearances cancel in the spanned price, so (IV.7) and (IV.2) agree. The moment markets are incomplete (stochastic $v$, jumps), replication fails, the kernel no longer cancels, and the *shape* of $f^{\mathbb Q}$ starts carrying genuine information about risk prices — which is the content of IV.L6.
+
+### (v) Model-free implied variance (the log contract / VIX)
+
+The spanning identity (Carr–Madan 1998, in *Volatility*, ed. Jarrow; Britten-Jones–Neuberger 2000, *JF* 55, 839–866): any twice-differentiable payoff replicates statically as bonds + forward + a continuum of options,
+
+$$\text{(IV.8)}\qquad H(S_T) = H(F) + H'(F)(S_T-F) + \int_0^{F}\! H''(K)(K-S_T)^+dK + \int_F^{\infty}\! H''(K)(S_T-K)^+dK.$$
+**[ID]** Apply to the **log contract** $H(S)=-2\ln(S/F)$, so $H''(K)=2/K^2$. Under $\mathbb Q$ with *continuous* $S$, $d\ln S=(r-\tfrac12 v)\,dt+\sqrt v\,dB^{\mathbb Q}$, whence $-2\ln(S_T/F)=\int_t^T v_s\,ds-2\int\sqrt v\,dB^{\mathbb Q}$ and the $\mathbb Q$-expectation of the stochastic integral vanishes:
+
+$$\text{(IV.9)}\qquad \mathbb E^{\mathbb Q}_t\!\Big[\int_t^T v_s\,ds\Big] = \frac{2}{B(t,T)}\Big[\int_0^{F}\! \frac{P(K)}{K^2}dK + \int_F^{\infty}\! \frac{C(K)}{K^2}dK\Big].$$
+**[derived / EC]** This is the (squared) VIX construction (Demeterfi–Derman–Kamal–Zou 1999; CBOE). With jumps the log contract additionally captures $\mathbb E^{\mathbb Q}[2(z-(e^z-1))]$ cumulant terms, so the gap between model-free implied variance and true $\mathbb Q$-variance is itself a *jump/skew* measure — the underpinning of the SKEW index and of (vii).
+
+### (vi) Risk-neutral higher moments
+
+Bakshi–Kapadia–Madan (2003, *RFS* 16, 101–143) give model-free $\mathbb Q$-skewness and $\mathbb Q$-kurtosis as prices of specific OTM-option portfolios (the "volatility, cubic, quartic" contracts) via the same spanning logic (IV.8). The strongly negative index $\mathbb Q$-skew is the moment-space statement of the smirk and the crash premium. **[EC]**
+
+### (vii) Static no-arbitrage shape restrictions on the surface
+
+These are the equilibrium-consistency constraints — the surface analogue of "markets clear":
+
+$$\text{(IV.10)}\qquad
+\underbrace{\partial^2_K C \ge 0}_{f^{\mathbb Q}\ge 0,\ \text{no butterfly arb}},\qquad
+\underbrace{-B \le \partial_K C \le 0}_{\text{monotonicity}},\qquad
+\underbrace{\partial_T\, w(K,T)\ge 0}_{\text{no calendar arb}} .$$
+**[EQ]** Convexity in strike is *equivalent* to a nonnegative density (IV.5); total implied variance $w$ must be nondecreasing in maturity. Arbitrage-free parametrizations (Gatheral's SVI) are built to satisfy (IV.10). A surface violating them admits a static arbitrage — the model-free, kernel-independent floor of consistency.
+
+## IV.L4 — Equilibrium concept: one kernel, one $\mathbb Q$, a price *interval* under incompleteness
+
+**Definition (option-consistent equilibrium).** Prices $\{O_t(g,T)\}$, the underlying $S_t$, and the bond are option-consistent if a single positive kernel $m$ (equivalently one measure $\mathbb Q$) prices all of them via (IV.2)/(IV.4) simultaneously — i.e. the $f^{\mathbb Q}$ extracted from any maturity-$T$ option sub-strip (IV.5) is the same density that reprices the underlying's forward and the bond.
+
+Under **completeness** (the GBM corner) $\mathbb Q$ is unique and (IV.4) pins every option to a single arbitrage price. Under **incompleteness** (stochastic $v$, jumps) the set of equivalent martingale measures $\mathcal Q$ is a *continuum*; (IV.4) holds for each $\mathbb Q\in\mathcal Q$, and an unspanned option's no-arbitrage price lies in an interval
+
+$$\text{(IV.11)}\qquad O_t \in \Big[\ \inf_{\mathbb Q\in\mathcal Q} B\,\mathbb E^{\mathbb Q}[g(S_T)]\ ,\ \sup_{\mathbb Q\in\mathcal Q} B\,\mathbb E^{\mathbb Q}[g(S_T)]\ \Big]
+= [\text{sub-replication price},\ \text{super-replication price}],$$
+**[EQ]** the dual of the super-/sub-hedging problem (El Karoui–Quenez; the bounds are the cost of the cheapest dominating / dearest dominated static-plus-dynamic hedge). The market *selects* one $\mathbb Q\in\mathcal Q$ — through the marginal investor's kernel (IV.2) and, when intermediaries cannot hedge, through demand (IV.L5). Selection within $\mathcal Q$ is exactly the incompleteness analogue of the equilibrium-selection problem flagged for Parts II–III.
+
+## IV.L5 — Frictions: incompleteness and demand pressure as deltas
+
+**Δ6. Incompleteness wedge.** Already (IV.11): the frictionless single-price (IV.4) is replaced by an interval; the delta is that the option price is no longer a pure function of $(S,\text{bond})$ but depends on the *selected* $\mathbb Q$, i.e. on preferences and demand, not arbitrage alone.
+
+**Δ7. Demand-based option pricing.** When market-makers are risk-averse and *cannot* perfectly hedge their option inventory (the generic incomplete case), net end-user demand moves prices. The equilibrium deviation of an option's price from a reference-$\mathbb Q$ value is, to first order, proportional to the **variance of the unhedgeable part** of the option's payoff times the dealer's net position:
+
+$$\text{(IV.12)}\qquad O_t^{\text{obs}} - O_t^{\mathbb Q\text{-ref}} \;\approx\; \gamma_{MM}\,\sum_{T',K'} \mathrm{Cov}_t\!\big(\text{unhedgeable}(g),\,\text{unhedgeable}(g_{K'T'})\big)\, d_{K'T'},$$
+**[FOC, intermediary]** where $d_{K'T'}$ is net end-user demand and $\gamma_{MM}$ the dealer's effective risk aversion (Gârleanu–Pedersen–Poteshman 2009, *RFS* 22, 4259–4299). This is the **options-market instance of the inelastic-demand / limits-to-arbitrage mechanism** of Part III (Δ2–Δ5): it explains the index skew's level (chronic end-user demand for protective puts) as a *demand* phenomenon on top of the kernel, and predicts that expensive options are the ones dealers are most short and least able to hedge. *Status: holds* — a documented departure from any single-$\mathbb Q$ no-arbitrage account.
+
+**Δ8. Transaction costs in options.** The Δ1 bid–ask band (III.19) applies a fortiori to options, whose spreads are wide; deep-OTM-tail densities (IV.5) are the least identified precisely where spreads are widest and strikes sparsest — the empirical tail of $f^{\mathbb Q}$ is extrapolated, not measured. **[P, known false to ignore]**
+
+## IV.L6 — The kernel, recovery, and the implication for $\mathbb P$
+
+This is the heart of the user's question. Everything above delivers $f^{\mathbb Q}$. What can be said about $f^{\mathbb P}$ — the actual *likelihood* of future states — and about expected future returns?
+
+### (i) The empirical pricing kernel: the gap *is* the kernel
+
+Project the SDF onto the terminal underlying, $m_t(x)\equiv\mathbb E[M_{t,T}\mid S_T=x]$. Then by iterated expectations on the Radon–Nikodym derivative (IV.3),
+
+$$\text{(IV.13)}\qquad f^{\mathbb Q}_t(x) \;=\; \frac{m_t(x)}{B(t,T)}\, f^{\mathbb P}_t(x)
+\quad\Longleftrightarrow\quad
+\boxed{\ \frac{m_t(x)}{B(t,T)} \;=\; \frac{f^{\mathbb Q}_t(x)}{f^{\mathbb P}_t(x)}\ } .$$
+**[ID]** The ratio of the two densities **is** the (projected, normalized) pricing kernel — the *empirical pricing kernel* (EPK). With standard risk aversion ($m$ decreasing in aggregate wealth, $S_T$ increasing in wealth), $m_t(x)$ is **decreasing in $x$**, so $f^{\mathbb Q}$ is tilted toward low-$x$ (bad) states relative to $f^{\mathbb P}$:
+
+$$\text{(IV.14)}\qquad \mathbb Q_t(\text{crash}) \;>\; \mathbb P_t(\text{crash}),\qquad \mathbb E^{\mathbb Q}_t[S_T]=F_{t,T} \;<\; \mathbb E^{\mathbb P}_t[S_T].$$
+**[derived]** **This is the precise sense in which option-implied densities overstate physical crash likelihood:** the excess is risk premium — bad states are overweighted in price because marginal utility is high there. Quoting the risk-neutral density as "the market's probability of a crash" double-counts: it is probability times marginal utility. This is the macro-density analogue of the Part II result that the dealer/risk-neutral price (II.20) drops the risk-discount term $-\bar x$ present in the Walrasian price (II.13).
+
+### (ii) The pricing-kernel puzzle (contested)
+
+Empirically, the EPK estimated as $B\,f^{\mathbb Q}/f^{\mathbb P}$ — $f^{\mathbb Q}$ from options (IV.5), $f^{\mathbb P}$ from realized index returns — is often **non-monotone** (U-shaped/humped) over the index range (Jackwerth 2000, *RFS* 13, 433–451; Aït-Sahalia–Lo 2000, *J. Econometrics* 94, 9–51; Rosenberg–Engle 2002, *JFE*). A locally *increasing* kernel means marginal utility rising with wealth — a violation of basic risk aversion. *Status: contested, unresolved.* Candidate resolutions, each with a cost: (a) **state-dependent utility** — the true kernel is monotone in wealth *and* volatility, and projecting a variance-pricing kernel onto the index *alone* manufactures spurious non-monotonicity (consistent with the III.L6 point that variance must be a separately priced state for any variance premium to exist); (b) heterogeneous beliefs / sentiment and probability weighting; (c) the index is a poor proxy for the wealth/consumption argument of the true kernel; (d) the $f^{\mathbb P}$ and $f^{\mathbb Q}$ are estimated under different conditioning information. The puzzle is a live caution that (IV.13) read naively can misidentify the kernel.
+
+### (iii) Variance and tail risk premia — and forecasting future returns
+
+The robust, identified objects are *differences* $\mathbb P-\mathbb Q$, available once a physical forecast is paired with the option-implied $\mathbb Q$-quantity:
+
+$$\text{(IV.15)}\qquad \mathrm{VRP}_t \;\equiv\; \mathbb E^{\mathbb P}_t\!\Big[\!\int_t^T\! v\,ds\Big] - \mathbb E^{\mathbb Q}_t\!\Big[\!\int_t^T\! v\,ds\Big] \;<\;0 \ \text{(typically)},$$
+**[EC]** with the $\mathbb Q$-term read from options (IV.9). The variance risk premium **predicts future equity returns**: high $-\mathrm{VRP}$ forecasts high returns, dominating P/E, default-spread and cay at the quarterly horizon (Bollerslev–Tauchen–Zhou 2009, *RFS* 22, 4463–4492). The tail/jump component carries a disproportionate share: deep-OTM puts identify a large jump-tail risk premium and a time-varying "Investor Fears" index (Bollerslev–Todorov 2011, *JF* 66, 2165–2211), the empirical incarnation of the disaster term $\int(e^z-1)(1-e^{-\gamma z})\ell(dz)$ in (III.18). These are concrete "implications for future asset-pricing expectations": option prices, differenced against physical forecasts, deliver *predictors* of the future equity premium.
+
+### (iv) A model-free *bound* on the expected return (the cleanest $\mathbb Q\!\to\!\mathbb P$ bridge)
+
+Martin (2017, *QJE* 132, 367–433) shows that under the **negative correlation condition** (NCC: $\mathrm{Cov}^{\mathbb P}_t(M_{t,T}R_{m},\,R_{m})\le 0$, satisfied in essentially every standard model), the equity premium is bounded *below* by an entirely option-implied quantity:
+
+$$\text{(IV.16)}\qquad \mathbb E^{\mathbb P}_t[R_{m,t\to T}] - R_{f,t\to T} \;\ge\; \mathrm{SVIX}^2_t,\qquad
+\mathrm{SVIX}^2_t \;=\; R_{f,t}\cdot\mathrm{Var}^{\mathbb Q}_t(R_{m,t\to T}),$$
+**[derived + EC]** where $\mathrm{Var}^{\mathbb Q}_t(R_m)$ is computed model-free from the option strip via the spanning logic (IV.8)–(IV.9). Empirically the bound averages $\approx 5\%$/yr, is approximately tight, and spiked above $20\%$ in late 2008. The cross-sectional analogue prices individual stocks with *no free parameters* from index and single-name option variances (Martin–Wagner 2019, *JF* 74, 1887–1929). This is the strongest robust statement available: **option prices place a tight, tradeable lower bound on the physical expected return, requiring only a sign condition — not knowledge of the full kernel.**
+
+### (v) Full recovery of $\mathbb P$: the Ross theorem and why it fails
+
+Can one go all the way — recover the *entire* physical density $f^{\mathbb P}$ from option prices alone? Ross (2015, *JF* 70, 615–648) says yes, under two strong restrictions: a **finite-state, time-homogeneous Markov** driving state, and a **transition-independent** kernel $m_{ij}=\delta\,\varphi_j/\varphi_i$ (marginal utility depends only on the state, with a constant discount $\delta$). Let $P$ be the observable matrix of one-step state prices (extracted from options across maturities and strikes via (IV.5)). Since the physical transition matrix $F$ has unit row sums and $P_{ij}=\delta\,F_{ij}\,\varphi_j/\varphi_i$,
+
+$$\text{(IV.17)}\qquad \sum_j P_{ij}\,\frac{1}{\varphi_j} = \delta\,\frac{1}{\varphi_i}
+\quad\Longleftrightarrow\quad P\,w = \delta\,w,\quad w_i\equiv 1/\varphi_i>0 .$$
+**[derived]** By Perron–Frobenius, $P$ (positive) has a *unique* positive eigenvector $w$ with eigenvalue equal to its spectral radius $\delta$; this recovers $\varphi$ (marginal utility), $\delta$ (time preference), and hence $F=$ the physical transitions and $f^{\mathbb P}$ — from prices alone. A beautiful result.
+
+**It does not survive contact with the data — and the reason is exactly the kernel structure of Part III.** By the Hansen–Scheinkman (2009, *Econometrica* 77, 177–234) factorization, every SDF decomposes as
+
+$$\text{(IV.18)}\qquad M_{t,t+T} \;=\; \underbrace{e^{-\eta T}}_{\text{discount}}\,\underbrace{\frac{\varphi(X_t)}{\varphi(X_{t+T})}}_{\text{transitory}}\;\underbrace{\mathsf M^{\mathrm{mart}}_{t,t+T}}_{\text{permanent (martingale)}},$$
+**[ID]** and Ross's transition-independence is precisely the assumption $\mathsf M^{\mathrm{mart}}\equiv 1$ — **no permanent component.** Borovička–Hansen–Scheinkman (2016, *JF* 71, 2493–2544) prove that when $\mathsf M^{\mathrm{mart}}$ is nondegenerate, the eigen-procedure (IV.17) recovers not $\mathbb P$ but the **long-term-risk-neutral measure** associated with the eigenfunction — a *different* measure that has absorbed all permanent risk adjustment. And the permanent component is not a minor term: Alvarez–Jermann (2005, *Econometrica* 73, 1977–2016) show, from the low average return on long-term bonds relative to the Hansen–Jagannathan bound, that $\mathsf M^{\mathrm{mart}}$'s volatility is *at least as large as the entire SDF's* — it dominates. Long-run-risk and most structural models (II.L6; Bansal–Yaron 2004) have exactly this feature.
+
+$$\text{(IV.19)}\qquad \text{Recovery identifies } \mathbb P \iff \mathsf M^{\mathrm{mart}}\equiv 1,\quad\text{but the data require } \mathrm{Vol}(\mathsf M^{\mathrm{mart}})\ \gtrsim\ \mathrm{Vol}(M).$$
+**[EQ / impossibility]** **Conclusion: option prices do not identify the physical likelihood of future states.** The map $\mathbb Q\to\mathbb P$ requires the kernel, the kernel has a large permanent component, and that component is unidentified from a cross-section of prices — recovery silently sets it to one and returns the wrong measure. This is the option-pricing incarnation of the joint-hypothesis problem (closing section) and a hard limit, not a calibration nuisance.
+
+### (vi) What is left: disciplined, assumption-flagged transforms
+
+Between "the full density (impossible)" and "a one-sided bound (robust)" sit parametric methods that *assume* a kernel and own the assumption. Fix a one-parameter family — power/exponential utility with relative risk aversion $\gamma$ — and invert (IV.13):
+
+$$\text{(IV.20)}\qquad f^{\mathbb P}_t(x) \;\propto\; x^{\gamma}\, f^{\mathbb Q}_t(x),\qquad \gamma \ \text{chosen so the implied } f^{\mathbb P}\text{ is calibrated to realized returns}.$$
+**[EC]** (Bliss–Panigirtzoglou 2004, *JF* 59, 407–446; Aït-Sahalia–Lo 2000.) Honest about what it buys: a physical density *conditional on* a postulated monotone kernel — useful, but it imports the very risk-aversion structure that recovery tried to avoid assuming, and it inherits the pricing-kernel puzzle (ii) when the assumed monotone form is wrong.
+
+### (vii) Synthesis — options and "future expectations/likelihood"
+
+The disciplined ledger, which is the answer to the question:
+
+1. **Fully identified, model-free:** the entire risk-neutral density $f^{\mathbb Q}$ (IV.5), forward-looking and conditional on today's information — its mean is the forward, its left tail is fattened by risk premia. It is a *price*, not a belief.
+2. **Robustly bounded:** the physical expected return is bounded below by an option-implied index under a sign condition (IV.16), and individual expected returns are pinned by option variances (Martin–Wagner).
+3. **Identified as a premium when paired with a physical forecast:** variance and jump-tail risk premia (IV.15), which *predict* future returns (Bollerslev–Tauchen–Zhou; Bollerslev–Todorov).
+4. **Not identified from prices alone:** the physical density $f^{\mathbb P}$ itself — the actual likelihood of future states. Recovery (IV.17) appears to deliver it but is misspecified whenever the SDF has a permanent component (IV.18)–(IV.19), which the data demand.
+
+So option prices say a great deal about the *prices of future risk* and impose tight, tradeable discipline on expected returns — but they do **not** hand over the physical probability distribution of future prices. The market's risk-neutral density is its *valuation* of future states, not its *forecast* of them, and the wedge between the two is the entire subject of asset pricing.
+
+---
 
 What this construction cannot capture, and why — concretely.
 
@@ -514,6 +701,8 @@ What this construction cannot capture, and why — concretely.
 6. **Equilibrium multiplicity and selection.** The document *selects* throughout: linear equilibria in (II.13)/(II.17) (nonlinear ones not ruled out); the fundamentals-continuous branch in Δ4's spiral region; uniqueness of the demand-system fixed point only under $b_{p,i}<1$. Sunspot equilibria exist in related economies even with complete markets broken only slightly (Cass–Shell 1983, *JPE*), and run-type multiplicity is endemic to liquidity provision (Diamond–Dybvig 1983, *JPE*). The model has no positive theory of selection; comparative statics in the multiple-equilibrium regions are conditional on the conventions stated.
 
 7. **Architecture limits (self-inflicted, disclosed).** Block M prices a single security in partial equilibrium under an in-window normalization; production, endogenous cash flows, taxes, and agency problems inside the institutions of (III.9) are absent; noise traders' budgets are open (see check 4 below).
+
+8. **Non-identification of the physical measure from prices (Part IV).** The sharpest boundary the options layer exposes: $f^{\mathbb Q}$ is fully observable (IV.5) but $f^{\mathbb P}$ is not recoverable from a cross-section of prices, because the map between them is the kernel and the kernel's permanent (martingale) component (IV.18) is unidentified — Ross recovery (IV.17) returns it only by assuming that component away, counterfactually (IV.19). This is not a measurement gap that better data closes; it is the joint-hypothesis problem (item 5) in density form. Any claim to read "the market's probability of a crash" off option prices is reading a risk-adjusted price as a belief. What *is* identified — the full $\mathbb Q$-density, lower bounds on expected returns (IV.16), and risk premia paired with physical forecasts (IV.15) — is bounded precisely by where the kernel stops being inferable.
 
 ---
 
@@ -544,6 +733,8 @@ Run against the construction; tensions are reported, not smoothed.
 11. **Endogeneity of the discount rate.** $R_f$ in (I.14), $R_{f,t}$ in (II.22), $r_t$ in (III.15): each is derived from preferences + clearing, never assumed. The only exogenous rate anywhere is the in-window normalization $R_f=1$ of Block M, disclosed at the top of Part II and bounded in check 8. ✔
 
 12. **Special-case verifications.** $\gamma=1/\psi$ collapses (II.4) to CRRA ✔; i.i.d. growth collapses EZ pricing to (II.21) ✔ (Kocherlakota 1990); $\gamma=1$ gives constant price–dividend ratio in (III.17) ✔; $\sigma_v=0,\ell=0$ gives exact GBM ✔. The model degrades gracefully to its classical corners.
+
+13. **Options layer uses one kernel (Part IV).** The option Euler equation (IV.2) is the *same* (III.16) restricted to a terminal-payoff claim — no new kernel is introduced, so the option, the underlying, and the bond are priced by one $m$. Density positivity: $f^{\mathbb Q}=B^{-1}\partial^2_K C\ge 0$ holds iff the surface is butterfly-arbitrage-free (IV.10), the exact convexity condition. ✔ Mean consistency: $\mathbb E^{\mathbb Q}_t[S_T]=F_{t,T}$ requires $e^{-\int r}S$ to be a $\mathbb Q$-martingale, which is the underlying's *own* Euler equation under (IV.3) — verified, not assumed. ✔ **Tension (T6):** the EPK identity (IV.13) is internally exact, but its *empirical* version is estimated by combining a forward-looking $f^{\mathbb Q}$ (today's options) with a backward-estimated $f^{\mathbb P}$ (historical returns) under different conditioning sets; the pricing-kernel puzzle (IV.L6.ii) may be partly an artifact of that mismatch rather than a preference anomaly. Reported, not resolved. **Limited-liability note:** unlike the CARA-normal Block M (T2), the Part IV underlying inherits $S_t>0$ from (III.1), so $f^{\mathbb Q}$ is supported on $(0,\infty)$ and the BL density is a genuine probability density. ✔
 
 ---
 
@@ -613,3 +804,24 @@ Confidence key: ★ = standard result, attribution confident (entries marked "Ve
 - ★ Weil, P. (1989), "The Equity Premium Puzzle and the Risk-Free Rate Puzzle," *JME*.
 - ★ Wilson, R. (1968), "The Theory of Syndicates," *Econometrica*. — Risk-tolerance aggregation (I.9)–(I.10).
 - ★ Knight, F. (1921), *Risk, Uncertainty and Profit*, Houghton Mifflin.
+
+**Options, the risk-neutral density, recovery, and risk premia (Part IV)** — all entries verified against the published record on 2026-06-13.
+
+- ★ Aït-Sahalia, Y. & A. Lo (2000), "Nonparametric Risk Management and Implied Risk Aversion," *Journal of Econometrics* 94, 9–51. — Implied risk aversion; pricing-kernel estimation (IV.L6.ii, vi).
+- ★ Alvarez, F. & U. Jermann (2005), "Using Asset Prices to Measure the Persistence of the Marginal Utility of Wealth," *Econometrica* 73, 1977–2016. — Permanent SDF component dominates; refutes recovery's premise (IV.18)–(IV.19).
+- ★ Bakshi, G., N. Kapadia & D. Madan (2003), "Stock Return Characteristics, Skew Laws, and the Differential Pricing of Individual Equity Options," *RFS* 16, 101–143. — Model-free $\mathbb Q$-moments (IV.L3.vi).
+- ★ Bliss, R. & N. Panigirtzoglou (2004), "Option-Implied Risk Aversion Estimates," *JF* 59, 407–446. — Parametric $\mathbb Q\!\to\!\mathbb P$ transform (IV.20).
+- ★ Bollerslev, T. & V. Todorov (2011), "Tails, Fears, and Risk Premia," *JF* 66, 2165–2211. — Jump-tail premium; Investor Fears index (IV.L6.iii).
+- ★ Bollerslev, T., G. Tauchen & H. Zhou (2009), "Expected Stock Returns and Variance Risk Premia," *RFS* 22, 4463–4492. — VRP predicts returns (IV.15).
+- ★ Borovička, J., L.P. Hansen & J. Scheinkman (2016), "Misspecified Recovery," *JF* 71, 2493–2544. — Recovery returns the long-term-risk-neutral measure, not $\mathbb P$ (IV.19).
+- ★ Breeden, D. & R. Litzenberger (1978), "Prices of State-Contingent Claims Implicit in Option Prices," *Journal of Business* 51, 621–651. — The $\mathbb Q$-density from the option strip (IV.5).
+- ★ Britten-Jones, M. & A. Neuberger (2000), "Option Prices, Implied Price Processes, and Stochastic Volatility," *JF* 55, 839–866. — Model-free implied variance (IV.9).
+- ◐ Carr, P. & D. Madan (1998), "Towards a Theory of Volatility Trading," in *Volatility: New Estimation Techniques for Pricing Derivatives*, ed. R. Jarrow, Risk Books, 417–427. — Static spanning of payoffs (IV.8).
+- ◐ Demeterfi, K., E. Derman, M. Kamal & J. Zou (1999), "More Than You Ever Wanted to Know About Volatility Swaps," Goldman Sachs Quantitative Strategies Research Notes (also *Journal of Derivatives*). — Variance-swap replication / VIX construction (IV.9). *Practitioner note; exact venue not re-verified.*
+- ★ Gârleanu, N., L. Pedersen & A. Poteshman (2009), "Demand-Based Option Pricing," *RFS* 22, 4259–4299. — Demand pressure on option prices (IV.12).
+- ★ Hansen, L.P. & J. Scheinkman (2009), "Long-Term Risk: An Operator Approach," *Econometrica* 77, 177–234. — Permanent–transitory SDF factorization (IV.18).
+- ★ Jackwerth, J. (2000), "Recovering Risk Aversion from Option Prices and Realized Returns," *RFS* 13, 433–451. — The pricing-kernel puzzle (IV.L6.ii).
+- ★ Martin, I. (2017), "What is the Expected Return on the Market?" *QJE* 132, 367–433. — SVIX lower bound on the equity premium (IV.16).
+- ★ Martin, I. & C. Wagner (2019), "What is the Expected Return on a Stock?" *JF* 74, 1887–1929. — Cross-sectional option-implied expected returns (IV.L6.iv).
+- ◐ Rosenberg, J. & R. Engle (2002), "Empirical Pricing Kernels," *JFE*. — Estimated EPK non-monotonicity (IV.L6.ii). *Year/venue not independently re-verified this pass.*
+- ★ Ross, S. (2015), "The Recovery Theorem," *JF* 70, 615–648. — Recovery of $\mathbb P$ under transition-independence (IV.17); refuted by Borovička–Hansen–Scheinkman.
