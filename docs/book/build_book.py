@@ -145,7 +145,11 @@ recipe into a dependency-free, unit-tested implementation. Chapter 6 states the
 synthesis. The unifying claim, proved from two directions, is that *markets price
 risk, not odds; models estimate odds, not edge; and the unidentified pricing
 kernel is exactly what makes both asset pricing hard and machine-learning
-backtests lie.*
+backtests lie.* The purpose is constructive, not pessimistic: to find the model,
+regime, and horizon where an edge is real — and the conclusion is explicit that
+markets *are* beatable, rarely and specifically, as Medallion and Buffett prove.
+The severity throughout is the filter that protects scarce time from what cannot
+work; it is not a verdict that nothing does.
 
 **How to read it.** Each chapter is self-contained and carries its own equations
 (tagged by logical type), figures, and references. Equations are rendered with
@@ -157,6 +161,43 @@ an in-sample leak — caught inside the project's own demonstration.
 on 13 June 2026. It is a research and education artefact, not financial advice.
 Load-bearing citations were verified against the published record where possible;
 items that could not be independently re-verified are flagged in place.
+"""
+
+READER_GUIDE = """
+This volume is dense by construction — it moves from expected-utility theory to
+stochastic calculus to gradient-boosted trees — so read it for your purpose, not
+cover to cover. Its aim is **constructive**: to identify which model fits which
+sector, regime, and horizon, and to supply a filter severe enough that scarce time
+is not spent on what cannot work. It is critical because the domain punishes
+credulity, not because it is pessimistic — its conclusion (Chapter 6) is that
+markets *are* beatable, rarely and specifically, and the severity is in service of
+finding where.
+
+- **The thesis in two pages:** the Preface and the opening of Chapter 6.
+- **What a price means (theory):** Chapter 2 — assumes comfort with expected
+  utility and Itô calculus; its boundary and self-consistency sections need no
+  calculus.
+- **The empirical and methodological core:** Chapters 3 and 4 — assume basic
+  statistics; the evaluation gate (§10 of Chapter 3) and the SWOT (Chapter 4) are
+  self-contained.
+- **The working code:** Chapter 5 — assumes Python; the results table stands alone.
+- **A reading aid throughout:** every equation is tagged by logical type —
+  *primitive*, *optimality*, *equilibrium/market-clearing*, *definition*, or
+  *estimating specification* — so the structure of an argument is legible even
+  without parsing every symbol. Assumptions carry their empirical status inline
+  (*holds / contested / known false*).
+
+A note on the tensions the book reports rather than hides (Chapter 2's
+self-consistency section): they are of three kinds, and only one would be a
+defect. *Logical inconsistencies within one model* — none; the consistency check
+verifies clearing, binding budgets, and a positive kernel. *Seams between
+deliberately incompatible idealisations* used in different blocks (e.g. the
+negative prices allowed by the tractable Gaussian microstructure) — the real
+limit, intrinsic to modelling, since no single tractable model is at once a
+complete-markets equilibrium, a noisy rational-expectations economy, and a
+limits-to-arbitrage economy. *Genuinely open empirical problems* (the elasticity
+clash) — correctly left open, because the field has not settled them and faking a
+resolution would be the true cop-out.
 """
 
 APPENDIX = """
@@ -356,6 +397,67 @@ up-rate baseline, transaction costs, the deflated Sharpe and its kin, point-in-t
 data, and reporting profit-and-loss rather than accuracy — is the only thing
 standing between an analyst and a confidently wrong result.
 
+## The constructive program — and why "the market is unbeatable" is false
+
+The purpose of this volume is constructive: to find the right model, and the
+sector, regime, horizon, and usage where it works. The criticality is a means to
+that end — in a domain that punishes credulity, an unsparing filter protects
+scarce time and capital, because a hallucinated edge trusted or a dead method
+pursued costs more than the filter that would have caught it.
+
+That criticality must not curdle into the false dogma that **the market is
+unbeatable**, or that **no one can consistently beat it**. Those statements are
+true only in an idealised, frictionless, stationary market that does not exist —
+and, as Keynes warned, "in the long run," in which "we are all dead." In the
+real, finite, frictional, non-stationary market they are false, and the
+counterexamples are decisive:
+
+- **Renaissance's Medallion Fund** compounded at roughly 63% gross (about 39% net
+  of its 5/44 fees) from 1988 to 2018, without a single losing year across the
+  dot-com crash and the financial crisis, and — decisively — with *negative*
+  market beta and *negative* factor loadings, so its returns provably cannot be a
+  premium for bearing risk. Cornell (2019, *Journal of Portfolio Management*)
+  calls it, correctly, "the ultimate counterexample" to market efficiency: there
+  is no adequate rational-market explanation. This is genuine, unexplained alpha.
+- **Warren Buffett** beat the market for sixty years, with a Sharpe ratio near
+  0.79 — roughly double the market's. Frazzini, Kabiller and Pedersen (2018,
+  *Financial Analysts Journal*) show the alpha is *explainable* — leverage of
+  about 1.7×, applied to cheap, safe, high-quality stocks (the betting-against-beta
+  and quality-minus-junk factors) — but explainable is not the same as available:
+  he found and sized those durable edges *decades before they were named*, and
+  financed them with patient, near-zero-cost insurance float.
+
+These are two different species of beating the market, and the distinction is the
+whole point of the book. Medallion is **true anomaly** — real, unexplained,
+short-horizon edge in a specific niche, *capacity-constrained* (the fund is capped
+near \\$10B and returns outside capital; Renaissance's funds open to outsiders have
+not replicated it) and *fiercely defended* against decay and imitation. Buffett is
+**premium-harvesting done supremely well** — a durable, identifiable edge, found
+early, sized large with cheap leverage, and held with permanent capital through
+the decades it took to pay off. Both *exemplify* this book's constructive core
+rather than contradict it: the claim was never that edge is impossible, but that
+it is **rare, specific, real-when-it-exists, and perishable**. Medallion and
+Buffett are what success under that description looks like.
+
+The base rate is not the ceiling. The ~50–55% directional accuracy, the fragility,
+the decay — those describe the median attempt and the naive method, the bar
+against which any new claim must be judged. Skill in this domain is real and
+*heavy-tailed*: that ~80–90% of active managers underperform over fifteen years
+and that Medallion exists are *both* true. The honest posture holds both — most
+fail, a few persistently win — and this book's severity is in service of reaching
+the thin right tail, not of denying it exists.
+
+And the joint-hypothesis problem cuts **both ways**. It disciplines edge-claims:
+apparent predictability may be a risk premium or an artifact. But it disciplines
+*efficiency*-claims with exactly equal force — because no test of efficiency is
+independent of the asset-pricing model assumed, market efficiency is not a proven
+null but an untestable maintained hypothesis. Cornell's Medallion result is the
+sharper form: with negative factor loadings there is no risk model under which its
+returns are fair compensation, so the efficiency null is not merely untested
+there — it is refuted. The asymmetry the sceptic smuggles in ("treat efficiency as
+the default and make edge prove itself") is unjustified. Both must prove
+themselves, and sometimes, demonstrably, edge wins.
+
 ## The boundary of the whole enterprise
 
 What no method in this book can repair: **non-stationarity** (every estimator
@@ -485,8 +587,9 @@ def build():
       </div>
     </section>"""
 
-    # front matter (preface)
+    # front matter (preface + reader's guide)
     front = f'<section class="frontmatter"><h1>Preface</h1>{md_to_html(PREFACE)}</section>'
+    guide = f'<section class="frontmatter"><h1>Reader’s Guide</h1>{md_to_html(READER_GUIDE)}</section>'
 
     # toc
     toc_items = "".join(
@@ -499,7 +602,7 @@ def build():
     toc = f'<section class="toc"><h1>Contents</h1><ol>{toc_items}</ol></section>'
 
     # chapters
-    parts = [cover, front, toc]
+    parts = [cover, front, guide, toc]
     for c in CHAPTERS:
         if c["src"]:
             text = c["src"].read_text()

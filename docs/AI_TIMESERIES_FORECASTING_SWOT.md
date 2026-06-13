@@ -18,6 +18,8 @@
 
 ---
 
+> **What this report does NOT claim.** The ~50–55% directional band and the "most attempts fail" findings describe the **base rate of naive methods and the median participant** — the bar any new claim must clear — *not* a ceiling, and emphatically *not* the false dogma that "markets are unbeatable" or that "no one consistently beats the market." Those statements hold only in an idealized, frictionless, stationary market that does not exist, and the real-world counterexamples are decisive: Renaissance's **Medallion** compounded at ~63% gross for 31 years with negative beta and negative factor loadings — provably *not* a risk premium, "the ultimate counterexample" to efficiency (Cornell 2019, *JPM*); **Buffett** beat the market for 60 years (Frazzini–Kabiller–Pedersen 2018, *FAJ*). Skill here is real and **heavy-tailed**: most fail, a thin tail wins persistently — both are true. Moreover, the joint-hypothesis problem is **symmetric**: it makes market *efficiency* an untestable maintained hypothesis just as much as it disciplines edge-claims, so "assume efficiency and make edge prove itself" is an unjustified default. The report's severity is a filter to get you into the right tail — not a verdict that the tail is empty.
+
 ## 1. The evaluation frame (why most reported accuracy is untrustworthy)
 
 **The ~50% wall and the right baseline.** Out-of-sample directional accuracy for equity direction clusters around 50%, with weak-but-real skill topping out in the low-to-mid 50s. Crucially, raw accuracy must be benchmarked against the **unconditional up-rate (~53–55%)**, not 50%: a constant "always up" predictor already scores ~55% on US returns, and boosted trees in honest studies improve on that by only ~2 points [Gu–Kelly–Xiu 2020, *RFS*; multi-market comparative study, *Int. J. Data Science & Analytics* 2025]. **Confidence: high.**
@@ -145,6 +147,8 @@ A directional-prediction number is probably untrustworthy if **any** of these ho
 ## 7. Sources
 
 **Realistic accuracy, base rates, accuracy ≠ edge**
+- Cornell, B. (2019), *Medallion Fund: The Ultimate Counterexample?*, Journal of Portfolio Management 46(4):156 — https://jpm.pm-research.com/content/46/4/156 (existence proof: persistent, unexplained alpha with negative factor loadings)
+- Frazzini, A., Kabiller, D. & Pedersen, L.H. (2018), *Buffett's Alpha*, Financial Analysts Journal 74(4):35–55 — https://www.tandfonline.com/doi/abs/10.2469/faj.v74.n4.3 (durable factor edge + leverage, found early)
 - Gu, Kelly & Xiu (2020), *Empirical Asset Pricing via Machine Learning*, RFS 33(5):2223–2273 — https://www.nber.org/papers/w25398
 - Avramov, Cheng & Metzker (2023), *Machine Learning vs. Economic Restrictions*, Management Science 69(5):2587–2619 — https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3450322
 - Gui (2024), *Machine learning in weekly movement prediction* — https://arxiv.org/abs/2407.09831
