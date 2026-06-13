@@ -79,6 +79,16 @@ $$\text{(1.4)}\qquad X_t=\sum_{j=0}^{\infty}\psi_j\,\varepsilon_{t-j}+\eta_t,\qq
 $$\text{(1.5)}\qquad r_t=\ln\frac{P_t}{P_{t-1}}=\ln(1+R_t),\qquad \sum_{t}r_t=\ln\frac{P_T}{P_0}\ \text{(log returns add)},\qquad \prod_t(1+R_t)=\frac{P_T}{P_0}\ \text{(simple returns compound)}.$$
 **[DEF]** Log returns are time-additive (convenient for horizon aggregation and Gaussian modelling); simple returns are asset-additive across a portfolio. Confusing them is a units error. *Note: the RESEARCH.md backtest illusion is partly (1.5) — compounding a positive drift over a bull market manufactures a large terminal number from no per-bar edge.*
 
+**The stylized facts (what any model of returns must respect).** Across markets and frequencies, return series exhibit a robust, model-independent set of empirical regularities (Cont 2001, *Quantitative Finance* 1, 223–236):
+
+$$\text{(1.6)}\qquad \rho_r(k)\approx 0\ (k\ge1)\quad\text{but}\quad \rho_{|r|}(k),\ \rho_{r^2}(k)>0\ \text{slowly decaying};\qquad \mathbb P(|r|>x)\sim x^{-\alpha},\ \alpha\in(2,5).$$
+**[MODEL]** *Status: holds.* Returns are nearly **uncorrelated** (so the mean is unforecastable — §2) yet **not independent**: absolute/squared returns are strongly autocorrelated (**volatility clustering** — §3). Distributions are **heavy-tailed** (power-law tail index $\alpha\approx3$, finite variance but infinite/large higher moments), **negatively skewed** with a **leverage effect** (down-moves raise future volatility more), and display **aggregational Gaussianity** (the tail thins as the horizon lengthens). Any model that produces i.i.d. Gaussian returns is, by (1.6), known false — and every later section is in some sense a response to one of these facts.
+
+**The random-walk / martingale hypothesis.** The weakest efficient-markets statement is that prices are a martingale, $\mathbb E[P_{t+1}\mid\mathcal F_t]=P_t$ — i.e. returns are unforecastable in mean. Stronger forms (i.i.d. increments, RW1; independent, RW2; uncorrelated, RW3) are nested and separately testable. The canonical test is the **variance ratio** (Lo–MacKinlay 1988, *RFS* 1, 41–66): under a random walk, variance scales linearly with horizon, so
+
+$$\text{(1.7)}\qquad \text{VR}(q)=\frac{\operatorname{Var}(r_t^{(q)})}{q\,\operatorname{Var}(r_t)}=1+2\sum_{k=1}^{q-1}\Big(1-\tfrac{k}{q}\Big)\rho(k)\ \xrightarrow{H_0}\ 1,$$
+**[STAT]** where $r_t^{(q)}$ is the $q$-period return. $\text{VR}(q)>1$ indicates positive autocorrelation/trending; $<1$ mean reversion. Lo–MacKinlay reject RW for weekly US index returns — note the tension with §10's finding that this rejection is rarely *tradeable* after costs (the joint-hypothesis problem, §11). The companion document's $\mathbb Q$-martingale (IV.4) is the *risk-neutral* analogue; here the question is whether the **physical** price is a martingale, which it very nearly — but not exactly — is.
+
 ---
 
 ## §2 — Linear models: ARMA, spectra, unit roots, cointegration, VAR
@@ -134,6 +144,11 @@ $$\text{(3.2)}\qquad \text{RV}_t=\sum_{i=1}^{M}r_{t,i}^2\ \xrightarrow{p}\ \int_
 $$\text{(3.3)}\qquad (1-L)^d X_t=\varepsilon_t\ \text{(ARFIMA)},\qquad \mathbb E\Big[\tfrac{R(n)}{S(n)}\Big]\sim n^{H},\qquad H=d+\tfrac12.$$
 **[MODEL]/[EST]** Fractional integration (Granger–Joyeux; Hosking 1981, *Biometrika*); the **Hurst exponent** $H$ estimated by rescaled-range (R/S) analysis (Hurst 1951; Mandelbrot–Wallis) or detrended fluctuation analysis (DFA, Peng et al. 1994). $H=\tfrac12$ is a random walk, $H>\tfrac12$ trending/persistent, $H<\tfrac12$ mean-reverting. *Status: contested — R/S is biased in small samples and confounded by short-memory and non-stationarity; treat $H$ estimates as suggestive, not decisive.*
 
+**Forecasting volatility: the HAR model.** The dominant practical volatility forecaster sidesteps fractional integration by regressing realised variance on its own averages over a *cascade* of horizons (daily, weekly, monthly), approximating long memory with three lags (Corsi 2009, *J. Financial Econometrics* 7, 174–196):
+
+$$\text{(3.4)}\qquad \text{RV}_{t+1}=\beta_0+\beta_d\,\text{RV}_t^{(d)}+\beta_w\,\text{RV}_t^{(w)}+\beta_m\,\text{RV}_t^{(m)}+\varepsilon_{t+1},$$
+**[MODEL]/[EST]** where $\text{RV}^{(w)},\text{RV}^{(m)}$ are 5- and 22-day averages. The **HAR-RV** is a plain OLS regression yet forecasts as well as far more complex long-memory models — a recurring lesson (echoed in this repo's experiments 4 and 9) that *parsimony beats sophistication* out-of-sample. *On daily OHLC bars one substitutes a range estimator (Parkinson/Garman–Klass) or ATR (§6) for RV.*
+
 ---
 
 ## §4 — State space, filtering, and regimes
@@ -160,9 +175,9 @@ $$\text{(4.3)}\qquad y_t\mid S_t=j\ \sim\ \mathcal N(\mu_j,\sigma_j^2),\qquad \m
 
 ---
 
-## §5 — Non-stationarity: breaks, trends, filters
+## §5 — Non-stationarity and nonlinearity: breaks, trends, filters, regimes-in-the-mean
 
-Because the standing caveat is real, detecting and handling parameter change is not optional.
+Because the standing caveat is real, detecting and handling parameter change — and nonlinearity — is not optional.
 
 **Structural breaks.** Chow (1960) tests a break at a *known* date; **CUSUM** (Brown–Durbin–Evans 1975, *JRSS-B*) monitors cumulative recursive residuals for parameter drift; **Bai–Perron** (1998, *Econometrica*; 2003, *J. Applied Econometrics*) estimates *multiple* breaks at *unknown* dates by minimising total SSR with a dynamic program. **[STAT]** A break detected is the stationarity assumption failing in-sample — the honest response is to model the change, not to extend the window through it.
 
@@ -170,6 +185,13 @@ Because the standing caveat is real, detecting and handling parameter change is 
 
 $$\text{(5.1)}\qquad \min_{\{\tau_t\}}\ \sum_t (y_t-\tau_t)^2+\lambda\sum_t\big[(\tau_{t+1}-\tau_t)-(\tau_t-\tau_{t-1})\big]^2.$$
 **[EST]** $\lambda$ trades fit against smoothness (1600 for quarterly data, by convention). *Known issues: spurious end-point cycles and the look-ahead of a two-sided filter — using HP-filtered features in a backtest is a classic leakage bug (§10).* Band-pass alternatives: Baxter–King; multiresolution alternatives: the **wavelet** transform, which localises variance jointly in time and frequency (better than the global Fourier spectrum for non-stationary series). Change-point detection (CUSUM, Bayesian online change-point, PELT) is the online cousin.
+
+**Nonlinear models in the mean.** Linear ARMA cannot capture state-dependent dynamics (trending in one regime, mean-reverting in another). The threshold/regime family makes the parameters depend on an observable or its own lag:
+
+$$\text{(5.2)}\qquad X_t=\begin{cases}\phi^{(1)}(L)X_t+\varepsilon_t,& q_{t-d}\le c\\[2pt]\phi^{(2)}(L)X_t+\varepsilon_t,& q_{t-d}> c\end{cases}\quad\text{(SETAR)},\qquad X_t=\phi^{(1)}X_{t-1}+\big(\phi^{(2)}-\phi^{(1)}\big)X_{t-1}\,G(q_{t-d};\gamma,c)+\varepsilon_t\ \text{(STAR)}.$$
+**[MODEL]** Self-exciting threshold AR (Tong 1990, *Non-Linear Time Series*) switches sharply at threshold $c$; smooth-transition AR (Teräsvirta 1994, *JASA*) interpolates via a logistic/exponential $G\in[0,1]$. These are the *in-the-mean* cousins of the Hamilton regime-switching model (§4, which switches on a *latent* state) and of this repo's regime gating (§6). *Status: flexible but easy to overfit — the bias–variance warning of §9 applies sharply.*
+
+**Testing for nonlinearity / i.i.d.** The **BDS test** (Brock–Dechert–Scheinkman–LeBaron 1996, *Econometric Reviews* 15) uses the correlation integral to test the null that a series is i.i.d. against unspecified (possibly nonlinear/chaotic) dependence — typically applied to model *residuals* to check whether linear filtering left structure behind. **[STAT]** Rejection says "there is more here," not "it is tradeable."
 
 ---
 
@@ -241,6 +263,11 @@ $$\text{(8.1)}\qquad \text{IC}_d=\rho_{\text{Spearman}}\big(\text{signal}_{i,d},
 
 **Factor models and dimension reduction.** Cross-sectional regressions $r_i=\boldsymbol\beta_i'\mathbf f+\epsilon_i$; **PCA** (eigendecomposition of the return covariance) extracts statistical factors; the companion document's $\mathbb Q$/$\mathbb P$ point applies — a "factor premium" is compensation for risk, not free money. **Copulas** (Sklar's theorem: any joint law factors into marginals plus a copula $C$) model tail dependence beyond linear $\rho$; **DCC-GARCH** (Engle 2002, *JBES*) makes the correlation matrix itself time-varying — the multivariate image of §3.
 
+**Nonlinear dependence (information-theoretic).** Correlation and rank-IC miss nonlinear/asymmetric dependence (the stylized fact (1.6) that returns are uncorrelated but *not* independent). Information theory measures the full dependence:
+
+$$\text{(8.2)}\qquad I(X;Y)=\sum_{x,y}p(x,y)\ln\frac{p(x,y)}{p(x)p(y)}\ \ge 0,\qquad T_{Y\to X}=\sum p(x_{t+1},x_t^{(\cdot)},y_t^{(\cdot)})\ln\frac{p(x_{t+1}\mid x_t^{(\cdot)},y_t^{(\cdot)})}{p(x_{t+1}\mid x_t^{(\cdot)})}.$$
+**[STAT]** **Mutual information** $I(X;Y)$ is zero iff $X\perp Y$ (it catches any dependence, not just linear); **transfer entropy** $T_{Y\to X}$ (Schreiber 2000, *Phys. Rev. Lett.* 85) is its directed, lagged version — a model-free, nonlinear generalisation of Granger causality (§2). *Caveat: both need a lot of data to estimate densities and are easy to over-read in finite, noisy samples — the multiple-testing and overfitting cautions of §§9–10 apply.*
+
 ---
 
 ## §9 — Estimation and inference machinery
@@ -263,6 +290,32 @@ $$\text{(9.2)}\qquad \textbf{block bootstrap: }\text{resample contiguous blocks 
 
 $$\text{(9.3)}\qquad p=\frac{1+\#\{b:\ \hat\theta^{(b)}_{\text{shuffled}}\ \ge\ \hat\theta_{\text{observed}}\}}{1+B}.$$
 **[VALID]** A model-free null that asks "could structure-free noise have produced a statistic this large?" The $+1$s make it a valid finite-sample test. *An effect that cannot clear its own shuffled null is reported as no edge* — this is what kills meta-labelling (p 0.005 on survivors → 0.80 with delisted names injected).
+
+### §9b — Regularised regression, classification, and learning machines
+
+The fitted models in this repo (and modern empirical finance generally) are penalised regressions and tree ensembles. Their math, and the one decomposition that explains when they fail.
+
+**Ridge regression.** **[REPO]** `vpts/ml/factor_model.py` learns the confluence weights by exactly this closed form (train-only standardisation, target centred):
+
+$$\text{(9.4)}\qquad \hat{\mathbf w}=\arg\min_{\mathbf w}\ \|\mathbf y-\mathbf X\mathbf w\|^2+\alpha\|\mathbf w\|_2^2=(\mathbf X'\mathbf X+\alpha\mathbf I)^{-1}\mathbf X'\mathbf y.$$
+**[EST]** Hoerl–Kennard (1970, *Technometrics* 12). The $\ell_2$ penalty $\alpha$ shrinks weights toward 0, trading a little bias for a large variance reduction — essential when features are collinear (confluence factors are) and the signal is faint. *In experiment 2, ridge shrank every learned weight to $\approx0$ and did not beat the hand-set baseline: the data did not support the extra degrees of freedom.*
+
+**LASSO and elastic net.** Swap the penalty: $\ell_1$ ($\alpha\|\mathbf w\|_1$, Tibshirani 1996, *JRSS-B* 58, 267–288) drives some weights *exactly* to zero (selection); the elastic net (Zou–Hastie 2005, *JRSS-B* 67) mixes $\ell_1+\ell_2$ to keep selection while handling correlated groups. **[EST]** These are the standard tools for the high-dimensional factor zoo — and, with the Harvey–Liu–Zhu hurdle (§10), the honest way to fight selection bias.
+
+**Logistic regression (the meta-model).** **[REPO]** `vpts/ml/meta_model.py` minimises the L2-regularised log-loss by gradient descent to learn $\mathbb P(\text{win}\mid\text{features})$:
+
+$$\text{(9.5)}\qquad p_i=\sigma(\mathbf w'\mathbf x_i+b)=\frac{1}{1+e^{-(\mathbf w'\mathbf x_i+b)}},\qquad \hat{\mathbf w}=\arg\min_{\mathbf w}\ -\sum_i\big[y_i\ln p_i+(1-y_i)\ln(1-p_i)\big]+\tfrac{\lambda}{2}\|\mathbf w\|_2^2.$$
+**[EST]** The binary cross-entropy is convex; the secondary model *filters* primary signals (meta-labelling, §7), so it is scored by classification metrics (§10), not by direction.
+
+**Gradient-boosted trees (XGBoost).** **[REPO]** A forward stagewise additive ensemble $F_M(\mathbf x)=\sum_{m=1}^{M} \nu\, f_m(\mathbf x)$ of regression trees, each fit to the (regularised) functional gradient of the loss (Friedman 2001, *Annals of Statistics* 29; XGBoost: Chen–Guestrin 2016, *KDD*, adds a second-order objective and explicit tree penalties):
+
+$$\text{(9.6)}\qquad f_m=\arg\min_{f}\ \sum_i \ell\big(y_i,\,F_{m-1}(\mathbf x_i)+f(\mathbf x_i)\big)+\Omega(f),\qquad \Omega(f)=\gamma T+\tfrac12\lambda\|\mathbf w\|^2.$$
+**[EST]** Hugely flexible — and hugely prone to overfit on low-signal financial data. In RESEARCH.md experiment 9, XGBoost memorised the training set (in-sample AUC **0.943**) yet scored **0.496 out-of-sample — below 0.5, worse than the linear logistic (0.529)**. The gaudy in-sample number is precisely the trap §10 exists to catch.
+
+**The bias–variance decomposition (why this happens).** For squared-error loss, expected test error at $\mathbf x$ factors as
+
+$$\text{(9.7)}\qquad \mathbb E\big[(y-\hat f(\mathbf x))^2\big]=\underbrace{\big(\mathbb E[\hat f(\mathbf x)]-f(\mathbf x)\big)^2}_{\text{bias}^2}+\underbrace{\operatorname{Var}(\hat f(\mathbf x))}_{\text{variance}}+\underbrace{\sigma_\varepsilon^2}_{\text{irreducible}}.$$
+**[DEF]** Hastie–Tibshirani–Friedman (2009, *ESL*). Flexible models (XGBoost) cut bias but inflate variance; in a regime where the irreducible noise $\sigma_\varepsilon^2$ dominates the signal — exactly daily return prediction (§11) — the variance term swamps any bias gain, so the *more flexible* model generalises *worse*. Regularisation ($\alpha,\lambda,\gamma$, tree depth, $\nu$) is the dial that buys variance reduction with bias; cross-validation (§10) is how it is set honestly. This single equation is why "use a bigger model" is usually the wrong answer here, and why this repo's linear book beat its gradient-boosted one.
 
 ---
 
@@ -302,6 +355,16 @@ $$\text{(10.4)}\qquad \text{DSR}=\Phi\!\left(\frac{(\widehat{\text{SR}}-\text{SR
 $$\text{(10.5)}\qquad \operatorname{se}(\widehat{\text{SR}})\approx\sqrt{\frac{1+\tfrac12\text{SR}^2}{T}}\ \text{(iid)},\qquad \text{SR}_{\text{annual}}=\frac{q\,\text{SR}}{\sqrt{q+2\sum_{k=1}^{q-1}(q-k)\rho_k}}\ \ \neq\ \sqrt q\,\text{SR}\ \text{unless }\rho_k=0.$$
 **[STAT]** Positive autocorrelation (smoothed returns) inflates the naïvely-annualised Sharpe; the $\sqrt q$ rule is valid only for serially-uncorrelated returns. *Reporting a Sharpe without its standard error, or $\sqrt{252}$-annualising an autocorrelated daily series, is the most common quiet overstatement in backtesting.*
 
+**Probabilistic Sharpe ratio and minimum track-record length.** The companion to the DSR with an explicit single-strategy test (Bailey–López de Prado 2012, *J. Risk* 15(2)): the probability that the true Sharpe exceeds a benchmark $\text{SR}^\ast$, and the track length needed to make that claim at confidence $1-\delta$:
+
+$$\text{(10.6)}\qquad \text{PSR}(\text{SR}^\ast)=\Phi\!\left(\frac{(\widehat{\text{SR}}-\text{SR}^\ast)\sqrt{T-1}}{\sqrt{1-\gamma_3\widehat{\text{SR}}+\frac{\gamma_4-1}{4}\widehat{\text{SR}}^2}}\right),\qquad \text{MinTRL}=1+\Big[1-\gamma_3\widehat{\text{SR}}+\tfrac{\gamma_4-1}{4}\widehat{\text{SR}}^2\Big]\Big(\tfrac{Z_{1-\delta}}{\widehat{\text{SR}}-\text{SR}^\ast}\Big)^2.$$
+**[VALID]** Skew/kurtosis enter because non-normal returns make the Sharpe estimate noisier; the related **Minimum Backtest Length** (Bailey–Borwein–López de Prado–Zhu 2014, *Notices of the AMS* 61(5), 458–471) says that with $M$ trials a backtest shorter than $\sim 2\ln M$ years is expected to find a spurious Sharpe of 1 — a length most backtests (this repo's single 2012–2017 window included) do not have.
+
+**Classification metrics (the meta-model's scorecard).** **[REPO]** Meta-labelling (§7, §9b) outputs probabilities scored by:
+
+$$\text{(10.7)}\qquad \text{AUC}=\mathbb P\big(\hat p_{\oplus}>\hat p_{\ominus}\big),\qquad \text{precision}=\frac{TP}{TP+FP},\quad \text{recall}=\frac{TP}{TP+FN},\quad \text{LogLoss}=-\tfrac1n\sum_i\big[y_i\ln\hat p_i+(1-y_i)\ln(1-\hat p_i)\big].$$
+**[STAT]** The **ROC-AUC** (Fawcett 2006, *Pattern Recognition Letters* 27) is the probability that a random positive is ranked above a random negative — 0.5 is coin-flipping, and it is *threshold-free* and robust to class imbalance, which is why it is the harness's headline meta-label metric. **Precision** is what a *selective* trader cares about (of the setups I act on, how many win — RESEARCH.md's selectivity lift, §7); the **Brier score** $\tfrac1n\sum(\hat p_i-y_i)^2$ and a reliability (calibration) curve check whether the probabilities are *honest*, not merely well-ranked. *The XGBoost result (in-sample AUC 0.943, OOS 0.496) is read directly off (10.7): perfect in-sample ranking, no out-of-sample ranking at all — (9.7)'s variance term in metric form.*
+
 ---
 
 ## §11 — Boundary of these methods (what the math cannot fix)
@@ -327,6 +390,8 @@ The through-line: the mathematics of §§1–9 lets you *describe and fit*; the 
 Confidence key: ★ = standard result, attribution confident; entries marked **Verified** were checked against the published record on 2026-06-13; ◐ = attribution confident, fine details not independently re-verified.
 
 **Time-series foundations & linear models**
+- ★ Cont, R. (2001), "Empirical Properties of Asset Returns: Stylized Facts and Statistical Issues," *Quantitative Finance* 1, 223–236. — **Verified**: stylized facts (1.6).
+- ★ Lo, A. & A.C. MacKinlay (1988), "Stock Market Prices Do Not Follow Random Walks: Evidence from a Simple Specification Test," *RFS* 1, 41–66. — **Verified**: variance-ratio test (1.7).
 - ★ Wold, H. (1938), *A Study in the Analysis of Stationary Time Series*. — Wold decomposition (1.4).
 - ★ Box, G. & G. Jenkins (1970), *Time Series Analysis: Forecasting and Control*. — ARIMA methodology (§2).
 - ★ Ljung, G. & G. Box (1978), "On a Measure of Lack of Fit in Time Series Models," *Biometrika* 65. — (2.2).
@@ -346,13 +411,27 @@ Confidence key: ★ = standard result, attribution confident; entries marked **V
 - ◐ Barndorff-Nielsen, O. & N. Shephard (2004), "Power and Bipower Variation with Stochastic Volatility and Jumps," *J. Financial Econometrics* 2. — (3.2).
 - ◐ Hosking, J. (1981), "Fractional Differencing," *Biometrika* 68. — ARFIMA.
 - ◐ Hurst, H. (1951), "Long-Term Storage Capacity of Reservoirs," *Trans. ASCE* 116. — R/S, Hurst exponent.
+- ★ Corsi, F. (2009), "A Simple Approximate Long-Memory Model of Realized Volatility," *J. Financial Econometrics* 7(2), 174–196. — **Verified**: HAR-RV (3.4).
 
-**State space, regimes, breaks, filters**
+**State space, regimes, breaks, filters, nonlinearity**
 - ★ Kalman, R. (1960), "A New Approach to Linear Filtering and Prediction Problems," *J. Basic Engineering* 82. — (4.2).
 - ★ Hamilton, J. (1989), "A New Approach to the Economic Analysis of Nonstationary Time Series and the Business Cycle," *Econometrica* 57. — regime switching (4.3).
 - ◐ Brown, Durbin & Evans (1975), "Techniques for Testing the Constancy of Regression Relationships over Time," *JRSS-B* 37. — CUSUM.
 - ★ Bai, J. & P. Perron (1998), "Estimating and Testing Linear Models with Multiple Structural Changes," *Econometrica* 66; (2003), *J. Applied Econometrics* 18.
 - ◐ Hodrick, R. & E. Prescott (1997), "Postwar U.S. Business Cycles: An Empirical Investigation," *J. Money, Credit and Banking* 29. — HP filter (5.1).
+- ◐ Tong, H. (1990), *Non-Linear Time Series: A Dynamical System Approach*, Oxford UP. — SETAR (5.2).
+- ◐ Teräsvirta, T. (1994), "Specification, Estimation, and Evaluation of Smooth Transition Autoregressive Models," *JASA* 89. — STAR (5.2).
+- ◐ Brock, Dechert, Scheinkman & LeBaron (1996), "A Test for Independence Based on the Correlation Dimension," *Econometric Reviews* 15. — BDS test.
+
+**Dependence & machine-learning estimators**
+- ◐ Engle, R. (2002), "Dynamic Conditional Correlation," *JBES* 20. — DCC-GARCH (§8).
+- ◐ Schreiber, T. (2000), "Measuring Information Transfer," *Physical Review Letters* 85. — transfer entropy (8.2).
+- ★ Hoerl, A. & R. Kennard (1970), "Ridge Regression: Biased Estimation for Nonorthogonal Problems," *Technometrics* 12. — ridge (9.4).
+- ★ Tibshirani, R. (1996), "Regression Shrinkage and Selection via the Lasso," *JRSS-B* 58, 267–288. — **Verified**: LASSO.
+- ◐ Zou, H. & T. Hastie (2005), "Regularization and Variable Selection via the Elastic Net," *JRSS-B* 67. — elastic net.
+- ★ Friedman, J. (2001), "Greedy Function Approximation: A Gradient Boosting Machine," *Annals of Statistics* 29. — gradient boosting (9.6).
+- ★ Chen, T. & C. Guestrin (2016), "XGBoost: A Scalable Tree Boosting System," *Proc. 22nd ACM SIGKDD*, 785–794. — **Verified** (9.6).
+- ★ Hastie, T., R. Tibshirani & J. Friedman (2009), *The Elements of Statistical Learning*, 2nd ed., Springer. — bias–variance (9.7).
 
 **Inference, resampling, evaluation, overfitting**
 - ★ Hansen, L.P. (1982), "Large Sample Properties of Generalized Method of Moments Estimators," *Econometrica* 50.
@@ -364,6 +443,9 @@ Confidence key: ★ = standard result, attribution confident; entries marked **V
 - ★ Lo, A. (2002), "The Statistics of Sharpe Ratios," *Financial Analysts Journal* 58(4), 36–52. — **Verified**: SR distribution & autocorrelation annualisation (10.5).
 - ★ Bailey, D. & M. López de Prado (2014), "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting, and Non-Normality," *J. Portfolio Management* 40(5), 94–107. — **Verified** (10.4).
 - ★ Bailey, Borwein, López de Prado & Zhu (2017), "The Probability of Backtest Overfitting," *J. Computational Finance* 20(4). — **Verified**: PBO/CSCV (10.3).
+- ★ Bailey, D. & M. López de Prado (2012), "The Sharpe Ratio Efficient Frontier," *J. Risk* 15(2). — **Verified**: probabilistic Sharpe ratio & minimum track record length (10.6).
+- ★ Bailey, Borwein, López de Prado & Zhu (2014), "Pseudo-Mathematics and Financial Charlatanism: The Effects of Backtest Overfitting on Out-of-Sample Performance," *Notices of the AMS* 61(5), 458–471. — **Verified**: minimum backtest length (10.6).
+- ◐ Fawcett, T. (2006), "An Introduction to ROC Analysis," *Pattern Recognition Letters* 27. — AUC/ROC (10.7).
 - ★ Harvey, C., Y. Liu & H. Zhu (2016), "… and the Cross-Section of Expected Returns," *RFS* 29(1), 5–68. — **Verified**: multiple-testing $t>3$ hurdle.
 - ★ López de Prado, M. (2018), *Advances in Financial Machine Learning*, Wiley. — Triple-barrier (§7), meta-labelling, purged/embargoed CPCV (§10); implemented in `vpts/`.
 - ★ McLean, R.D. & J. Pontiff (2016), "Does Academic Research Destroy Stock Return Predictability?" *JF* 71, 5–32. — signal decay (§11).
