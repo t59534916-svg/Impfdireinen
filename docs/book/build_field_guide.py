@@ -42,6 +42,11 @@ aside.insert { background: #eef4fb; border: 1px solid #cfe0f2; border-left: 4px 
   page-break-inside: avoid; }
 aside.insert p { margin: 0; }
 aside.insert strong:first-child { color: #1a5f9e; }
+aside.metaphor { background: #fdf4e3; border: 1px solid #ecd9ad; border-left: 4px solid #b8860b;
+  border-radius: 6px; padding: 9px 14px; margin: 13px 0; font-size: 10.5pt; line-height: 1.55;
+  font-style: italic; page-break-inside: avoid; }
+aside.metaphor p { margin: 0; }
+aside.metaphor strong:first-child { color: #8a6500; font-style: normal; }
 figure { margin: 16px auto; text-align: center; page-break-inside: avoid; }
 figure img { max-width: 92%; border: 1px solid #e2e8f0; border-radius: 5px; }
 figcaption { font-family: Helvetica, Arial, sans-serif; font-size: 8.8pt; color: #55606f;
