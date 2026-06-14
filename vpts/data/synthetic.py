@@ -32,18 +32,24 @@ def _ohlc_from_close(close: np.ndarray, bar_vol: np.ndarray, rng: np.random.Gene
 def synthetic_survivor_ohlcv(
     n: int = 504, *, seed: int = 0, start_date: str = "2015-01-02"
 ) -> pd.DataFrame:
-    """A 'name that lived': mild drift + multi-scale oscillation + noise.
+    """A 'name that lived': a near-random-walk with mild positive drift.
 
-    Always-positive close, realistic intrabar ranges, and volume that ebbs and
-    flows with the cycle. Deterministic given *seed*.
+    Deliberately **near-efficient** — returns are i.i.d. with a small drift, so the
+    forward return is *not* predictable from past bars. This matters: a survivor
+    built from a smooth deterministic cycle would let any feature "predict" it and
+    manufacture a fake edge in demos/tests. A geometric random walk is the honest
+    null — features should score ≈0 IC on it. Volume carries a benign cycle (so
+    RVOL-type features have something to measure) that is uncorrelated with returns.
+    Deterministic given *seed*.
     """
     rng = np.random.default_rng(seed)
     t = np.arange(n)
-    drift = rng.uniform(0.0001, 0.0004)
-    cycle = 7 * np.sin(t / 26.0) + 3 * np.sin(t / 8.0)
-    close = 50.0 * np.exp(drift * t) + cycle + np.cumsum(rng.normal(0, 0.15, n))
-    close = np.maximum(close, 5.0)
-    bar_vol = 0.008 + 0.004 * np.abs(np.sin(t / 26.0))
+    start = rng.uniform(30.0, 150.0)
+    mu = rng.uniform(0.0001, 0.0004)          # mild positive drift
+    sigma = rng.uniform(0.010, 0.018)         # daily volatility
+    rets = rng.normal(mu, sigma, n)           # i.i.d. returns ⇒ no free predictability
+    close = np.maximum(start * np.exp(np.cumsum(rets)), 1.0)
+    bar_vol = sigma * (1.0 + 0.3 * np.abs(np.sin(t / 26.0)))
     open_, high, low = _ohlc_from_close(close, bar_vol, rng)
     volume = (3e6 + 1e6 * np.cos(t / 26.0) + rng.integers(-3e5, 3e5, n)).astype(float)
     volume = np.maximum(volume, 1e5)

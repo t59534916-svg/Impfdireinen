@@ -55,6 +55,21 @@ def test_synthetic_delisted_declines_and_is_valid_ohlcv() -> None:
     assert df["Close"].iloc[-1] < df["Close"].iloc[0]      # it declined (a 'death')
 
 
+def test_behavioral_ai_demo_runs_offline() -> None:
+    """The end-to-end capstone runs with no network and returns success."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
+    import behavioral_ai_demo as demo
+
+    argv = ["prog", "--names", "3", "--perms", "3", "--horizon", "20",
+            "--stride", "20", "--n-delisted", "2"]
+    old = sys.argv
+    sys.argv = argv
+    try:
+        assert demo.main() == 0
+    finally:
+        sys.argv = old
+
+
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     passed = failed = 0

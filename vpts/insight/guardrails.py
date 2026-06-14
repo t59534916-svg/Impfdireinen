@@ -87,6 +87,11 @@ def scan_for_overclaims(text: str, verdict: Verdict) -> tuple[str, ...]:
     Empty when the verdict is VALIDATED (claims are licensed) or no forbidden
     phrasing is found. This is a backstop against the LLM ignoring instructions —
     it operates on the output, not on the model's good behavior.
+
+    Deliberately conservative: it is context-blind, so a *negated* phrase ("this is
+    not a real edge") is also flagged. That is the safe failure direction — a
+    redundant correction banner on honest text is harmless; letting a genuine
+    overclaim through is not. Word honest narration to avoid the trigger phrases.
     """
     if verdict.permits_edge_claim:
         return ()
