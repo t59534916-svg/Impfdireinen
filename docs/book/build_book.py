@@ -274,10 +274,13 @@ CHAPTERS = [
          lead=("fig5_cpcv.png", "3.1",
                "Combinatorial purged cross-validation: contiguous groups, every k-subset as the test set, with purging and embargo to stop label leakage."),
          src=DOCS / "TIMESERIES_MATH.md", strip_title=True,
-         inline=[("## §10 — Forecast evaluation and the overfitting problem (the core of the harness)",
-                  figure("fig12_insample_oos.png", "3.2",
+         inline=[("## §5b — Living with non-stationarity: what to do when the law moves",
+                  figure("fig15_stationarity.png", "3.2",
+                         "Why structure beats statistics under non-stationarity: at a regime break, a statistical pattern (a correlation that merely 'worked') dies, while an edge anchored in a durable structural counterparty takes a hit and resumes. A relationship is exactly as stationary as its source.", "inline")),
+                 ("## §10 — Forecast evaluation and the overfitting problem (the core of the harness)",
+                  figure("fig12_insample_oos.png", "3.3",
                          "Overfitting made visceral: the same strategy soars on the data it was tuned to and collapses the moment it meets data it has never seen. The vertical line is where the backtest ends and reality begins.", "inline")
-                  + figure("fig7_deflated_sharpe.png", "3.3",
+                  + figure("fig7_deflated_sharpe.png", "3.4",
                          "Multiple testing inflates the significance hurdle: the benchmark Sharpe grows with the number of trials, so an observed Sharpe loses significance as the search widens.", "inline"))]),
     dict(id="ch4", num="4", title="AI Architectures for Directional Forecasting — a SWOT",
          abstract="An evidence-based survey anchored to directional accuracy: ~50–55% across every model family, and why.",
@@ -475,7 +478,11 @@ themselves, and sometimes, demonstrably, edge wins.
 ## The boundary of the whole enterprise
 
 What no method in this book can repair: **non-stationarity** (every estimator
-assumes a law that does not move; structural breaks are that assumption failing);
+assumes a law that does not move; structural breaks are that assumption failing —
+though Chapter 3's §5b develops in full what *can* be done, namely adaptive
+estimation, robust and no-regret methods, and anchoring an edge in durable
+structure rather than a statistical pattern, and marks precisely where the hard
+limit lies);
 **reflexivity and signal decay** (the map decays once it is measured and traded);
 **Knightian uncertainty** (the agents and the econometrician alike assume the
 probability law is known, including the tails that may never have been sampled);

@@ -399,6 +399,27 @@ def fig_edge_funnel():
     _save(fig, "fig13_edge_funnel.png")
 
 
+def fig_stationarity():
+    rng = np.random.default_rng(3)
+    T, brk = 400, 200
+    t = np.arange(T)
+    struct = np.cumsum(0.10 + 0.25 * rng.standard_normal(T))      # steady positive slope throughout
+    dip = np.zeros(T)                                             # a temporary hit at the break that recovers
+    dip[brk:brk + 30] = -np.concatenate([np.linspace(0, 6, 15), np.linspace(6, 0, 15)])
+    struct = struct + dip
+    stat = np.cumsum(np.where(t < brk, 0.10, -0.085) + 0.25 * rng.standard_normal(T))  # rises, then decays
+    fig, ax = plt.subplots(figsize=(7.8, 4.2))
+    ax.axvline(brk, color=SLATE, ls="--", lw=1.5)
+    ax.text(brk + 6, 3, "regime\nchange", color=SLATE, fontsize=9, weight="bold")
+    ax.plot(t, struct, color=GREEN, lw=2.4, label="structurally-anchored edge — survives the break")
+    ax.plot(t, stat, color=MAROON, lw=2.4, label="statistical pattern — dies at the break")
+    ax.axhline(0, color=GREY, lw=1, ls=":")
+    ax.set_xlabel("time"); ax.set_ylabel("cumulative edge")
+    ax.set_title("Structure is more stationary than statistics")
+    ax.legend(fontsize=8.6, loc="upper left")
+    _save(fig, "fig15_stationarity.png")
+
+
 if __name__ == "__main__":
     fig_pq_wedge()
     fig_pricing_kernel()
@@ -414,4 +435,5 @@ if __name__ == "__main__":
     fig_lln_convergence()
     fig_insample_oos()
     fig_edge_funnel()
+    fig_stationarity()
     print("all figures written to", OUT)

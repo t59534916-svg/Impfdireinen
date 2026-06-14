@@ -195,6 +195,52 @@ $$\text{(5.2)}\qquad X_t=\begin{cases}\phi^{(1)}(L)X_t+\varepsilon_t,& q_{t-d}\l
 
 ---
 
+## §5b — Living with non-stationarity: what to do when the law moves
+
+The standing caveat (§0) is not a disclaimer to be filed and forgotten — it is the central practical problem, and it has a real, if partial, constructive answer. This section develops it at length, separating what *can* be handled from what *cannot*. The honest position is neither "assume stationarity" nor "give up," but a graded discipline.
+
+**The reframing that makes the problem tractable.** You do not need *the market* to be stationary; you need the *specific relationship you exploit* to be stable over your trading horizon — a different, answerable question. And a relationship's stability is inherited from its **source**:
+
+$$\text{(5.3)}\qquad \underbrace{\text{statistical pattern}}_{\text{least stationary}} \;\prec\; \text{risk premium} \;\prec\; \underbrace{\text{structural constraint}}_{\text{most stationary}}.$$
+**[PRINCIPLE]** A bare statistical regularity ("$X$ predicted $Y$ in-sample") has no reason to persist and decays fastest; a risk premium persists as long as the risk and the aversion to it persist; a structural/institutional constraint — an index fund that must buy regardless of price, a hedger who must roll, a regulation that forces a flow — persists as long as the institution does. **The same structural counterparty that makes an edge *survive* (§EDGE_METHODOLOGY.5) is what makes it *stationary*.** So the first response to non-stationarity is not statistical at all: anchor the edge in durable structure, not in a pattern.
+
+**The adaptive-estimation tradeoff (handling slow drift).** When the true parameter drifts slowly, re-estimate on a trailing window — but the window length is itself an optimization. With drift rate $\delta$ (parameter change per period) and per-observation noise $\sigma^2$, a rolling window of length $w$ has
+
+$$\text{(5.4)}\qquad \mathrm{MSE}(w)\;\approx\;\underbrace{\frac{\sigma^2}{w}}_{\text{estimation variance}}\;+\;\underbrace{c\,\delta^2 w^2}_{\text{staleness bias}},\qquad\Longrightarrow\qquad \text{(5.5)}\quad w^\star \;\propto\; \Big(\frac{\sigma^2}{\delta^2}\Big)^{1/3}.$$
+**[EST]** The window optimisation is the formal statement of "re-fit fast enough to track the drift, slow enough to average out the noise" — the bias–variance tradeoff of §9b, now along the **time** axis: a faster-adapting model tracks the regime but is noisier. The exponentially-weighted estimator $\hat\sigma^2_t=\lambda\hat\sigma^2_{t-1}+(1-\lambda)r_t^2$ is the smooth version, with effective window $1/(1-\lambda)$ (RiskMetrics). The **time-varying-parameter** model — let $\theta_t=\theta_{t-1}+\eta_t$ follow a random walk and run the Kalman filter (§4) — is the optimal linear adaptive estimator under that drift model. **[MODEL/EST]**
+
+**Regime-switching, and why it does not escape the problem.** Hamilton's model (§4) treats non-stationarity as switching among a *finite set of stationary regimes* with a fixed transition law. Where regimes recur (calm/turbulent volatility states), it is the right tool. But a *known* switching law is only a larger *stationary meta-model* — it relocates the stationarity assumption one level up, to the transition matrix. It handles *recurrent* change; it cannot handle a *genuinely novel* regime, because the new regime is not in the state space. **[MODEL]**
+
+**The robust / no-regret paradigm (giving up the law entirely).** A different philosophy abandons the attempt to estimate the data-generating law at all:
+
+- **Distributionally robust optimisation.** Instead of minimising expected loss under a single estimated $\mathbb P$, minimise the *worst case* over an ambiguity set $\mathcal U$ of laws around the empirical distribution:
+$$\text{(5.6)}\qquad \min_{a}\;\sup_{\mathbb Q\in\mathcal U}\;\mathbb E_{\mathbb Q}\big[\ell(a)\big].$$
+**[MODEL]** (Hansen–Sargent robust control; Wasserstein-DRO.) You trade a little average performance for stability across a neighbourhood of laws — explicitly buying insurance against having the wrong $\mathbb P$.
+
+- **Online / no-regret learning.** Drop the i.i.d. assumption entirely: treat the data as an *arbitrary, even adversarial* sequence. Online gradient descent attains **regret** — cumulative loss minus that of the best single decision in hindsight — bounded by
+$$\text{(5.7)}\qquad \mathrm{Regret}_T \;\le\; O(\sqrt T)\quad\Longrightarrow\quad \frac{\mathrm{Regret}_T}{T}\to 0,$$
+**[STAT]** for *any* sequence of bounded convex losses, with **no stationarity assumed anywhere** (Zinkevich 2003, *ICML*). *The catch, made precise:* the comparator is the best *fixed* decision in hindsight, which is itself poor if the world changed a lot. Against a *moving* comparator (dynamic regret), the bound holds only if the comparator's total variation is **budgeted** — you can track change that is *limited in total*, not arbitrary change (Besbes–Gur–Zeevi 2015, *Operations Research* 63(5), "variation budget"). This is the exact mathematical boundary of adaptation: **bounded non-stationarity is learnable; unbounded non-stationarity is not.**
+
+**A taxonomy of non-stationarity by tractability.** Putting it together:
+
+| Kind | Example | Handled by | Tractable? |
+|---|---|---|---|
+| Slowly-varying parameters | drifting volatility, slow beta change | adaptive estimation (5.4–5.5), Kalman TVP | **yes** |
+| Recurrent regimes | calm/turbulent vol, risk-on/off | regime-switching (§4), robust opt. (5.6) | **mostly** |
+| Bounded-variation change | gradual structural evolution | no-regret w/ variation budget (5.7) | **partly** |
+| Genuine structural break / Knightian novelty | a regime absent from the *entire* sample | **nothing** | **no** |
+| Reflexive self-decay | your own trading erodes the signal | shorten horizon, expect decay | **no (self-induced)** |
+
+**[PRINCIPLE / boundary]**
+
+**The hard limit, made precise.** The last two rows are the edge of the map, and no method removes them:
+- **The Lucas critique** (Lucas 1976). If agents' decision rules depend on the policy/structural regime, then parameters estimated under one regime are *not invariant* to a change of regime — they are not "structural," and forecasts under a new regime are unfounded. "Estimate on history, deploy in the future" silently assumes the future regime equals the past. A break whose *possibility was not in the support* of your model is not risk you can hedge; it is Knightian uncertainty (§11).
+- **Reflexivity** (§11). Exploiting a relationship changes it — a non-stationarity you *cause*, which no external change-point detector catches, because you *are* the regime change.
+
+**The operational upshot.** Non-stationarity does not counsel despair; it dictates a discipline: (i) prefer *structural* edges over *statistical* ones — they are more stationary by construction (5.3); (ii) re-estimate adaptively, sized to the drift timescale (5.5), and monitor with change-point detection; (iii) where you cannot trust a single law, use robust/online methods (5.6–5.7) and accept lower average return for stability; (iv) size for the regime change that *will* come — cap leverage, and stress-test not only against the regimes in your sample but against a plausible one outside it; (v) read every backtest as conditional on "no regime change unlike the sample," and never stake the firm on that condition holding.
+
+---
+
 ## §6 — The signal math this repository computes
 
 This section documents `vpts`'s feature construction as time-series mathematics. All of it operates **without look-ahead** (features at bar $t$ use data $\le t$), which is itself the most important modelling constraint (§10).
@@ -422,6 +468,8 @@ Confidence key: ★ = standard result, attribution confident; entries marked **V
 - ◐ Tong, H. (1990), *Non-Linear Time Series: A Dynamical System Approach*, Oxford UP. — SETAR (5.2).
 - ◐ Teräsvirta, T. (1994), "Specification, Estimation, and Evaluation of Smooth Transition Autoregressive Models," *JASA* 89. — STAR (5.2).
 - ◐ Brock, Dechert, Scheinkman & LeBaron (1996), "A Test for Independence Based on the Correlation Dimension," *Econometric Reviews* 15. — BDS test.
+- ★ Zinkevich, M. (2003), "Online Convex Programming and Generalized Infinitesimal Gradient Ascent," *ICML*. — **Verified**: online gradient descent attains $O(\sqrt T)$ regret with no stationarity assumption (5.7).
+- ★ Besbes, O., Y. Gur & A. Zeevi (2015), "Non-Stationary Stochastic Optimization," *Operations Research* 63(5):1227–1244. — **Verified**: the variation-budget bound on dynamic regret — bounded non-stationarity is learnable, unbounded is not.
 
 **Dependence & machine-learning estimators**
 - ◐ Engle, R. (2002), "Dynamic Conditional Correlation," *JBES* 20. — DCC-GARCH (§8).
