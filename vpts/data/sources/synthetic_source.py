@@ -7,6 +7,7 @@ a paid provider — invaluable for tests, demos, and the injection stress harnes
 """
 from __future__ import annotations
 
+import hashlib
 from typing import Iterable, Optional
 
 import pandas as pd
@@ -59,8 +60,11 @@ class SyntheticSource(DataSource):
 
     @staticmethod
     def _seed_for(symbol: str) -> int:
-        # Stable per-symbol seed so the same ticker is reproducible across calls.
-        return abs(hash(symbol.upper())) % (2 ** 31)
+        # Stable per-symbol seed so the same ticker is reproducible across *processes*.
+        # NB: the builtin hash() is salted per-process (PYTHONHASHSEED); use a fixed
+        # digest so the "deterministic" guarantee actually holds in CI and elsewhere.
+        digest = hashlib.sha1(symbol.upper().encode()).hexdigest()
+        return int(digest[:8], 16)
 
     def get_bars(
         self,

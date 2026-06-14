@@ -33,16 +33,29 @@ from vpts.data.base import validate_ohlcv  # noqa: E402
 # --------------------------------------------------------------------------- #
 # Synthetic source + generators
 # --------------------------------------------------------------------------- #
-def test_synthetic_source_survivor_vs_delisted() -> None:
+def test_synthetic_source_structure_and_flags() -> None:
     src = SyntheticSource(delisted=["DEADCO"])
     surv = src.get_bars("GOODCO", period="2y")
-    dead = src.get_bars("DEADCO", period="2y")
     assert list(surv.columns) == ["Open", "High", "Low", "Close", "Volume"]
     assert not src.is_delisted("GOODCO") and src.is_delisted("DEADCO")
-    # The dead name ends far below where it started; the survivor does not collapse.
-    assert dead["Close"].iloc[-1] < 0.5 * dead["Close"].iloc[0]
-    assert surv["Close"].iloc[-1] > 0.5 * surv["Close"].iloc[0]
     assert src.capabilities.provides_delisted is True
+    assert surv.attrs["synthetic_delisted"] is False
+
+
+def test_synthetic_delisted_decline_is_distributional() -> None:
+    # A single delisted draw is high-variance over a short window; assert the
+    # *distribution* over seeds declines, not one noisy path.
+    import numpy as np
+
+    src = SyntheticSource(delisted=[f"DEAD{i}" for i in range(10)])
+    dead = [src.get_bars(f"DEAD{i}", period="5y")["Close"] for i in range(10)]
+    surv = [src.get_bars(f"GOOD{i}", period="5y")["Close"] for i in range(10)]
+    dead_ret = np.array([c.iloc[-1] / c.iloc[0] for c in dead])
+    surv_ret = np.array([c.iloc[-1] / c.iloc[0] for c in surv])
+    assert np.median(dead_ret) < np.median(surv_ret)   # dead underperform survivors
+    assert np.median(dead_ret) < 1.0                    # dead decline on balance
+    assert (np.median([c.min() / c.iloc[0] for c in dead])
+            < np.median([c.min() / c.iloc[0] for c in surv]))  # deeper drawdowns
 
 
 def test_synthetic_is_deterministic() -> None:
@@ -50,6 +63,19 @@ def test_synthetic_is_deterministic() -> None:
     b = synthetic_survivor_ohlcv(200, seed=42)
     pd.testing.assert_frame_equal(a, b)
     assert not a.equals(synthetic_survivor_ohlcv(200, seed=43))
+
+
+def test_synthetic_source_seed_is_process_stable() -> None:
+    # Must NOT use the builtin hash() (salted per-process) — pin the digest so the
+    # source returns identical data across processes / CI runs.
+    import hashlib
+
+    expected = int(hashlib.sha1(b"AAPL").hexdigest()[:8], 16)
+    assert SyntheticSource._seed_for("AAPL") == expected
+    assert SyntheticSource._seed_for("aapl") == SyntheticSource._seed_for("AAPL")
+    src = SyntheticSource()
+    pd.testing.assert_frame_equal(src.get_bars("AAPL", period="1y"),
+                                  src.get_bars("AAPL", period="1y"))
 
 
 def test_ohlc_consistency() -> None:
