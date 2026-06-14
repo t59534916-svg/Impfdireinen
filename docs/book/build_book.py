@@ -250,6 +250,53 @@ All sources, figures, code, and this builder live in the repository under
 `docs/` and `vpts/`. The implemented model and significance gate ship with 15
 unit tests (signal-detection and null-clearing for every estimator); the full
 suite is 150 offline, deterministic tests.
+
+## A.5 — Load-bearing citations: claims and verification status
+
+This is the honesty ledger for the volume's empirical and theoretical anchors.
+It exists because of a hard constraint disclosed in A.2: during the session,
+full-text page-fetching was uniformly blocked (HTTP 403), so for most journal
+articles the *claim*-level check was made against the paper's **abstract**, a
+search-engine extraction, or a secondary summary — **not** a full-text read.
+Two grades of verification must therefore be kept apart, and are, below:
+*bibliographic* verification (author / title / year / venue checked against the
+published record) is not the same as *claim-level* verification (the specific
+number or theorem confirmed in the source text). Where a figure rests on a
+secondary summary, it is flagged as such — that is exactly the citation hygiene
+a reader is owed.
+
+**Status key.** **[B]** bibliographic record verified this session;
+**[O]** open-access full text **or** a canonical/textbook identity — the claim
+is directly checkable (and, for the significance statistics, implemented and
+unit-tested in `vpts/ml/significance.py`); **[A]** the supporting figure is
+taken from the **abstract** or a secondary summary, full text not accessed;
+**[P]** **paywalled** and the figure rests on **secondary reporting** — treat
+the precise decimals with caution.
+
+| Work (author, year, venue) | Precise claim it supports | Status |
+|---|---|---|
+| Rahimikia, Ni & Wang (2025), *Re(Visiting) TS Foundation Models in Finance*, arXiv:2511.18578 | Off-the-shelf TS foundation models score "just above 51%" directional with negative backtested returns; a benchmark CatBoost posts ~51% accuracy yet a large pre-cost Sharpe — the "accuracy ≠ edge" point (Ch. 4, Ch. 7). | [B][A] — preprint + ~51% figure verified on 2026-06-13; **the CatBoost return/Sharpe decimals are from the abstract, not full-text re-verified** |
+| McLean & Pontiff (2016), *Does Academic Research Destroy Stock Return Predictability?*, JF 71(1):5–32 | Across 97 predictors, portfolio returns are 26% lower out-of-sample and 58% lower post-publication — signal decay / reflexivity (Ch. 2 boundary, Ch. 4, Ch. 6). | [B][A] — record verified; the 26% / 58% figures are the paper's abstract headline |
+| Cornell (2019), *Medallion Fund: The Ultimate Counterexample?*, JPM 46(4):156–159 | Medallion ~63% gross / ~39% net 1988–2018 with negative beta and factor loadings ⇒ not a risk premium; "the ultimate counterexample" to efficiency (Ch. 6, Ch. 7). | [B][P] — **paywalled; the return figures rest on secondary reporting** (Zuckerman 2019) and the abstract |
+| Frazzini, Kabiller & Pedersen (2018), *Buffett's Alpha*, FAJ 74(4):35–55 | Buffett's Sharpe ≈ 0.79; the alpha is explained by ≈1.6–1.7× leverage on cheap, safe, high-quality stocks (betting-against-beta + quality-minus-junk) (Ch. 6, Ch. 7). | [B][A] — record verified; Sharpe / leverage figures from the abstract |
+| Bailey & López de Prado (2014), *The Deflated Sharpe Ratio*, JPM 40(5):94–107 | DSR corrects a Sharpe for skew, kurtosis, length, and the **number of trials** (SR₀ = expected max of M noise trials) (Ch. 3 §10, Ch. 5). | [O] — canonical formula, **implemented & unit-tested** in `significance.py` |
+| Bailey & López de Prado (2012), *The Sharpe Ratio Efficient Frontier*, J. Risk 15(2) | Probabilistic Sharpe ratio and minimum track-record length (Ch. 3 §10, Ch. 5). | [O] — canonical; implemented & unit-tested |
+| Bailey, Borwein, López de Prado & Zhu (2014), *Pseudo-Mathematics and Financial Charlatanism*, Notices of the AMS 61(5):458–471 | Backtest overfitting is easily achieved; under memory effects it yields **negative** expected OOS returns; a backtest shorter than ≈2 ln M years finds a spurious Sharpe ≈ 1 (Ch. 3, Ch. 4, Ch. 7). | [B][O] — **open-access** (Notices / SSRN); claim checkable from the public PDF |
+| Harvey, Liu & Zhu (2016), *…and the Cross-Section of Expected Returns*, RFS 29(1):5–68 | With multiple testing a "new" factor needs t > 3.0; ~half of published factors are likely false (Ch. 3, Ch. 4). | [B][A] — record verified; the t > 3 / "half false" figures from the abstract |
+| Gu, Kelly & Xiu (2020), *Empirical Asset Pricing via Machine Learning*, RFS 33(5):2223–2273 | Trees / NNs beat linear models, but the edge is ≈0.3–0.4% monthly OOS R², realized via cross-sectional **ranking** (L/S decile Sharpe ~1.35 VW / ~2.45 EW, **pre-cost**) (Ch. 4, Ch. 5). | [B][A] — record verified; R² / Sharpe figures from the abstract |
+| Grinsztajn, Oyallon & Varoquaux (2022), *Why do tree-based models still outperform deep learning on tabular data?*, NeurIPS D&B, arXiv:2207.08815 | Tree ensembles are state-of-the-art on medium-N noisy tabular data vs deep learning — the basis for the GBRT choice (Ch. 4, Ch. 5). | [B][O] — **open-access**; claim checkable from the public PDF |
+| Grinold (1989), *The Fundamental Law of Active Management*, JPM 15(3):30–37 | IR = IC·√BR — a small per-bet edge × breadth = an institutional information ratio (Ch. 6). | [O] — canonical identity, **re-derived in Ch. 6** |
+| Clarke, de Silva & Thorley (2002), *Portfolio Constraints and the Fundamental Law…*, FAJ 58(5):48–66 | The transfer-coefficient refinement IR = TC·IC·√BR (Ch. 6). | [B] — record verified; standard refinement |
+| Ross (2015), *The Recovery Theorem*, JF 70(2):615–648 | The physical measure is recoverable from state prices under transition-independence (Ch. 2 §IV) — shown to fail. | [B][A] — record verified; claim from abstract |
+| Borovička, Hansen & Scheinkman (2016), *Misspecified Recovery*, JF 71(6):2493–2544 | Recovery returns the long-term-risk-neutral measure, not the physical measure, whenever the SDF has a permanent component — why Ross recovery fails (Ch. 2 §IV). | [B][A] — record verified; claim from abstract |
+| Martin (2017), *What is the Expected Return on the Market?*, QJE 132(1):367–433 | A model-free option-implied (SVIX) **lower bound** on the equity premium (Ch. 2 §IV). | [B][A] — record verified; claim from abstract |
+| Breeden & Litzenberger (1978), *Prices of State-Contingent Claims Implicit in Option Prices*, J. Business 51(4):621–651 | The risk-neutral density is the second strike-derivative of the call price (Ch. 2 §IV). | [O] — canonical textbook result |
+
+Chapters 2 and 3 carry their own per-reference confidence keys (★ / ◐ / ○) with
+dates of the verification pass; this table is the cross-cutting subset that the
+volume's headline conclusions actually rest on. Nothing here is a primary-source
+full-text read performed during the session; the strongest grade available under
+the session's constraints was open-access PDFs and canonical identities ([O]).
 """
 
 CHAPTERS = [
