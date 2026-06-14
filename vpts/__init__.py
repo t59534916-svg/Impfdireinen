@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.8.0"  # + vpts.stats: anti-overfitting / data-snooping controls
+__version__ = "1.9.0"  # + pluggable data sources, point-in-time universe, survivorship injector
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (

@@ -1,0 +1,83 @@
+"""Deterministic synthetic OHLCV generators (survivor & delisted paths).
+
+These are promoted, library-grade versions of the generator that lived in
+``examples/survivorship_stress.py``. Two roles:
+
+1. **Offline testing / demos** — let the whole pipeline run with zero network.
+2. **Survivorship stress** — the *delisted* generator produces the "name that
+   died" path (normal, then a negative-drift, elevated-volatility decline to a
+   penny floor with capitulation volume) that `RESEARCH.md` injects to show the
+   structural edge is a survivorship mirage. Keeping one canonical implementation
+   means every experiment stresses survivorship the same, documented way.
+
+The processes are **strategy-agnostic** (not tuned to any model) and fully
+seeded, so results are reproducible.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+
+def _ohlc_from_close(close: np.ndarray, bar_vol: np.ndarray, rng: np.random.Generator):
+    """Build self-consistent O/H/L from a close path and per-bar volatility."""
+    high = close * (1.0 + np.abs(rng.normal(0, bar_vol)))
+    low = close * (1.0 - np.abs(rng.normal(0, bar_vol)))
+    open_ = np.concatenate([[close[0]], close[:-1]])
+    high = np.maximum.reduce([high, close, open_])
+    low = np.minimum.reduce([low, close, open_])
+    return open_, high, low
+
+
+def synthetic_survivor_ohlcv(
+    n: int = 504, *, seed: int = 0, start_date: str = "2015-01-02"
+) -> pd.DataFrame:
+    """A 'name that lived': mild drift + multi-scale oscillation + noise.
+
+    Always-positive close, realistic intrabar ranges, and volume that ebbs and
+    flows with the cycle. Deterministic given *seed*.
+    """
+    rng = np.random.default_rng(seed)
+    t = np.arange(n)
+    drift = rng.uniform(0.0001, 0.0004)
+    cycle = 7 * np.sin(t / 26.0) + 3 * np.sin(t / 8.0)
+    close = 50.0 * np.exp(drift * t) + cycle + np.cumsum(rng.normal(0, 0.15, n))
+    close = np.maximum(close, 5.0)
+    bar_vol = 0.008 + 0.004 * np.abs(np.sin(t / 26.0))
+    open_, high, low = _ohlc_from_close(close, bar_vol, rng)
+    volume = (3e6 + 1e6 * np.cos(t / 26.0) + rng.integers(-3e5, 3e5, n)).astype(float)
+    volume = np.maximum(volume, 1e5)
+    idx = pd.date_range(start_date, periods=n, freq="B")
+    return pd.DataFrame(
+        {"Open": open_, "High": high, "Low": low, "Close": close, "Volume": volume},
+        index=idx,
+    )
+
+
+def synthetic_delisted_ohlcv(
+    n: int = 504, *, seed: int = 0, start_date: str = "2015-01-02"
+) -> pd.DataFrame:
+    """A 'name that died': ~normal, then a sustained decline to pennies.
+
+    Canonical survivorship-injection path (mirrors the `RESEARCH.md` harness): a
+    flat-ish first phase, then a negative-drift, elevated-volatility decline
+    floored near zero, with capitulation volume spikes on big down days.
+    """
+    rng = np.random.default_rng(seed)
+    start = rng.uniform(40.0, 160.0)
+    cut = int(rng.uniform(0.2, 0.5) * n)               # when the decline begins
+    vol_n, vol_d = rng.uniform(0.012, 0.022), rng.uniform(0.03, 0.06)
+    drift_d = -rng.uniform(0.002, 0.005)               # -0.2%..-0.5% / day
+    rets = np.empty(n)
+    rets[:cut] = rng.normal(0.0, vol_n, cut)
+    rets[cut:] = rng.normal(drift_d, vol_d, n - cut)
+    close = np.maximum(start * np.exp(np.cumsum(rets)), 0.20)   # penny floor
+    bar_vol = np.where(np.arange(n) < cut, vol_n, vol_d)
+    open_, high, low = _ohlc_from_close(close, bar_vol, rng)
+    base = rng.uniform(2e6, 8e6)
+    volume = base * (1.0 + 3.0 * np.maximum(0.0, -rets) / (vol_d + 1e-9))
+    idx = pd.date_range(start_date, periods=n, freq="B")
+    return pd.DataFrame(
+        {"Open": open_, "High": high, "Low": low, "Close": close, "Volume": volume},
+        index=idx,
+    )

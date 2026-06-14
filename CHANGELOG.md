@@ -8,6 +8,11 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.9.0` — Provider-agnostic data layer + point-in-time universe (`vpts.data`)
+- **Added** a `DataSource` abstraction with honest `DataSourceCapabilities` (notably `provides_delisted`), a `YFinanceSource` (free, survivor-only) and an offline, deterministic `SyntheticSource` that *can* mint delisted paths, and a capability-aware `SourceRegistry` with priority fallback (`default_registry()`).
+- **Added** `Universe` — point-in-time membership with **delist dates** (`members_asof`, `survivors`/`delisted`, `survivorship_free`) — and `SurvivorshipInjector`, which promotes the `RESEARCH.md` synthetic-delisted generator into the library so any experiment can be re-run "with injection" and an augmented universe in one call.
+- **Why:** the project's documented binding constraint is survivorship-free / point-in-time data. The pipeline was welded to one survivor-only feed; this is the abstraction that lets a delisted-capable source (or the injector) drop in and the rest of the system ask "who was tradable *as of* date *t*?". Fully offline-testable (13 tests, incl. end-to-end injection through the structural harness).
+
 ### `1.8.0` — Anti-overfitting statistics suite (`vpts.stats`)
 - **Added** `vpts.stats`: selection-aware significance tests that sit on top of the CPCV + permutation harness — **Probabilistic** and **Deflated Sharpe Ratio** (Bailey & López de Prado), **minimum track-record length**, **Probability of Backtest Overfitting** via Combinatorial Symmetric CV (Bailey–Borwein–López de Prado–Zhu), the **Harvey–Liu–Zhu** multiple-testing Sharpe haircut (Bonferroni/Holm/BH/BY adjusted p-values), and **Lo's** autocorrelation-corrected annualized Sharpe.
 - **Why:** the harness tells you whether *one* signal clears its shuffled null; these tell you whether a *selected-best* strategy survives the multiplicity and short-sample corrections — the controls that turn the repo's "in-sample 0.94 / OOS 0.49" XGBoost trap into a measured PBO. Prerequisite for an honest edge-hunt.
