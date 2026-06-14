@@ -569,6 +569,18 @@ adjusted, so this is a real-data demonstration that the method runs end-to-end a
 stays honest on real prices — **not** a research-grade backtest. Point `--data` at
 a proper point-in-time CRSP universe to run it for real. The builder is
 `examples/build_real_panel.py`; the source is the FMP price API.
+
+And to be unambiguous, because a null result invites the wrong moral: **this is
+not evidence that markets are unbeatable.** It is evidence that *this* tool, on
+*this* deliberately thin universe, honestly finds nothing — the gate doing its
+job. Markets **are** beatable, and the rest of this volume shows where: not in
+eighteen names timed monthly, but in genuine breadth (the Fundamental Law,
+Chapter 6), in the structural counterparties of §5b, and in the existence proofs
+the survey refuses to explain away — Medallion's three decades of negative-beta
+alpha and Buffett's sixty years. The honest null and the beatable market are the
+same discipline seen twice: the filter that rejects a thin fake is exactly the one
+that clears the path to the rare, real, defended edge. The severity is in service
+of that edge — never a verdict that it does not exist.
 """
 
 CH6_BODY = """
