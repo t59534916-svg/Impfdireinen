@@ -22,7 +22,7 @@
 
 ## 1. The evaluation frame (why most reported accuracy is untrustworthy)
 
-**The ~50% wall and the right baseline.** Out-of-sample directional accuracy for equity direction clusters around 50%, with weak-but-real skill topping out in the low-to-mid 50s. Crucially, raw accuracy must be benchmarked against the **unconditional up-rate (~53–55%)**, not 50%: a constant "always up" predictor already scores ~53–55% on US returns, and boosted trees in honest studies improve on that by only ~2 points [Gu–Kelly–Xiu 2020, *RFS*; multi-market comparative study, *Int. J. Data Science & Analytics* 2025]. **Confidence: high.**
+**The ~50% wall and the right baseline.** Out-of-sample directional accuracy for equity direction clusters around 50%, with weak-but-real skill topping out in the low-to-mid 50s. Crucially, raw accuracy must be benchmarked against the **unconditional up-rate (~53–55%)**, not 50%: a constant "always up" predictor already scores ~53–55% on US returns, and boosted trees in honest studies improve on that by only ~2 points [Gu–Kelly–Xiu 2020, *RFS*; multi-market comparative study, *Int. J. Data Science & Analytics* 2025]. **§7 grounds this band in a structured systematic review of ~24 papers**, whose cleanest direct measurement (Macrosynergy 2023) puts honest daily hit-rates at 50.5–52%. **Confidence: high.**
 
 **Directional accuracy ≠ tradeable edge.** Accuracy and profitability are not monotonically linked once magnitudes and asymmetry enter: ~40% accuracy can be profitable and ~60% can be needed to "guarantee" profit, depending on payoff structure [Gui 2024, arXiv:2407.09831]. The naive random-walk/last-value forecast is "notoriously difficult to surpass," and a directional overlay only beats it once accuracy exceeds ~0.55 [Zhang 2024, arXiv:2406.14469]. **Confidence: medium-high.**
 
@@ -144,7 +144,71 @@ A directional-prediction number is probably untrustworthy if **any** of these ho
 
 ---
 
-## 7. Sources
+## 7. Systematic review — the daily-directional evidence base (2018–2025)
+
+*This section is the chapter's evidentiary backbone: a structured review of ~24 papers (2018–2025) on machine-/deep-learning daily directional prediction of equities and indices, assembled by five parallel extractors (deep-learning, classical/tree ML, hygiene/reproducibility, index-ETF/alt-data, and the 2023–25 frontier). **Method & honesty note:** full-text fetching was unavailable, so figures are extracted from abstracts and search snippets and confidence-flagged (verified / from-abstract / uncertain); this is a **search-grounded review, not full-text adjudication**. The load-bearing figures below were each corroborated across multiple independent snippets; precise decimals on AMBER/RED papers are from-abstract and should be confirmed against the methods sections before being quoted as definitive.*
+
+### 7.1 The headline — the honest-accuracy distribution
+
+The credibly-evaluated results (temporal/walk-forward OOS, cost-aware where stated) cluster in a narrow band, and the cleanest *direct daily* measurements sit at its bottom:
+
+- **Direct daily hit-rate, US equities, balanced accuracy:** logistic 51.99%, GAM 51.35%, random forest 50.51%; naive baselines ~50.0–50.9% — "simple methods outperformed more complex ML" [Macrosynergy/Sueppel 2023]. *The single strongest direct measurement.*
+- **918-experiment controlled DL comparison:** mean directional accuracy **50.08%** — "a fair coin flip" [Saidd 2026, arXiv:2603.16886].
+- **Foundation models, global daily excess returns:** "all just above **51%**" across four windows [Rahimikia–Ni–Wang 2025, arXiv:2511.18578].
+- **S&P 500 LSTM (24-h close-to-close), costs discussed: 53.8%** — the cleanest honest index result [S&P-500 vs Nasdaq-100 LSTM study 2024, *ML with Applications*].
+- **Gold-standard walk-forward + 5 bps costs: ~54%** on S&P 500 constituents — but profits collapse to ≈0 net post-2010 [Fischer–Krauss 2018, *EJOR*].
+
+**So the honest, cost-aware band is ~50.5–54%, with the direct measurements and the most rigorous controlled studies at 50–52%; net of realistic costs the exploitable edge shrinks to ~50.5–52% or vanishes.** Anything above ~54% daily, out-of-sample, after purged CV and costs, is a red flag — not an achievement. This *empirically grounds* the chapter's headline band (§0).
+
+### 7.2 Master table (grouped by hygiene verdict)
+
+**GREEN — credibly evaluated (temporal OOS; near the honest band):**
+
+| Paper (author-year, venue) | Universe & period | Model | Eval & hygiene | Reported OOS acc / IC | Conf. |
+|---|---|---|---|---|---|
+| Macrosynergy / Sueppel (2023) | US equities, daily | logistic, GAM, RF | OOS, **balanced accuracy** (neutralises long-bias) | 50.5–**52%** (best logistic 51.99%) | verified |
+| Saidd (2026), arXiv:2603.16886 | crypto/FX/equity-idx, hourly | 9 archs (PatchTST, ModernTCN, …) | 918 exps, **3-seed**, code released | **50.08%** mean DA | from-abstract |
+| Rahimikia–Ni–Wang (2025), arXiv:2511.18578 | global daily excess returns | time-series foundation models | OOS vs strong benchmarks; finance-native pretraining | **~51%** DA (small-caps marginally higher) | from-abstract |
+| S&P/Nasdaq LSTM (2024), *ML w/ Apps* | S&P 500, Nasdaq-100, daily 1999–2024 | LSTM | walk-forward; **costs flagged** as eroding net | S&P **53.8%** | verified |
+| Gu–Kelly–Xiu (2020), *RFS* | ~30k US stocks, **monthly** 1957–2016 | RF, GBRT, NN | expanding-window OOS | R² ~0.4% (*not* daily DA) | verified |
+| Hewamalage et al. (2023), *DMKD* | methods tutorial | — | mandates persistence baselines | DL "wins" often vanish vs naive | verified |
+
+**AMBER — hygienic design but pre-cost / unconfirmed / narrow:**
+
+| Paper | Universe & period | Model | Eval & hygiene | Reported acc | Conf. |
+|---|---|---|---|---|---|
+| Fischer–Krauss (2018), *EJOR* | S&P 500 const., 1992–2015 | LSTM, RF | walk-forward, 5 bps costs | ~54% (gross; ≈0 net post-2010) | from-abstract |
+| Ghosh–Neufeld–Sahoo (2022), *FRL* | S&P 500 const., 1993–2018 | LSTM, RF | walk-forward, costs acknowledged | LSTM **60.1%** (gross, intraday) | from-abstract |
+| Kamalov et al. (2020), arXiv:2103.14080 | S&P 500 index, daily | CNN | chronological split, no costs | **>55%** | from-abstract |
+| Campisi–Muzzioli–De Baets (2024), *IJF* | S&P 500, daily 2011–22 | RF/bagging/GBM on VIX,VVIX,SKEW,OVX,GVZ | OOS, multi-metric | beats naive (0.3816); best % unconf. | from-abstract |
+| Zhong–Enke (2019), *Financial Innovation* | SPY ETF, daily | DNN+PCA | train/val/test, trading sim | ~56–58% (unconfirmed) | uncertain |
+| NEPSE-XGBoost (2026), arXiv:2601.08896 | Nepal index, daily | XGBoost | walk-forward, "avoids look-ahead" | **65.15%** (single emerging idx, unreviewed) | from-abstract |
+| Deng et al. (2023), *NAJEF* | China indices, daily | XGBoost + investor sentiment | OOS | "best" acc (% unconfirmed) | from-abstract |
+| Heterogeneous-GNN+MARL (2025) | US equities | graph NN | mixed; one aligns news timestamps | **54.62%** | uncertain |
+| FinCast (2025), CIKM | multi-asset | 1B-param TSFM (MoE) | zero-shot | **MSE/MAE only — no DA reported** | from-abstract |
+| Vrontos et al. (2021), *Quant. Finance* | **VIX** direction (adjacent) | ML vs econometric | statistical + economic eval | "enhances" DA (% unconf.) | from-abstract |
+
+**RED — high accuracy traced to a hygiene defect:**
+
+| Paper | Reported acc | The disqualifying defect |
+|---|---|---|
+| Lu et al. (2024), PLSTM-TAL, *Heliyon* | **85–96%** | EMD signal-decomposition fit over the *full series* before split (leakage); no costs, no backtest |
+| López Gil et al. (2024), xLSTM-TS, arXiv:2408.12408 | **72.8%** | wavelet denoising over the full series incl. test data; gains explicitly attributed to it |
+| Basak et al. (2019), *NAJEF* | **85–95%** | overlapping "n-days-ago" labels; 3 single tickers; no costs |
+| Khaidem et al. (2016) *(pre-2018, cautionary)* | **~96%** | the original smoothed/overlapping-label artifact |
+| Ibrahim et al. (2025), quantum-ensemble, arXiv:2512.15738 | **60.14%** | Top-7-of-35 models *selected on the evaluation data*; 4 yrs, 7 instruments; no costs, no deflation |
+| Shi et al. (2025), Kronos, AAAI | "**58–65%**" | hourly **crypto**, blog-sourced (not the peer-reviewed text); backtest omits costs/slippage |
+| GNN-LSTM hybrid (2024) | **67%** | favourable pre-2021 window; no costs; no multiple-testing control; unreplicated |
+
+### 7.3 The niche question — is there a durable >56–58% daily-directional edge?
+
+**No.** No replicated, developed-market, cost-aware, multiple-testing-adjusted study in the corpus demonstrates a sustained **>56–58%** daily directional edge on liquid equities; the credible frontier holds at **~50–55%**, best evidence near 51%. Every apparent exception carries a disqualifier (§7.2 RED). The lone >58% under genuine walk-forward — NEPSE-XGBoost at 65% — is a *single emerging-market index*, an *unreviewed 2026 preprint*, with *costs unconfirmed*, and emerging indices are more autocorrelated and less efficient (so a higher daily directional rate is achievable there and does not transfer to developed large-caps). The only **credible real lift** (still *below* 56%) comes from **options-implied / volatility features** — VIX, VVIX, SKEW, OVX, GVZ beating the naive baseline [Campisi et al. 2024] — i.e. *information*, not sentiment. Sentiment-driven high accuracies are look-ahead-confounded: GPT/news-sentiment "alpha" is inflated by the model's training window overlapping the backtest [Glasserman–Lin 2023].
+
+### 7.4 The systematic gap, and the through-line
+
+**Not one** of the ~24 papers reports a **deflated-Sharpe ratio or a multiple-testing correction.** Even the credible 50–54% figures are uncorrected for the model/feature search behind them, so they are *upper bounds*: the field measures accuracy but does not deflate it. The corpus also replicates the literature's own meta-observation that out-of-sample accuracy "converges to either 50% or 65%" — where the **65% cluster is a leakage signature, not a skill cluster.** This review therefore confirms, on ~24 independent data points, the chapter's central claim: honest daily directional accuracy is ~50–55%, the difference between a believable result and a headline is almost always evaluation hygiene, and the right comparison is the deflated, cost-aware, purged-CV bar — which essentially nothing in the published literature clears.
+
+## 8. Sources
 
 **Realistic accuracy, base rates, accuracy ≠ edge**
 - Cornell, B. (2019), *Medallion Fund: The Ultimate Counterexample?*, Journal of Portfolio Management 46(4):156 — https://jpm.pm-research.com/content/46/4/156 (existence proof: persistent, unexplained alpha with negative factor loadings)
@@ -196,3 +260,26 @@ A directional-prediction number is probably untrustworthy if **any** of these ho
 - Yang, Liu, Zhong & Walid (2020), *Deep RL for Automated Stock Trading: An Ensemble Strategy*, ICAIF — https://openfin.engineering.columbia.edu/sites/default/files/content/publications/ensemble.pdf
 - *Outperforming algorithmic trading RL systems: A supervised approach to the cryptocurrency market*, Expert Systems with Applications (2022) — https://www.sciencedirect.com/science/article/abs/pii/S0957417422006339
 - Zhang, Zohren & Roberts (2019), *Deep Reinforcement Learning for Trading* — https://arxiv.org/abs/1911.10107
+
+**Systematic-review corpus (§7, daily directional prediction 2018–2025)** — *search-grounded extraction; figures from-abstract unless verified.*
+- Fischer & Krauss (2018), *Deep Learning with LSTM for Financial Market Predictions*, EJOR 270(2):654–669 — https://www.sciencedirect.com/science/article/abs/pii/S0377221717310652
+- Ghosh, Neufeld & Sahoo (2022), *Forecasting directional movements… LSTM and random forests*, Finance Research Letters — https://arxiv.org/abs/2004.10178
+- Kamalov, Smail & Gurrib (2020), *Forecasting with Deep Learning: S&P 500 index* — https://arxiv.org/abs/2103.14080
+- Lu et al. (2024), *Enhanced stock-market prediction using PLSTM-TAL*, Heliyon 10(6):e27747 — https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10963254/ *(RED — denoising leakage)*
+- López Gil, Duhamel-Sebline & McCarren (2024), *An Evaluation of DL Models for Stock Market Trend Prediction* (xLSTM-TS) — https://arxiv.org/abs/2408.12408 *(RED — wavelet-denoising leakage)*
+- Basak, Kar, Saha, Khaidem & Dey (2019), *Predicting stock direction using tree-based classifiers*, NAJEF 47:552–567 — https://www.sciencedirect.com/science/article/abs/pii/S106294081730400X *(RED — overlapping labels)*
+- Gu, Kelly & Xiu (2020), *Empirical Asset Pricing via Machine Learning*, RFS 33(5):2223–2273 — https://academic.oup.com/rfs/article/33/5/2223/5758276 *(monthly R², not daily DA)*
+- "XGBoost Forecasting of NEPSE Index… Walk-Forward Validation" (2026) — https://arxiv.org/abs/2601.08896 *(single emerging index, unreviewed)*
+- Deng et al. (2023), *Stock index direction forecasting using explainable XGBoost and investor sentiments*, NAJEF 64 — https://www.sciencedirect.com/science/article/abs/pii/S1062940822001838
+- Zhong & Enke (2019), *Predicting the daily return direction… hybrid ML*, Financial Innovation 5(1):24 — https://jfin-swufe.springeropen.com/articles/10.1186/s40854-019-0138-0
+- Campisi, Muzzioli & De Baets (2024), *…predicting the direction of the US stock market on the basis of volatility indices*, Int. J. Forecasting 40(3):869–880 — https://www.sciencedirect.com/science/article/pii/S0169207023000729
+- "S&P-500 vs Nasdaq-100 price-movement prediction with LSTM" (2024), *ML with Applications* — https://www.sciencedirect.com/science/article/pii/S2666827024000938 *(53.8%, verified)*
+- Vrontos, Galakis & Vrontos (2021), *Implied volatility directional forecasting: a ML approach*, Quantitative Finance 21(10):1687–1706 — https://www.tandfonline.com/doi/full/10.1080/14697688.2021.1905869
+- Glasserman & Lin (2023), *Assessing Look-Ahead Bias in… GPT Sentiment Analysis* — https://arxiv.org/abs/2309.17322
+- Kapoor & Narayanan (2023), *Leakage and the Reproducibility Crisis in ML-based Science*, Patterns 4(9) — https://arxiv.org/abs/2207.07048
+- Hewamalage, Ackermann & Bergmeir (2023), *Forecast Evaluation for Data Scientists*, Data Mining & Knowledge Discovery 37:788–832 — https://arxiv.org/abs/2203.10716
+- Macrosynergy / Sueppel (2023), *Directional predictability of daily equity returns* — https://research.macrosynergy.com/directional-predictability-of-daily-equity-returns/ *(direct daily hit-rates; the strongest single source for the honest band)*
+- Goyal, Welch & Zafirov (2024), *A Comprehensive Look at the Empirical Performance of Equity Premium Prediction*, RFS 37(11):3490 — https://academic.oup.com/rfs/article/37/11/3490/7749383
+- Shi et al. (2025), *Kronos: A Foundation Model for the Language of Financial Markets*, AAAI 2026 — https://arxiv.org/abs/2508.02739 *(RankIC; the "58–65%" is hourly-crypto, blog-sourced)*
+- Zhu et al. (2025), *FinCast*, CIKM 2025 — https://arxiv.org/abs/2508.19609 *(MSE/MAE only — no directional accuracy)*
+- Ibrahim et al. (2025), *Hybrid Quantum-Classical Ensemble for S&P 500 Directional Prediction* — https://arxiv.org/abs/2512.15738 *(RED — model selection on eval data)*
