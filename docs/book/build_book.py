@@ -177,7 +177,7 @@ credulity, not because it is pessimistic — its conclusion is that markets *are
 beatable, rarely and specifically (Chapter 6 supplies the positive theory; Chapter
 7 the synthesis), and the severity is in service of finding where.
 
-- **The thesis in two pages:** the Plain-Language Summary, then the opening of Chapter 6.
+- **The thesis with no mathematics:** Part I, the plain-language Field Guide.
 - **What a price means (theory):** Chapter 2 — assumes comfort with expected
   utility and Itô calculus; its boundary and self-consistency sections need no
   calculus.
@@ -576,6 +576,44 @@ figcaption { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #
   text-transform: uppercase; color: #b8860b; font-weight: 700; }
 .chapter .cabstract { font-style: italic; color: #44505f; margin: 4px 0 8px; }
 .section-body h1 { /* source-level '# Part' headings already styled by h1 */ }
+
+/* part dividers */
+.partdivider { page-break-before: always; page-break-after: always; height: 244mm;
+  display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.partdivider .pnum { font-family: Helvetica, Arial, sans-serif; font-size: 13pt; letter-spacing: .3em;
+  text-transform: uppercase; color: #b8860b; font-weight: 700; margin-bottom: 14px; }
+.partdivider .ptitle { font-size: 27pt; border: none; color: #16263a; line-height: 1.14;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 80%; margin: 0 auto; }
+.partdivider .psub { font-style: italic; color: #55606f; font-size: 12pt; margin: 18px auto 0;
+  max-width: 66%; }
+
+/* toc: two parts with nested chapters */
+.toc li.part { margin-top: 13px; font-weight: 700; border-bottom: 1.5px solid #b8860b; }
+.toc li.part .cnum { color: #1a3a5c; }
+.toc li.ch { margin-left: 22px; }
+
+/* field guide (Part I) — plain-language layout + call-out boxes */
+.fieldguide h2 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #16263a;
+  font-size: 14.5pt; margin: 1.5em 0 0.4em; padding-bottom: 3px; border-bottom: 2px solid #d8a93a;
+  page-break-before: always; page-break-after: avoid; }
+.fieldguide h2:first-of-type { page-break-before: avoid; }
+.fieldguide p { text-align: left; font-size: 10.8pt; line-height: 1.55; }
+.fieldguide .lead { font-style: italic; color: #44505f; border-left: 3px solid #b8860b;
+  padding: 2px 14px; background: #fbf8f0; }
+.fieldguide .transition { color: #6a4a00; }
+.fieldguide hr { display: none; }
+aside.insert { background: #eef4fb; border: 1px solid #cfe0f2; border-left: 4px solid #2e6e9e;
+  border-radius: 6px; padding: 8px 13px; margin: 12px 0; font-size: 9.9pt; line-height: 1.5;
+  page-break-inside: avoid; }
+aside.insert p { margin: 0; text-align: left; }
+aside.insert strong:first-child { color: #1a5f9e; }
+aside.metaphor { background: #fdf4e3; border: 1px solid #ecd9ad; border-left: 4px solid #b8860b;
+  border-radius: 6px; padding: 8px 13px; margin: 12px 0; font-size: 10.1pt; line-height: 1.5;
+  font-style: italic; page-break-inside: avoid; }
+aside.metaphor p { margin: 0; text-align: left; }
+aside.metaphor strong:first-child { color: #8a6500; font-style: normal; }
+figure.fg { margin: 14px auto; text-align: center; page-break-inside: avoid; }
+figure.fg img { max-width: 88%; border: 1px solid #e2e8f0; border-radius: 5px; }
 """
 
 
@@ -587,9 +625,10 @@ def build():
     <section class="cover">
       <div class="rule"></div>
       <h1>Asset Pricing, Time Series,<br/>and the Limits of Prediction</h1>
-      <div class="sub">A scientific compendium of one research session — from
-        general-equilibrium theory to tested, dependency-free code</div>
+      <div class="sub">A scientific compendium of one research session — opening with a
+        plain-language field guide, then the full theory, the evidence, and tested code</div>
       <ul>
+        <li>Part I — a plain-language field guide: the whole argument, no mathematics</li>
         <li>A four-level model of a market and its participants</li>
         <li>The mathematics of analysing financial time series</li>
         <li>A SWOT of AI architectures for directional forecasting</li>
@@ -602,24 +641,49 @@ def build():
       </div>
     </section>"""
 
-    # front matter (plain-language summary + preface + reader's guide)
-    primer = re.sub(r"^#\s+.*\n", "", (DOCS / "PRIMER.md").read_text(), count=1)
-    summary = f'<section class="frontmatter"><h1>Plain-Language Summary</h1>{md_to_html(primer)}</section>'
+    # front matter (preface + reader's guide)
     front = f'<section class="frontmatter"><h1>Preface</h1>{md_to_html(PREFACE)}</section>'
     guide = f'<section class="frontmatter"><h1>Reader’s Guide</h1>{md_to_html(READER_GUIDE)}</section>'
 
-    # toc
-    toc_items = "".join(
-        f'<li><span class="cnum">{c["num"]}</span>'
+    # toc — two parts, chapters nested under Part II
+    toc_items = [
+        '<li class="part"><span class="cnum">I</span>'
+        '<a href="#partI">The Short Road — A Plain-Language Field Guide</a></li>',
+        '<li class="part"><span class="cnum">II</span>'
+        '<a href="#partII">The Full Compendium</a></li>']
+    toc_items += [
+        f'<li class="ch"><span class="cnum">{c["num"]}</span>'
         f'<a href="#{c["id"]}">{c["title"]}</a>'
-        f'<span class="cabs">{c["abstract"]}</span></li>'
-        for c in CHAPTERS)
-    toc_items += ('<li><span class="cnum">A</span>'
-                  '<a href="#appendix">Appendix — Methodology, Tooling, and a Caught Leak</a></li>')
-    toc = f'<section class="toc"><h1>Contents</h1><ol>{toc_items}</ol></section>'
+        f'<span class="cabs">{c["abstract"]}</span></li>' for c in CHAPTERS]
+    toc_items.append('<li class="ch"><span class="cnum">A</span>'
+                     '<a href="#appendix">Appendix — Methodology, Tooling, and a Caught Leak</a></li>')
+    toc = f'<section class="toc"><h1>Contents</h1><ol>{"".join(toc_items)}</ol></section>'
+
+    # Part I — the Field Guide, rendered inline (figures + call-out boxes)
+    fg = re.sub(r"^#\s+.*\n", "", (DOCS / "FIELD_GUIDE.md").read_text(), count=1)
+    fg = re.sub(r"^###\s+.*\n", "", fg, count=1)
+    fg = fg.replace("](book/img/", f"](file://{IMG}/")
+    fgb = md_to_html(fg)
+    fgb = fgb.replace("<em>Where this leads:</em>", '<em class="transition">Where this leads:</em>')
+    fgb = fgb.replace("<em>This is the keystone", '<em class="transition">This is the keystone')
+    fgb = re.sub(r'<p>\s*<img\b[^>]*?alt="(.*?)"[^>]*?src="(.*?)"[^>]*?/?>\s*</p>',
+                 r'<figure class="fg"><img src="\2"/><figcaption>\1</figcaption></figure>', fgb)
+    fgb = fgb.replace("<p><em>The full compendium proves",
+                      '<p class="lead"><em>The full compendium proves', 1)
+    part1_divider = ('<section class="partdivider" id="partI"><div class="pnum">Part I</div>'
+                     '<div class="ptitle">The Short Road</div>'
+                     '<div class="psub">A plain-language field guide — the whole argument in six '
+                     'stepping-stones, with metaphors, plain-word inserts, and the load-bearing figures. '
+                     'No derivations; just the path.</div></section>')
+    fieldguide = part1_divider + f'<div class="fieldguide">{fgb}</div>'
+    part2_divider = ('<section class="partdivider" id="partII"><div class="pnum">Part II</div>'
+                     '<div class="ptitle">The Full Compendium</div>'
+                     '<div class="psub">The same argument proved in detail — general-equilibrium theory, '
+                     'the mathematics of time series, the AI survey, the implemented model, and the '
+                     'positive theory of edge.</div></section>')
 
     # chapters
-    parts = [cover, summary, front, guide, toc]
+    parts = [cover, front, guide, toc, fieldguide, part2_divider]
     for c in CHAPTERS:
         if c["src"]:
             text = c["src"].read_text()
