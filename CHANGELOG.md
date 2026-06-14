@@ -8,6 +8,10 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.10.0` — Multi-timeframe behavioral-dynamics features (`vpts.features`)
+- **Added** `vpts.features`: causal behavioral proxies — participation surge (RVOL), absorption (effort-without-result), liquidity grabs (stop-runs), accumulation/distribution pressure and its acceleration (conviction shift), FOMO extension/thrust, wick rejection asymmetry, and coil-to-expansion trend emergence — each computed at multiple horizons. `build_behavioral_dataset` emits a `FactorDataset` straight into the CPCV + permutation + survivorship harness; `multi_timeframe_feature` adds look-ahead-safe calendar resampling.
+- **Honest scope:** these are *hypotheses*, not validated edges — `RESEARCH.md` already found single-timeframe richness didn't beat the wall. They are wired to be judged by the harness, with negatives reported. The load-bearing test is **truncation invariance** (a feature at bar *t* is identical with or without future bars), proving no look-ahead for the whole set at once.
+
 ### `1.9.0` — Provider-agnostic data layer + point-in-time universe (`vpts.data`)
 - **Added** a `DataSource` abstraction with honest `DataSourceCapabilities` (notably `provides_delisted`), a `YFinanceSource` (free, survivor-only) and an offline, deterministic `SyntheticSource` that *can* mint delisted paths, and a capability-aware `SourceRegistry` with priority fallback (`default_registry()`).
 - **Added** `Universe` — point-in-time membership with **delist dates** (`members_asof`, `survivors`/`delisted`, `survivorship_free`) — and `SurvivorshipInjector`, which promotes the `RESEARCH.md` synthetic-delisted generator into the library so any experiment can be re-run "with injection" and an augmented universe in one call.

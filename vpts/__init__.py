@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.9.0"  # + pluggable data sources, point-in-time universe, survivorship injector
+__version__ = "1.10.0"  # + vpts.features: multi-timeframe behavioral dynamics
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (
@@ -106,6 +106,12 @@ from vpts.stats import (
     probabilistic_sharpe_ratio,
     probability_of_backtest_overfitting,
     sharpe_ratio,
+)
+from vpts.features import (
+    BEHAVIORAL_FEATURES,
+    BehavioralConfig,
+    behavioral_feature_frame,
+    build_behavioral_dataset,
 )
 
 __all__ = [
@@ -199,4 +205,9 @@ __all__ = [
     "MinTRLResult",
     "PBOResult",
     "HaircutResult",
+    # features (multi-timeframe behavioral dynamics)
+    "BEHAVIORAL_FEATURES",
+    "BehavioralConfig",
+    "behavioral_feature_frame",
+    "build_behavioral_dataset",
 ]
