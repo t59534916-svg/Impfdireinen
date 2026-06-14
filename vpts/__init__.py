@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.10.0"  # + vpts.features: multi-timeframe behavioral dynamics
+__version__ = "1.11.0"  # + vpts.insight: LLM explanation layer with honesty guardrails
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (
@@ -112,6 +112,14 @@ from vpts.features import (
     BehavioralConfig,
     behavioral_feature_frame,
     build_behavioral_dataset,
+)
+from vpts.insight import (
+    AnthropicClient,
+    Evidence,
+    Insight,
+    InsightGenerator,
+    MockLLMClient,
+    Verdict,
 )
 
 __all__ = [
@@ -210,4 +218,11 @@ __all__ = [
     "BehavioralConfig",
     "behavioral_feature_frame",
     "build_behavioral_dataset",
+    # insight (LLM explanation layer with honesty guardrails)
+    "InsightGenerator",
+    "Evidence",
+    "Insight",
+    "Verdict",
+    "AnthropicClient",
+    "MockLLMClient",
 ]

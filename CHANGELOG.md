@@ -8,6 +8,10 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.11.0` — LLM insight layer that cannot fabricate an edge (`vpts.insight`)
+- **Added** `vpts.insight`: turns validated harness statistics into a human-readable behavioral-finance explanation via Claude (`AnthropicClient`, default `claude-opus-4-8`) — with a structural honesty guarantee rather than a trust-the-model hope. The **verdict** (no-edge / survivorship-fragile / overfit / weak / validated) is computed *in code* (`assess`) from the same bars as `RESEARCH.md`; the LLM only narrates it; the output is **scanned** for edge-claims the verdict forbids (`scan_for_overclaims`) and corrected if it overclaims; with no client (or on failure) a faithful, non-overclaiming **template** is rendered, so the layer is fully offline-capable.
+- **Added** the optional `llm` extra (`pip install vpts[llm]`). 16 tests, all offline (incl. an adversarial mock model that *tries* to claim a tradeable edge and is caught + corrected).
+
 ### `1.10.0` — Multi-timeframe behavioral-dynamics features (`vpts.features`)
 - **Added** `vpts.features`: causal behavioral proxies — participation surge (RVOL), absorption (effort-without-result), liquidity grabs (stop-runs), accumulation/distribution pressure and its acceleration (conviction shift), FOMO extension/thrust, wick rejection asymmetry, and coil-to-expansion trend emergence — each computed at multiple horizons. `build_behavioral_dataset` emits a `FactorDataset` straight into the CPCV + permutation + survivorship harness; `multi_timeframe_feature` adds look-ahead-safe calendar resampling.
 - **Honest scope:** these are *hypotheses*, not validated edges — `RESEARCH.md` already found single-timeframe richness didn't beat the wall. They are wired to be judged by the harness, with negatives reported. The load-bearing test is **truncation invariance** (a feature at bar *t* is identical with or without future bars), proving no look-ahead for the whole set at once.
