@@ -99,7 +99,7 @@ $$\text{your overall edge} \;=\; (\text{skill per bet}) \times \sqrt{\text{numbe
 </aside>
 
 <aside class="insert" markdown="1">
-**By the numbers — a tiny edge, with and without real breadth.** Take a skill so small it is a *hair* above a coin: a 52.5% hit rate, which is a "skill" (information coefficient) of about **0.05**. Your overall edge — the information ratio — is that skill times the square root of the number of **independent** bets:
+**By the numbers — a tiny edge, with and without real breadth.** Take a skill so small it is a *hair* above a coin: a cross-sectional "skill score" (the *information coefficient*) of about **0.05** — about as small as a 52.5% hit rate, though the two are measured differently and the full book is careful not to mix them (Step 6's law uses the skill score, not the hit rate). Your overall edge — the information ratio — is that skill times the square root of the number of **independent** bets:
 
 | What you actually have | Independent bets that count | Overall edge (information ratio) |
 |---|---|---|
