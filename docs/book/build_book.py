@@ -338,7 +338,7 @@ CHAPTERS = [
                   figure("fig4_bias_variance.png", "4.2",
                          "On a low-SNR target the irreducible-noise floor is high, so the variance term dominates and the optimal model is simple — why bigger models lose.", "inline"))]),
     dict(id="ch5", num="5", title="From Theory to Code — the Model and the Significance Gate",
-         abstract="The defensible recipe as dependency-free, unit-tested code, with a live demonstration.",
+         abstract="The defensible recipe as dependency-free, unit-tested code, with a live demonstration and a realistic-scale, cost-aware, point-in-time validation.",
          lead=("fig6_gbrt_demo.png", "5.1",
                "The implemented recipe on synthetic data: with a planted signal it is found; with none, the OOS IC, the directional edge, and the deflated Sharpe all collapse."),
          body="CH5", src=None, strip_title=False, inline=[]),
@@ -411,6 +411,81 @@ point: an earlier in-sample version let the null falsely pass.
 | Directional accuracy | 63.6% (up-rate 50.5%) | 50.1% (up-rate 50.0%) |
 | Edge over baseline | +13.1 pp | +0.1 pp |
 | Deflated Sharpe | 1.000 — significant | 0.000 — not significant |
+
+## 5.x — Real-world-scale validation, with costs, capacity, and regimes
+
+The demonstration above proves the *plumbing* — the gate finds a planted signal
+and clears a null. It does not prove the recipe survives realistic scale and
+realistic frictions. A heavier companion (`examples/gbrt_realistic_validation.py`)
+runs the identical recipe on a point-in-time-style universe of ≈500 names
+(names list and delist, so there is no survivorship), 2010–2024, monthly
+rebalanced, with a market-plus-style factor structure, volatility regimes (a
+2020 COVID-scale spike and an elevated 2022), and a deliberately **weak,
+decaying** cross-sectional alpha calibrated to the ≈0.02–0.03 monthly rank-IC
+the peer-reviewed literature (Gu–Kelly–Xiu) reports as the realistic ceiling.
+Per-trade costs (a bps sweep), per-name and ADV-based capacity caps, and turnover
+are all charged; the economic P&L runs as a time-ordered, rolling-refit
+walk-forward, the CPCV block as the significance/robustness check.
+
+**An honest data caveat, stated up front.** True CRSP / point-in-time data is
+paywalled and unreachable from the build environment, so the panel is a realistic
+**simulation** calibrated to documented stylized facts — *not* real returns. The
+script is data-agnostic: `--data PANEL.parquet` runs the identical analysis on a
+real panel. What follows is therefore a demonstration of *the method's behaviour
+under realistic conditions*, not an empirical claim about live markets.
+
+*Does the gate separate a real (small) edge from a dead panel?* Yes — and note
+how small "real" is.
+
+| Out-of-sample metric | Signal panel | Null panel |
+|---|---|---|
+| CPCV rank-IC (mean, 925 test dates) | **+0.021** (σ 0.068, 65% dates > 0) | +0.003 (51% > 0) |
+| Directional accuracy vs up-rate | 50.7% vs 50.6% (**+0.1 pp**) | 50.1% vs 50.5% (−0.5 pp) |
+| Deflated Sharpe on the OOS IC stream (50 trials) | **1.00 — significant** | 0.02 — not |
+| GBRT importance on the two alpha features | 0.19 / 0.15 (noise ≈ 0.11) | 0.12 / 0.13 (flat) |
+| Importance rank-stability across folds | +0.54 | +0.12 |
+
+The cross-sectional IC is *reliably positive but tiny*, and directional accuracy
+sits **at the up-rate** — the "accuracy ≠ edge" point of Chapters 4 and 6, now a
+live measurement: a genuine cross-sectional signal leaves the coin-flip
+directional number essentially untouched.
+
+*Does it survive costs?* Barely, and that is the realistic part. The time-ordered
+L/S book turns over ≈72% (one-way) per rebalance:
+
+| Cost (bps/trade) | Annualized net return | Net Sharpe (ann.) | Deflated Sharpe |
+|---|---|---|---|
+| 0.05 | +1.6% | 1.26 | 1.00 |
+| 0.50 | +1.5% | 1.20 | 1.00 |
+| 5.00 | +0.7% | 0.59 | **0.75 — fails the bar** |
+
+At the user-optimistic 0.05–0.5 bps the edge clears; at a *still-conservative*
+≈5 bps all-in (real equity round-trips with impact are often higher) the net
+Sharpe halves and the deflated Sharpe drops below 0.95. The edge is real and
+fragile to frictions at the same time.
+
+*Baselines, regimes, decay (signal panel, 0.5 bps).*
+
+| Strategy | Net Sharpe (ann.) | Deflated Sharpe | avg IC |
+|---|---|---|---|
+| GBRT long/short | 1.20 | 1.00 | +0.019 |
+| single-factor momentum | **1.59** | 1.00 | +0.028 |
+| always-long | −0.13 | 0.03 | — |
+| shuffled null | 0.13 | 0.17 | −0.001 |
+
+A one-factor baseline **beats** the GBRT, because the planted signal is
+near-linear: *more model is not the lever* — exactly Chapter 4's verdict, here
+self-inflicted and honestly reported. The edge is concentrated **pre-2020**
+(Sharpe 1.64, IC +0.028) versus 2020-onward (Sharpe 0.64, IC +0.006), and it
+**decays monotonically** across the out-of-sample timeline — IC +0.029 → +0.021 →
++0.006 and Sharpe 2.10 → 1.01 → 0.54 over the three thirds — the McLean–Pontiff
+signature reproduced in a controlled panel (with `--no-decay` the IC is flat).
+On the `--null` panel every number collapses: net Sharpe −0.1 to −0.7, deflated
+Sharpe ≈ 0, importances flat.
+
+This is what a *passing-but-honest* result looks like: real, small, fragile to
+costs, beaten by a simpler model when the truth is linear, regime-dependent, and
+perishable — the thin right tail of Chapters 6 and 7, not a refutation of it.
 """
 
 CH6_BODY = """
