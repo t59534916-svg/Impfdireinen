@@ -40,6 +40,8 @@ The hidden "fear-weighting" inside prices has a name: the *pricing kernel*. The 
 
 *Where this leads:* if prices won't hand you the market's beliefs, perhaps raw data and machine learning can predict the future directly. How well do they actually do? That is Step 3.
 
+![Figure 2 — A price is the real-world odds *multiplied by* a fear-weighting (high for outcomes you dread). You only ever see the right-hand panel — the product — so you can never recover the two factors separately.](book/img/fig14_belief_fear.png)
+
 ---
 
 ## Step 3 — Predicting direction is almost a coin toss
@@ -56,7 +58,7 @@ Measured honestly, forecasting tomorrow's up-or-down is right about **51–53%**
 
 *Where this leads:* 53% sounds useless — and yet published strategies routinely claim 70%, 90%, even higher. Are those real? That is Step 4.
 
-![Figure 2 — Honest out-of-sample directional accuracy by model family. Every family — simple linear, gradient-boosted trees, deep learning, foundation models — clusters near the coin-flip line, and the real bar is the ~53% up-rate, not 50%.](book/img/fig3_directional_accuracy.png)
+![Figure 3 — Honest out-of-sample directional accuracy by model family. Every family — simple linear, gradient-boosted trees, deep learning, foundation models — clusters near the coin-flip line, and the real bar is the ~53% up-rate, not 50%.](book/img/fig3_directional_accuracy.png)
 
 ---
 
@@ -78,7 +80,7 @@ A strategy that looks brilliant on historical data is usually fooling you. There
 
 *Where this leads:* if genuine edges are tiny and most claims are fake, is the market simply unbeatable? No — and here the whole story turns. That is Step 5.
 
-![Figure 3 — The same recipe on data with a planted signal (it is found) and on pure noise (it collapses). The significance gate run on unseen data is what makes the difference between a real result and a flattering illusion.](book/img/fig6_gbrt_demo.png)
+![Figure 4 — The same overfit strategy, before and after the line where the backtest ends and live trading begins. It soars on the data it was tuned to (green) and dies on data it has never seen (red). This is what "the backtest lied" looks like.](book/img/fig12_insample_oos.png)
 
 ---
 
@@ -96,7 +98,7 @@ $$\text{your overall edge} \;=\; (\text{skill per bet}) \times \sqrt{\text{numbe
 **In plain words — "breadth" and the "information ratio."** *Breadth* is how many genuinely **independent** bets you make. The *information ratio* is your return per unit of risk — the scorecard of skill. The law says that even a near-coin-flip skill, spread across enough independent bets, becomes excellent: a skill of 0.05 (about a 52–53% hit rate) times the square root of 1,000 bets gives an information ratio near 1.6 — institutional-grade. A tiny edge × huge breadth, levered and defended, *is* Renaissance's Medallion fund: roughly 39% a year, after fees, for thirty years.
 </aside>
 
-![Figure 4 — The reconciliation. The "coin-flip" edge that looked hopeless in Step 3 becomes a great fund once multiplied by breadth. The pessimistic fact and the optimistic fact are the same fact at two different scales.](book/img/fig10_fundamental_law.png)
+![Figure 5 — The casino made concrete. Left: many gamblers with the same tiny 53% edge — on a few bets they scatter and some lose, but across thousands of independent bets they fan into reliable profit. Right: the share of them in profit climbs from a coin-flip toward certainty as the number of bets grows. A small edge and large breadth is the whole game.](book/img/fig11_lln_convergence.png)
 
 *This is the keystone of the whole book:* the gloomy "it's just a coin flip" and the hopeful "you can get rich" are **the same fact seen at two scales**. The catch — which is Step 6 — is that independent bets are scarce, edges have limited size, and they fade with time.
 
@@ -125,6 +127,8 @@ Most people, most methods, most of the time, lose. A few — in specific niches,
 <aside class="metaphor" markdown="1">
 **Picture it — the gold rush.** Most who rush in pan nothing but mud; a few who know the right creek, stake the claim first, and dig before the crowd arrives strike it rich. The relentless skepticism of this book is the assayer at the door — the one who tells fool's gold from the real thing, so that you do not spend your life mining mud.
 </aside>
+
+![Figure 6 — The attrition funnel. Of a thousand strategies that look good in a backtest, only a handful survive honest out-of-sample testing, realistic costs, and a correction for how many were tried — and fewer still have a real reason to work. The severity is what keeps you out of the part that was only ever luck.](book/img/fig13_edge_funnel.png)
 
 <aside class="insert" markdown="1">
 **Your one-page checklist for a real edge.** (1) A nameable *reason* you should win — information, speed, structure, or a behaviour you don't share. (2) A *counterparty* structurally willing to lose. (3) *Breadth* — many genuinely independent bets. (4) Don't let *costs and constraints* strangle the signal. (5) Respect *capacity and decay* — harvest before it fades. (6) *Size* with discipline; even a real edge, over-bet, ruins you. (7) A *moat* so it can't be instantly copied. (8) And only then: prove it survives honest, out-of-sample, cost-aware testing before trusting a cent to it.

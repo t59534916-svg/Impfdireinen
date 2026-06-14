@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Polygon
 
 OUT = Path(__file__).resolve().parent / "img"
 OUT.mkdir(exist_ok=True)
@@ -302,6 +302,103 @@ def fig_fundamental_law():
     _save(fig, "fig10_fundamental_law.png")
 
 
+def fig_belief_fear():
+    x = np.linspace(60, 140, 500)
+    fP = np.exp(-0.5 * ((x - 103) / 11) ** 2); fP /= np.trapezoid(fP, x)
+    m = np.exp(-0.045 * (x - 100))
+    fQ = fP * m; fQ /= np.trapezoid(fQ, x)
+    fig, axes = plt.subplots(1, 3, figsize=(9.6, 3.2))
+    a, b, c = axes
+    a.fill_between(x, fP, color=NAVY, alpha=0.7); a.set_title("what will happen\n(real-world odds)", fontsize=10)
+    b.plot(x, m, color=GOLD, lw=2.4); b.set_title("how much you'd care\n(fear / marginal utility)", fontsize=10)
+    c.fill_between(x, fQ, color=MAROON, alpha=0.7); c.set_title("the PRICE\n(what you actually see)", fontsize=10)
+    for ax in axes:
+        ax.set_yticks([]); ax.set_xticks([])
+        ax.spines[["top", "right"]].set_visible(False)
+    fig.text(0.347, 0.5, "×", fontsize=30, ha="center", va="center", color="#333")
+    fig.text(0.655, 0.5, "=", fontsize=30, ha="center", va="center", color="#333")
+    fig.suptitle("A price is belief × fear — and you only ever see the right-hand panel",
+                 fontsize=11.5, weight="bold", y=1.02)
+    fig.text(0.5, -0.04, "You cannot run it backwards: from the price alone you cannot recover the odds and the fear separately.",
+             ha="center", fontsize=8.8, style="italic", color="#55606f")
+    _save(fig, "fig14_belief_fear.png")
+
+
+def fig_lln_convergence():
+    rng = np.random.default_rng(7)
+    N = 2000
+    edge = 0.06                                  # per even-money bet at a 53% win rate
+    fig, (ax, axr) = plt.subplots(1, 2, figsize=(9.4, 4.0), gridspec_kw={"width_ratios": [2.1, 1]})
+    xN = np.arange(1, N + 1)
+    for _ in range(28):
+        bets = np.where(rng.random(N) < 0.53, 1.0, -1.0)
+        ax.plot(xN, np.cumsum(bets), color=NAVY, lw=0.7, alpha=0.25)
+    ax.plot(xN, edge * xN, color=MAROON, lw=2.6, label="expected profit (0.06 / bet)")
+    ax.axhline(0, color=GREY, lw=1, ls=":")
+    ax.set_xlabel("number of independent bets"); ax.set_ylabel("cumulative profit (units)")
+    ax.set_title("A 53% edge: a coin flip on one bet — near-certain profit on many")
+    ax.legend(fontsize=8.6, loc="upper left")
+    from scipy.stats import norm
+    Ns = np.array([1, 10, 100, 1000, 5000])
+    p = norm.cdf(edge * np.sqrt(Ns)) * 100
+    axr.bar(range(len(Ns)), p, color=GREEN, alpha=0.85)
+    axr.axhline(50, color=GREY, ls=":", lw=1)
+    axr.set_xticks(range(len(Ns))); axr.set_xticklabels([str(n) for n in Ns], fontsize=8)
+    axr.set_ylim(40, 102); axr.set_ylabel("% of bettors in profit")
+    axr.set_xlabel("after N bets"); axr.set_title("breadth → certainty", fontsize=10)
+    for i, pp in enumerate(p):
+        axr.text(i, pp + 1, f"{pp:.0f}%", ha="center", fontsize=7.6)
+    _save(fig, "fig11_lln_convergence.png")
+
+
+def fig_insample_oos():
+    rng = np.random.default_rng(11)
+    n_in, n_oos, n_feat = 250, 250, 30
+    Xin = rng.standard_normal((n_in, n_feat)); rin = rng.standard_normal(n_in)
+    w = np.linalg.lstsq(Xin, rin, rcond=None)[0]            # overfit to in-sample noise
+    pnl_in = np.cumsum(np.sign(Xin @ w) * rin)
+    Xoos = rng.standard_normal((n_oos, n_feat)); roos = rng.standard_normal(n_oos)
+    pnl_oos = np.cumsum(np.sign(Xoos @ w) * roos - 0.12)    # fresh data + small costs
+    fig, ax = plt.subplots(figsize=(7.6, 4.0))
+    ax.plot(range(n_in), pnl_in, color=GREEN, lw=2.2, label="in-sample — the backtest you see")
+    ax.plot(range(n_in, n_in + n_oos), pnl_in[-1] + pnl_oos, color=MAROON, lw=2.2,
+            label="out-of-sample — what happens live")
+    ax.axvline(n_in, color=GREY, ls="--", lw=1.3)
+    ax.text(n_in, ax.get_ylim()[1], "  backtest ends · live begins", fontsize=8.2, color="#555", va="top")
+    ax.axhline(0, color=GREY, lw=0.8, ls=":")
+    ax.set_xlabel("time (bars)"); ax.set_ylabel("cumulative profit")
+    ax.set_title("The same overfit strategy: brilliant in-sample, dead out-of-sample")
+    ax.legend(fontsize=8.6, loc="upper left")
+    _save(fig, "fig12_insample_oos.png")
+
+
+def fig_edge_funnel():
+    widths = [1.0, 0.62, 0.36, 0.20, 0.12]
+    labels = ["1,000 strategies backtested",
+              "survive purged cross-validation",
+              "survive realistic trading costs",
+              "clear multiple-testing  (t > 3 / deflated Sharpe)",
+              "have a real source + a moat  —  often none at all"]
+    counts = ["1,000", "≈ 120", "≈ 35", "≈ 4", "1"]
+    cols = [NAVY, "#2e5e84", "#6a5577", MAROON, "#7a1f1f"]
+    fig, ax = plt.subplots(figsize=(7.8, 4.7)); ax.axis("off")
+    h, gap, ytop = 0.165, 0.022, 1.0
+    for i in range(len(widths)):
+        y1 = ytop - i * (h + gap); y0 = y1 - h
+        wt, wb = widths[i], widths[i + 1] if i + 1 < len(widths) else widths[i] * 0.7
+        poly = Polygon([(0.5 - wt / 2, y1), (0.5 + wt / 2, y1),
+                        (0.5 + wb / 2, y0), (0.5 - wb / 2, y0)],
+                       closed=True, fc=cols[i], ec="white", lw=1.6, alpha=0.92)
+        ax.add_patch(poly)
+        ax.text(0.5, (y0 + y1) / 2, counts[i], ha="center", va="center",
+                color="white", fontsize=11.5, weight="bold")
+        ax.text(1.06, (y0 + y1) / 2, labels[i], ha="left", va="center", fontsize=8.7)
+    ax.set_xlim(0, 2.05); ax.set_ylim(-0.02, 1.06)
+    ax.set_title("The attrition funnel — almost nothing survives the honest gate",
+                 fontsize=12, weight="bold")
+    _save(fig, "fig13_edge_funnel.png")
+
+
 if __name__ == "__main__":
     fig_pq_wedge()
     fig_pricing_kernel()
@@ -313,4 +410,8 @@ if __name__ == "__main__":
     fig_gbm_vs_jump()
     fig_session_map()
     fig_fundamental_law()
+    fig_belief_fear()
+    fig_lln_convergence()
+    fig_insample_oos()
+    fig_edge_funnel()
     print("all figures written to", OUT)
