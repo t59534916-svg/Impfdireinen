@@ -250,14 +250,20 @@ def cpcv_block(P: Panel, gbrt_kw: dict, n_trials: int) -> dict:
             rho = spearmanr(pred, real).correlation
             if rho is not None and np.isfinite(rho):
                 oos_ic.append(float(rho))
-            correct += int(np.sum((pred > np.median(pred)) == (real > 0)))
+            # CROSS-SECTIONAL hit rate: did the model sort the name into the correct
+            # *within-date* half? The null is 50% BY CONSTRUCTION — a dollar-neutral
+            # book removes market drift, so the unconditional up-rate is NOT the
+            # baseline here (that is the baseline only for an absolute, long-only,
+            # single-name up/down call). Comparing a cross-sectional split to the
+            # absolute return sign and benchmarking on the up-rate conflates the two.
+            correct += int(np.sum((pred > np.median(pred)) == (real > np.median(real))))
             total += int(real.size)
             up += int(np.sum(real > 0))
     ic = np.array(oos_ic)
     imp = np.vstack(importances)                       # (folds, features)
-    up_rate = up / total
-    dir_acc = correct / total
-    majority = max(up_rate, 1 - up_rate)
+    up_rate = up / total                               # unconditional up-rate (context only)
+    dir_acc = correct / total                          # cross-sectional hit rate
+    majority = 0.50                                     # correct null for a dollar-neutral XS model
     dsr = deflated_sharpe_ratio(ic, n_trials=n_trials, sr_std=0.05)
     # importance stability: per-feature mean/std + mean pairwise Spearman of fold rankings
     rank_corrs = [spearmanr(imp[a], imp[b]).correlation
@@ -437,8 +443,11 @@ def main() -> None:
     cp = cpcv_block(P, gbrt_kw, args.n_trials)
     print(f"  OOS rank-IC    : mean {cp['ic_mean']:+.3f}  median {cp['ic_median']:+.3f}  "
           f"σ {cp['ic_std']:.3f}  ({cp['pct_pos']:.0f}% dates >0, {cp['n_dates_oos']} OOS dates)")
-    print(f"  Dir. accuracy  : {cp['dir_acc']*100:.1f}%  vs up-rate {cp['up_rate']*100:.1f}% / "
-          f"majority {cp['majority']*100:.1f}%  -> edge {cp['edge_pp']:+.2f}pp")
+    print(f"  XS hit rate    : {cp['dir_acc']*100:.1f}%  vs the **50%** cross-sectional null "
+          f"-> edge {cp['edge_pp']:+.2f}pp")
+    print(f"     (the unconditional up-rate is {cp['up_rate']*100:.1f}%, but that is the baseline "
+          f"only for an ABSOLUTE long-only call;\n      this book is dollar-neutral, so drift is "
+          f"removed and 50% is the correct null.)")
     print(f"  PSR vs 0       : {cp['psr']:.3f}     Deflated SR ({args.n_trials} trials): "
           f"{cp['dsr']:.3f}  -> {'SIGNIFICANT' if cp['dsr_sig'] else 'not significant'}")
     print(f"  Importance     : " + ", ".join(

@@ -481,15 +481,19 @@ how small "real" is.
 | Out-of-sample metric | Signal panel | Null panel |
 |---|---|---|
 | CPCV rank-IC (mean, 925 test dates) | **+0.021** (σ 0.068, 65% dates > 0) | +0.003 (51% > 0) |
-| Directional accuracy vs up-rate | 50.7% vs 50.6% (**+0.1 pp**) | 50.1% vs 50.5% (−0.5 pp) |
+| Cross-sectional hit rate vs the **50% null** | 50.8% (**+0.8 pp**) | 50.0% (−0.0 pp) |
 | Deflated Sharpe on the OOS IC stream (50 trials) | **1.00 — significant** | 0.02 — not |
 | GBRT importance on the two alpha features | 0.19 / 0.15 (noise ≈ 0.11) | 0.12 / 0.13 (flat) |
 | Importance rank-stability across folds | +0.54 | +0.12 |
 
-The cross-sectional IC is *reliably positive but tiny*, and directional accuracy
-sits **at the up-rate** — the "accuracy ≠ edge" point of Chapters 4 and 6, now a
-live measurement: a genuine cross-sectional signal leaves the coin-flip
-directional number essentially untouched.
+The cross-sectional IC is *reliably positive but tiny*, and the cross-sectional
+hit rate beats its **correct 50% null** by less than a point (+0.8 pp) — the
+"accuracy ≠ edge" point of Chapters 4 and 6, now a live measurement: a genuine,
+deflated-Sharpe-significant ranking signal still moves the hit rate by under a
+percentage point. (The right null here is **50%**, *not* the ~53–55% up-rate: the
+book is dollar-neutral, so market drift is removed by construction; benchmarking
+it against the up-rate would be the baseline-conflation Chapter 4 §0 warns
+against — and would have *understated* this edge as +0.1 pp.)
 
 *Does it survive costs?* Barely, and that is the realistic part. The time-ordered
 L/S book turns over ≈72% (one-way) per rebalance:
@@ -527,6 +531,44 @@ Sharpe ≈ 0, importances flat.
 This is what a *passing-but-honest* result looks like: real, small, fragile to
 costs, beaten by a simpler model when the truth is linear, regime-dependent, and
 perishable — the thin right tail of Chapters 6 and 7, not a refutation of it.
+
+## 5.y — The same pipeline on real US equities
+
+The objection writes itself: a book about telling real edge from fake should not
+rest its capstone on *simulated* data. Two answers. First, the epistemic one —
+validating a **significance gate**, a procedure whose entire job is to reject
+nulls, *requires* data whose ground truth you know, and only synthetic data
+provides that. You cannot prove a null-rejecter correctly rejects nulls on real
+data where you do not know whether a null holds; the planted-signal / planted-null
+pair is the *only* way to show the gate fires when it should and stays silent when
+it should. Synthetic-with-known-truth is the right tool for the §5.x job, not a
+dodge. Second, the direct one — the pipeline is data-agnostic (`--data`), so here
+it is on **real prices**: 18 liquid US large-caps (Financial Modeling Prep daily
+closes), 2020–2025, monthly, same momentum/reversal/volatility features, the
+*corrected* baselines, the same gate. The result is the most credible one a
+disciplined pipeline can give on a thin universe — **it finds nothing significant,
+and says so.**
+
+| Real 18-name US large-cap panel, 2020–2025 (monthly) | Result |
+|---|---|
+| CPCV cross-sectional rank-IC (mean, 320 OOS obs) | −0.016 (σ 0.31) |
+| Cross-sectional hit rate vs the **50% null** | 48.8% — and the up-rate is 55.4%, but that is *not* the baseline for a dollar-neutral book |
+| Deflated Sharpe on the OOS IC stream | ≈ 0.00 — **not significant** |
+| Walk-forward L/S net Sharpe / deflated Sharpe (5 bps) | 0.83 / **0.78 — below the 0.95 bar** |
+| … vs always-long (buy-and-hold) Sharpe | 0.71 — the long/short *barely* beats it |
+| Shuffled-null deflated Sharpe | 0.00 — correctly dead |
+
+This is not a disappointing result; it is the *point*. Eighteen survivorship-
+selected names over five years is far too thin a cross-section to carry a rank-IC
+edge — the IC's standard error alone is ~0.31 — and the gate **refuses to certify
+one**. That is exactly the behaviour separating this pipeline from one that would
+have reported the +9%/yr walk-forward return as "alpha" without noticing it barely
+beats buy-and-hold and fails the deflated-Sharpe bar. *Caveats, stated plainly:*
+the universe is survivorship-selected and the closes are split- (not total-return-)
+adjusted, so this is a real-data demonstration that the method runs end-to-end and
+stays honest on real prices — **not** a research-grade backtest. Point `--data` at
+a proper point-in-time CRSP universe to run it for real. The builder is
+`examples/build_real_panel.py`; the source is the FMP price API.
 """
 
 CH6_BODY = """
