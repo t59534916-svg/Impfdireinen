@@ -56,7 +56,8 @@ def _protect(text: str):
     text = re.sub(r"\$\$(.+?)\$\$", disp, text, flags=re.S)
 
     # inline $...$ (pandoc heuristic: open not before space; close not after space,
-    # not followed by a digit; reject if the span itself contains a $ — currency).
+    # not followed by a digit; reject only on an UNESCAPED inner $ — currency — so
+    # that an escaped \$ inside the math, e.g. units like "$/share", is allowed).
     out, i, n = [], 0, len(text)
     while i < n:
         c = text[i]
@@ -69,7 +70,7 @@ def _protect(text: str):
                 if text[k] == "\n" and k + 1 < n and text[k + 1] == "\n":
                     break
                 k += 1
-            if found > 0 and "$" not in text[i + 1:found]:
+            if found > 0 and not re.search(r"(?<!\\)\$", text[i + 1:found]):
                 math.append((text[i + 1:found], False))
                 out.append(f"@@MATH{len(math) - 1}@@")
                 i = found + 1
