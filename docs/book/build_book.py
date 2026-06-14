@@ -104,6 +104,11 @@ def _hl(lang: str, code: str) -> str:
 
 def md_to_html(text: str) -> str:
     text, code_blocks, inline_code, math = _protect(text)
+    # Math and code are now in @@…@@ placeholders, so any remaining "\$" is an
+    # escaped *currency* dollar in prose (used to stop it pairing as inline math).
+    # Python-Markdown does not unescape "\$", so strip the backslash ourselves —
+    # otherwise it renders as a literal "\$10B".
+    text = text.replace("\\$", "$")
     body = markdown.markdown(
         text, extensions=["tables", "sane_lists", "attr_list", "md_in_html"])
     rendered = _render_math(math)
@@ -265,19 +270,24 @@ number or theorem confirmed in the source text). Where a figure rests on a
 secondary summary, it is flagged as such — that is exactly the citation hygiene
 a reader is owed.
 
-**Status key.** **[B]** bibliographic record verified this session;
-**[O]** open-access full text **or** a canonical/textbook identity — the claim
-is directly checkable (and, for the significance statistics, implemented and
-unit-tested in `vpts/ml/significance.py`); **[A]** the supporting figure is
-taken from the **abstract** or a secondary summary, full text not accessed;
-**[P]** **paywalled** and the figure rests on **secondary reporting** — treat
-the precise decimals with caution.
+**Status key**, mapped to the three grades this ledger is meant to report —
+*directly verifiable*, *paywalled / summary only*, and *not independently
+re-verifiable from public sources*. **No journal article below received a
+full-text, page-cited read this session** (the HTTP-403 constraint of A.2), so
+the strongest honest grade is **[O] directly verifiable** — reserved for
+open-access PDFs and for canonical/textbook identities checkable by derivation
+and, for the significance statistics, **implemented and unit-tested** in
+`vpts/ml/significance.py`. **[B]** marks the bibliographic record (author /
+title / year / venue) verified this session. **[A] paywalled / summary only** —
+the supporting figure is taken from the abstract or publisher summary, not the
+full text. **[S] relies on a secondary summary**, and for the precise figures is
+**not independently re-verifiable from public sources** — flagged explicitly.
 
 | Work (author, year, venue) | Precise claim it supports | Status |
 |---|---|---|
-| Rahimikia, Ni & Wang (2025), *Re(Visiting) TS Foundation Models in Finance*, arXiv:2511.18578 | Off-the-shelf TS foundation models score "just above 51%" directional with negative backtested returns; a benchmark CatBoost posts ~51% accuracy yet a large pre-cost Sharpe — the "accuracy ≠ edge" point (Ch. 4, Ch. 7). | [B][A] — preprint + ~51% figure verified on 2026-06-13; **the CatBoost return/Sharpe decimals are from the abstract, not full-text re-verified** |
+| Rahimikia, Ni & Wang (2025), *Re(Visiting) TS Foundation Models in Finance*, arXiv:2511.18578 | Off-the-shelf TS foundation models score "just above 51%" directional with negative backtested returns; a benchmark CatBoost posts ~51% accuracy yet a large pre-cost Sharpe — the "accuracy ≠ edge" point (Ch. 4, Ch. 7). | [B][O] — open-access preprint, ~51% figure verified on 2026-06-13; **the CatBoost return/Sharpe decimals are from the abstract, not a full-text re-verified read** |
 | McLean & Pontiff (2016), *Does Academic Research Destroy Stock Return Predictability?*, JF 71(1):5–32 | Across 97 predictors, portfolio returns are 26% lower out-of-sample and 58% lower post-publication — signal decay / reflexivity (Ch. 2 boundary, Ch. 4, Ch. 6). | [B][A] — record verified; the 26% / 58% figures are the paper's abstract headline |
-| Cornell (2019), *Medallion Fund: The Ultimate Counterexample?*, JPM 46(4):156–159 | Medallion ~63% gross / ~39% net 1988–2018 with negative beta and factor loadings ⇒ not a risk premium; "the ultimate counterexample" to efficiency (Ch. 6, Ch. 7). | [B][P] — **paywalled; the return figures rest on secondary reporting** (Zuckerman 2019) and the abstract |
+| Cornell (2019), *Medallion Fund: The Ultimate Counterexample?*, JPM 46(4):156–159 | Medallion ~63% gross / ~39% net 1988–2018 with negative beta and factor loadings ⇒ not a risk premium; "the ultimate counterexample" to efficiency (Ch. 6, Ch. 7). | [B][S] — paywalled; the precise return figures **rely on a secondary summary** (Zuckerman 2019) and are **not independently re-verifiable from public sources** |
 | Frazzini, Kabiller & Pedersen (2018), *Buffett's Alpha*, FAJ 74(4):35–55 | Buffett's Sharpe ≈ 0.79; the alpha is explained by ≈1.6–1.7× leverage on cheap, safe, high-quality stocks (betting-against-beta + quality-minus-junk) (Ch. 6, Ch. 7). | [B][A] — record verified; Sharpe / leverage figures from the abstract |
 | Bailey & López de Prado (2014), *The Deflated Sharpe Ratio*, JPM 40(5):94–107 | DSR corrects a Sharpe for skew, kurtosis, length, and the **number of trials** (SR₀ = expected max of M noise trials) (Ch. 3 §10, Ch. 5). | [O] — canonical formula, **implemented & unit-tested** in `significance.py` |
 | Bailey & López de Prado (2012), *The Sharpe Ratio Efficient Frontier*, J. Risk 15(2) | Probabilistic Sharpe ratio and minimum track-record length (Ch. 3 §10, Ch. 5). | [O] — canonical; implemented & unit-tested |
