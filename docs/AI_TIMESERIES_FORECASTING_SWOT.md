@@ -22,7 +22,7 @@
 
 ## 1. The evaluation frame (why most reported accuracy is untrustworthy)
 
-**The ~50% wall and the right baseline.** Out-of-sample directional accuracy for equity direction clusters around 50%, with weak-but-real skill topping out in the low-to-mid 50s. Crucially, raw accuracy must be benchmarked against the **unconditional up-rate (~53–55%)**, not 50%: a constant "always up" predictor already scores ~55% on US returns, and boosted trees in honest studies improve on that by only ~2 points [Gu–Kelly–Xiu 2020, *RFS*; multi-market comparative study, *Int. J. Data Science & Analytics* 2025]. **Confidence: high.**
+**The ~50% wall and the right baseline.** Out-of-sample directional accuracy for equity direction clusters around 50%, with weak-but-real skill topping out in the low-to-mid 50s. Crucially, raw accuracy must be benchmarked against the **unconditional up-rate (~53–55%)**, not 50%: a constant "always up" predictor already scores ~53–55% on US returns, and boosted trees in honest studies improve on that by only ~2 points [Gu–Kelly–Xiu 2020, *RFS*; multi-market comparative study, *Int. J. Data Science & Analytics* 2025]. **Confidence: high.**
 
 **Directional accuracy ≠ tradeable edge.** Accuracy and profitability are not monotonically linked once magnitudes and asymmetry enter: ~40% accuracy can be profitable and ~60% can be needed to "guarantee" profit, depending on payoff structure [Gui 2024, arXiv:2407.09831]. The naive random-walk/last-value forecast is "notoriously difficult to surpass," and a directional overlay only beats it once accuracy exceeds ~0.55 [Zhang 2024, arXiv:2406.14469]. **Confidence: medium-high.**
 

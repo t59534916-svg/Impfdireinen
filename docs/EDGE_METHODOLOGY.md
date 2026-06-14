@@ -19,8 +19,8 @@ The information ratio IR (active return per unit of active risk) decomposes
 
 $$\text{(1)}\qquad \mathrm{IR} \;\approx\; \mathrm{IC}\,\sqrt{\mathrm{BR}},$$
 **[LAW]** where **IC** is the information coefficient — the cross-sectional
-correlation of forecast with realised return, the very statistic of §8 of the
-time-series chapter — and **BR** is breadth, the number of *independent* bets per
+rank-correlation of forecast with realised return *across names* (the §8
+statistic) — and **BR** is breadth, the number of *independent* bets per
 year. Under realistic constraints (no shorting, leverage caps, costs) this becomes
 (Clarke–de Silva–Thorley 2002, *FAJ* 58(5):48–66)
 
@@ -28,16 +28,10 @@ $$\text{(2)}\qquad \mathrm{IR}\;\approx\;\mathrm{TC}\cdot\mathrm{IC}\,\sqrt{\mat
 **[LAW]** with **TC** ∈ [0,1] the *transfer coefficient* — the correlation between
 the ideal portfolio and the one you can actually implement after constraints.
 
-**The reconciliation.** The empirical chapters establish that honest directional
-IC sits around 0.02–0.10 — the "~50–55% accuracy" restated as a correlation, via
-the rule of thumb $\mathrm{IC}\approx 2\,(\text{hit rate})-1$ (so 52.5% maps to
-$\mathrm{IC}\approx0.05$ and 55% to $\mathrm{IC}\approx0.10$; the bridge is a
-heuristic, the exact map depends on the signal's distribution). Read
-through (1), that is not a verdict of futility — it is a *per-bet* skill that
-compounds with breadth:
+**The reconciliation.** Skill is small however you measure it — but mind *which* measure. The law (1) consumes the **cross-sectional rank-IC** — the §8 statistic: the correlation of forecast with realised return *across names* each rebalance — and an honest one sits around 0.02–0.10. A *single-series directional* hit rate (the SWOT's "~50–55%") is a **different** statistic; the rough bridge $\mathrm{IC}\approx 2(\text{hit rate})-1$ shows only that it is of *comparable smallness* (52.5% ↔ 0.05). Do not conflate them — a per-date cross-sectional IC is not a one-series up/down hit rate — but both carry the same lesson: the per-bet edge is tiny. Read through (1), tiny is not futile — it is a *per-bet* skill that compounds with breadth:
 
 $$\text{(3)}\qquad \mathrm{IC}=0.05,\ \mathrm{BR}=1000 \;\Longrightarrow\; \mathrm{IR}\approx 0.05\sqrt{1000}\approx 1.58.$$
-**[LAW]** An information ratio of ~1.6 is institutional-grade. **The skeptical fact
+**[LAW]** An information ratio of ~1.6 is institutional-grade — *provided* the 1000 here are **genuinely independent** bets. §2 shows that a naive trade count collapses under cross-correlation to $\mathrm{BR}_{\text{eff}}\approx 1/\rho$ (1000 names at $\rho=0.1$ give ≈ 10, not 1000), so (3) is an **upper bound** whose hard part is manufacturing real independence. With that caveat: **the skeptical fact
 ("the edge per bet is tiny") and the constructive fact ("you can build a great
 fund on it") are the same fact at two scales.** This is exactly how a
 statistical-arbitrage operation — and Renaissance's Medallion — works: a

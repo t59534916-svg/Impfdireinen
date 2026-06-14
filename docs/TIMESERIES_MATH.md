@@ -9,7 +9,10 @@ Every numbered equation is tagged with its logical role:
 - **[EST]** an estimator or fitting procedure (a function of the sample)
 - **[STAT]** a test statistic / inferential object (with its null)
 - **[VALID]** a validation, resampling, or multiple-testing-control procedure
+- **[PRINCIPLE]** a structural principle that organises the methods (used in §5b)
 - **[REPO]** implemented in this codebase — with a pointer to the file, so the math maps 1:1 to the code
+
+Compound tags (e.g. **[MODEL/EST]**, **[PRINCIPLE/boundary]**) mark an object that plays two of these roles at once.
 
 The cardinal discipline, inherited from the companion document: **never present an estimator as if it were the truth it estimates, and never present an in-sample fit as out-of-sample evidence.** A backtest is an estimate with a standard error and a multiple-testing burden; the whole back half of this document is about taking that seriously.
 
@@ -207,7 +210,7 @@ $$\text{(5.3)}\qquad \underbrace{\text{statistical pattern}}_{\text{least statio
 **The adaptive-estimation tradeoff (handling slow drift).** When the true parameter drifts slowly, re-estimate on a trailing window — but the window length is itself an optimization. With drift rate $\delta$ (parameter change per period) and per-observation noise $\sigma^2$, a rolling window of length $w$ has
 
 $$\text{(5.4)}\qquad \mathrm{MSE}(w)\;\approx\;\underbrace{\frac{\sigma^2}{w}}_{\text{estimation variance}}\;+\;\underbrace{c\,\delta^2 w^2}_{\text{staleness bias}},\qquad\Longrightarrow\qquad \text{(5.5)}\quad w^\star \;\propto\; \Big(\frac{\sigma^2}{\delta^2}\Big)^{1/3}.$$
-**[EST]** The window optimisation is the formal statement of "re-fit fast enough to track the drift, slow enough to average out the noise" — the bias–variance tradeoff of §9b, now along the **time** axis: a faster-adapting model tracks the regime but is noisier. The exponentially-weighted estimator $\hat\sigma^2_t=\lambda\hat\sigma^2_{t-1}+(1-\lambda)r_t^2$ is the smooth version, with effective window $1/(1-\lambda)$ (RiskMetrics). The **time-varying-parameter** model — let $\theta_t=\theta_{t-1}+\eta_t$ follow a random walk and run the Kalman filter (§4) — is the optimal linear adaptive estimator under that drift model. **[MODEL/EST]**
+**[EST]** Here $c$ is a model-dependent constant fixed by the drift geometry (it drops out of the proportionality (5.5)). The window optimisation is the formal statement of "re-fit fast enough to track the drift, slow enough to average out the noise" — the bias–variance tradeoff of §9b, now along the **time** axis: a faster-adapting model tracks the regime but is noisier. The exponentially-weighted estimator $\hat\sigma^2_t=\lambda\hat\sigma^2_{t-1}+(1-\lambda)r_t^2$ is the smooth version, with effective window $1/(1-\lambda)$ (RiskMetrics). The **time-varying-parameter** model — let $\theta_t=\theta_{t-1}+\eta_t$ follow a random walk and run the Kalman filter (§4) — is the optimal linear adaptive estimator under that drift model. **[MODEL/EST]**
 
 **Regime-switching, and why it does not escape the problem.** Hamilton's model (§4) treats non-stationarity as switching among a *finite set of stationary regimes* with a fixed transition law. Where regimes recur (calm/turbulent volatility states), it is the right tool. But a *known* switching law is only a larger *stationary meta-model* — it relocates the stationarity assumption one level up, to the transition matrix. It handles *recurrent* change; it cannot handle a *genuinely novel* regime, because the new regime is not in the state space. **[MODEL]**
 
