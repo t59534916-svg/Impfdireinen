@@ -4,8 +4,8 @@
 
 **A free, explainable Volume‑Profile trading system — and an honest, adversarial study of whether it actually has an edge.**
 
-![version](https://img.shields.io/badge/version-1.7.0-blue)
-![tests](https://img.shields.io/badge/tests-135%20passing-brightgreen)
+![version](https://img.shields.io/badge/version-1.11.0-blue)
+![tests](https://img.shields.io/badge/tests-197%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![deps](https://img.shields.io/badge/core%20deps-numpy%20·%20pandas%20·%20scipy-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -214,6 +214,9 @@ timeline
     v1.1–1.3 : CPCV harness : Learned factor weights : Triple-barrier meta-labeling
     v1.4–1.6 : Cost-aware + permutation tests : Enriched features : Cross-sectional ranks
     v1.7 : Structural analytics : Survivorship decomposition : Swing setup-rater + selectivity
+  section Act III · production hardening
+    v1.8–1.9 : Anti-overfitting stats (DSR · PBO · HLZ) : Pluggable data layer + point-in-time universe
+    v1.10–1.11 : Multi-timeframe behavioral features : LLM insight layer (edge-claim guardrails)
 ```
 
 | Version | Milestone | Adds |
@@ -227,6 +230,16 @@ timeline
 | `1.5` | New inputs | enriched per‑name feature set |
 | `1.6` | Equity‑alpha form | cross‑sectional rank factors |
 | `1.7` | **Microstructure** | `vpts.structure` + survivorship decomposition + swing rater |
+| `1.8` | Anti‑overfitting stats | `vpts.stats` — Deflated Sharpe · PBO/CSCV · Harvey–Liu–Zhu haircut · Lo |
+| `1.9` | Pluggable data | `vpts.data` source abstraction + **point‑in‑time universe** + survivorship injector |
+| `1.10` | Behavioral features | `vpts.features` — multi‑timeframe behavioral dynamics (harness‑gated) |
+| `1.11` | **Insight layer** | `vpts.insight` — LLM explanation that *cannot* assert an unvalidated edge |
+
+> **Act III is engineering, not a new claim.** It hardens the harness (selection‑aware
+> statistics), attacks the documented binding constraint (a data layer that can express
+> delisted / point‑in‑time universes), adds behavioral features *as hypotheses*, and an LLM
+> layer whose verdict is computed in code — none of it overturns Act II's conclusion. On the
+> committed synthetic null, `examples/behavioral_ai_demo.py` correctly reports **no edge**.
 
 ---
 
@@ -234,7 +247,8 @@ timeline
 
 ```
 vpts/                      core library — lightweight (numpy · pandas · scipy)
-├─ data/                   robust, cached OHLCV fetcher (yfinance)
+├─ data/                   OHLCV fetcher + Act III: source abstraction, point-in-time
+│                          universe, survivorship injector (sources/ · universe.py)
 ├─ profile/                Phase 1 — VolumeProfileCalculator + immutable models
 ├─ regime/                 Phase 2 — QuietPhaseDetector + VolumePatternDetector
 ├─ scoring/                Phase 3 — ConfluenceScorer
@@ -243,10 +257,13 @@ vpts/                      core library — lightweight (numpy · pandas · scip
 ├─ backtest/               Phase 6 — walk-forward engine, realistic costs
 ├─ validation/             CPCV — purged + embargoed combinatorial CV
 ├─ ml/                     factor model · meta-labeling · cross-sectional · enriched
-└─ structure/              microstructure analytics (synthetic delta, shape, decay)
+├─ structure/              microstructure analytics (synthetic delta, shape, decay)
+├─ stats/                  Act III — DSR · PBO/CSCV · Harvey–Liu–Zhu haircut · Lo Sharpe
+├─ features/               Act III — multi-timeframe behavioral-dynamics features
+└─ insight/                Act III — LLM explanation layer with edge-claim guardrails
 
-examples/                  one runnable file per phase AND per experiment
-tests/                     135 offline, deterministic tests
+examples/                  one runnable file per phase, per experiment, + behavioral_ai_demo
+tests/                     197 offline, deterministic tests
 docs/                      ARCHITECTURE.md · img/ (committed figures + generator)
 RESEARCH.md                the eleven-experiment validation log
 streamlit_app.py           dashboard entry point
@@ -259,7 +276,7 @@ streamlit_app.py           dashboard entry point
 ## Testing
 
 ```bash
-python -m pytest -q            # 135 tests, all offline & deterministic (no network)
+python -m pytest -q            # 197 tests, all offline & deterministic (no network)
 python tests/test_phase1.py    # or run any file directly
 ```
 
