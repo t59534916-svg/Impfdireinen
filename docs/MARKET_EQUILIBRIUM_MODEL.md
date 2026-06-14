@@ -363,6 +363,18 @@ Cross-sectional restriction, every traded claim including Block M's asset:
 $$\text{(II.23)}\qquad \mathbb E_t[R_{j,t+1}] - R_{f,t} = -R_{f,t}\,\mathrm{Cov}_t(m_{t+1}, R_{j,t+1}) \qquad \forall j .$$
 **[ID given (II.4)]** Block M prices at $\mathbb E[f\mid\cdot]$, which obeys (II.23) only if $\mathrm{Cov}_t(m_{t+1}, f)\approx 0$ — the diversifiability assumption behind dealer risk neutrality. The wedge when it fails is quantified in the Self-Consistency section.
 
+## II.OS — Original vs. standard results (Level 2)
+
+*What is taken from the literature.* The recursive-utility aggregator (II.3)–(II.4) is Epstein–Zin (1989, *Econometrica*) / Weil (1989, *JME*); the observational equivalence of Epstein–Zin to CRRA for asset returns under i.i.d. growth (II.21) is Kocherlakota (1990, *JF*); the equity-premium and volatility-bound failure read off (II.22) is Mehra–Prescott (1985, *JME*) and Hansen–Jagannathan (1991, *JPE*). The three price-formation mechanisms are imported wholesale: the noisy rational-expectations fixed point (II.13)–(II.14) is Grossman–Stiglitz (1980, *AER*) / Hellwig (1980, *JET*); the strategic batch auction and its $\lambda$ (II.15)–(II.17) is Kyle (1985, *Econometrica*); the sequential adverse-selection spread (II.18)–(II.20) is Glosten–Milgrom (1985, *JFE*). None of these closed forms is original here.
+
+*What is assembled here.* Two connective results are not in the source papers in this form, though neither is a deep theorem. **(Proposition II.1.)** Placed over one common information structure, the competitive dealer of (II.18)–(II.20) is the $\gamma_U \to 0$ (risk-neutral, zero-inventory) limit of the Block-M market-maker, and the Kyle $\lambda$ and the Glosten–Milgrom spread are two readings of the same adverse-selection price impact — the bridge itself is Kyle (1989, *REStud*) for imperfect competition and Back (1992, *RFS*) for the continuous-auction limit, cited not claimed. **(The T3 wedge.)** The cross-sectional restriction (II.23) applies to the dealer-priced security only up to $\mathrm{Cov}_t(m_{t+1}, f)$; making that covariance the exact error term that reconnects the microstructure block to the SDF is the document's own bookkeeping — elementary, but not part of either source literature's exposition.
+
+*Novel extension — preference for early resolution drives information acquisition.* Standard Grossman–Stiglitz collapses risk attitudes into one CARA parameter; Epstein–Zin separates relative risk aversion $\gamma$ from the inverse EIS $1/\psi$. Conjecture that the equilibrium informed fraction $\phi^\star$ responds to the wedge $\gamma - 1/\psi$, whose sign is the preference for early resolution of uncertainty:
+
+$$\text{(II.24)}\qquad \frac{\partial \phi^\star}{\partial(\gamma - 1/\psi)} > 0 \qquad [\textbf{conjecture}].$$
+
+The mechanism: an agent who prefers early resolution ($\gamma > 1/\psi$) values a signal for *more* than its static risk reduction — it also resolves continuation-utility uncertainty sooner — so the private value of information, and hence acquisition, rises in $\gamma - 1/\psi$ independently of static risk-bearing. This couples the recursive-utility and costly-information literatures, which are normally kept apart. *Flag:* heuristic and unsolved as a fixed point — the EIS enters Grossman–Stiglitz only through wealth dynamics that the static model suppresses, so (II.24) is a prediction for a dynamic information-acquisition economy (in the spirit of Vives 2008), not a corollary of (II.14).
+
 ---
 
 # Part III — Level 3: Continuous time, stochastic volatility, jumps, constrained intermediaries, inelastic demand, limits to arbitrage
@@ -504,6 +516,24 @@ $$\text{(III.18)}\qquad \mu_j + \int J_j(z)\ell(dz) - r_t = \underbrace{\gamma\,
 **Reduction to geometric Brownian motion.** Set $\sigma_v = 0$ with $v_0=\bar v$ (variance constant) and $\ell \equiv 0$ (no jumps): then $B_\Phi$ is irrelevant, $\Phi$ is constant, $P_t \propto D_t$, and $dP/P = (g)\,dt + \sqrt{\bar v}\,dB^D$ — exact GBM, the Black–Scholes environment, with $r$ constant by (III.15). **Every assumption needed for GBM is individually known false** (volatility clusters; jumps happen); GBM is the measure-zero corner of this model, which is the precise sense in which Black–Scholes is a limiting case rather than a foundation.
 
 **Fundamental theorem of asset pricing.** The strictly positive kernel (III.13)/(III.14) defines an equivalent (local) martingale measure $\mathbb Q$ via $d\mathbb Q/d\mathbb P\big|_{\mathcal F_t} = m_t e^{\int_0^t r_s ds}$; conversely, absence of arbitrage in the NFLVR sense is equivalent to the existence of such a measure (Harrison–Kreps 1979, *JET*; Harrison–Pliska 1981, *SPA*; general semimartingale version: Delbaen–Schachermayer 1994, *Mathematische Annalen*). With the L5 frictions, equality-FTAP relaxes to no-arbitrage *bands* (Δ1) and kernel *segmentation* (Δ5): there exist positive kernels, but not a unique one shared by all agents — each agent's shadow kernel prices what that agent can trade frictionlessly.
+
+## III.OS — Original vs. standard results (Level 3)
+
+*What is taken from the literature.* The square-root stochastic-variance process (III.1)–(III.2) is Heston (1993, *RFS*); the jump component is Merton (1976, *JFE*); the exponential-affine transform and the Riccati system (III.17) are Duffie–Pan–Singleton (2000, *Econometrica*); continuous-time recursive utility (III.3) is Duffie–Epstein (1992, *Econometrica*) / Duffie–Skiadas (1994, *J. Math. Econ.*); that a variance risk premium requires $\gamma \neq 1/\psi$ is Drechsler–Yaron (2011, *RFS*); the rare-disaster premium channel in (III.14)–(III.15) is Rietz (1988, *JME*) / Barro (2006, *QJE*).
+
+*What is derived here — a self-contained SDF sketch (representative-household CRRA spine).* The kernel (III.13)–(III.18) is rederived from primitives, not cited. Euler optimality gives the marginal-utility kernel; goods-market clearing forces $C_t = D_t$ (consumption equals the aggregate dividend); CRRA marginal utility then yields $m_t = e^{-\varrho t} D_t^{-\gamma}$ (III.13); Itô's formula with jumps applied to (III.13) under the dividend law (III.1) produces the market prices of risk (III.14) — diffusive $\eta^D = \gamma\sqrt{v_t}$, variance price $\eta^v = 0$, jump kernel $Y(z) = e^{-\gamma z}$ — and the shadow rate (III.15); imposing the martingale restriction (III.16) on the dividend strip closes the model into the Riccati system (III.17). This chain, including the $\eta^v = 0$ knife-edge and the $\gamma = 1$ log-utility verification, is self-contained at the representative-agent level — standard objects, but rederived rather than asserted.
+
+*What is flagged as reliance, not solved here.* The heterogeneous, constrained-intermediary and inelastic-demand blocks (III.5)–(III.9) do **not** admit the closed-form SDF above; the document imports their *channels* and flags the remainder:
+
+- **He–Krishnamurthy (2013, *AER*)** and **Brunnermeier–Sannikov (2014, *AER*):** when the intermediary capital constraint binds, the marginal investor is the intermediary and the kernel loads on the intermediary wealth share $w$; the equilibrium is a nonlinear PDE in $w$ that is **not** solved here (the channel — effective risk aversion $\gamma_I \approx \gamma/w$ rising as capital is depleted — is used qualitatively).
+- **Gârleanu–Pedersen (2011, *RFS*):** the margin-CAPM basis between equal-cash-flow assets of differing margin — imported as the Δ-friction (III.7), not re-derived.
+- **Koijen–Yogo (2019, *JPE*):** the characteristic-based demand system and its price multiplier $M$ — imported, not solved to a kernel.
+
+*Novel comparative static — capital scarcity and demand inelasticity are complements.* Write the equity jump premium of (III.18) under the two frictions multiplicatively: with intermediary effective risk aversion $\gamma_I \approx \gamma/w$ (He–Krishnamurthy) and Koijen–Yogo price multiplier $M \ge 1$,
+
+$$\text{(III.23)}\qquad \Pi(w, M) \approx M\cdot\frac{\gamma}{w}\cdot b,\quad b \equiv \int (e^z-1)\big(1 - e^{-\gamma z}\big)\,\ell(dz) > 0,\qquad \frac{\partial^2 \Pi}{\partial w\,\partial M} = -\frac{\gamma\,b}{w^2} \neq 0 \quad [\textbf{heuristic}].$$
+
+The sensitivity of the disaster premium to a deterioration in intermediary capital ($\partial\Pi/\partial w = -M\gamma b/w^2 < 0$ — a fall in $w$ raises the premium) is itself *proportional to* the demand-inelasticity multiplier $M$: the more inelastic the demand curve, the more a given capital shock moves the premium. Capital scarcity and inelastic demand are therefore **complements** in amplifying the disaster premium, and neither friction's contribution can be read off in isolation. *Flag:* heuristic — this composes two channels each modeled in partial equilibrium in its own paper; the cross-partial sign follows from each being individually amplifying and acting on the same premium, but a joint general-equilibrium fixed point is not solved here.
 
 ---
 
@@ -694,6 +724,18 @@ The disciplined ledger, which is the answer to the question:
 
 So option prices say a great deal about the *prices of future risk* and impose tight, tradeable discipline on expected returns — but they do **not** hand over the physical probability distribution of future prices. The market's risk-neutral density is its *valuation* of future states, not its *forecast* of them, and the wedge between the two is the entire subject of asset pricing.
 
+## IV.OS — Original vs. standard results (Level 3+)
+
+*What is taken from the literature.* Every closed form in the options layer is cited, not invented: the $\mathbb Q$-density as the second strike-derivative of the call price (IV.5) is Breeden–Litzenberger (1978, *J. Business*); risk-neutral valuation and the FTAP are Harrison–Kreps (1979, *JET*) / Harrison–Pliska (1981, *SPA*); the static spanning behind model-free implied variance (IV.8)–(IV.9) is Carr–Madan (1998) / Britten-Jones–Neuberger (2000, *JF*); the risk-neutral higher moments (IV.11) are Bakshi–Kapadia–Madan (2003, *RFS*); the lower bound on the equity premium (IV.16) is Martin (2017, *QJE*) and its cross-sectional analogue Martin–Wagner (2019, *JF*); the recovery theorem (IV.17) is Ross (2015, *JF*); the permanent–transitory factorization (IV.18) is Hansen–Scheinkman (2009, *Econometrica*) / Alvarez–Jermann (2005, *Econometrica*); the recovery-failure result (IV.19) is Borovička–Hansen–Scheinkman (2016, *JF*); demand pressure on option prices (IV.12) is Gârleanu–Pedersen–Poteshman (2009, *RFS*).
+
+*What is assembled here.* The organizing identity that the empirical pricing kernel *is* the density ratio, $m(x)/B = f^{\mathbb Q}(x)/f^{\mathbb P}(x)$ (IV.13), and the four-way ledger of IV.L6(vii) — sorting $\mathbb Q$-objects into *fully identified* (the whole $\mathbb Q$-density), *robustly bounded* (the expected-return floor), *identified-as-premium-when-paired-with-a-physical-forecast* (variance and jump-tail premia), and *not identified from prices alone* (the physical density itself) — are this document's expository synthesis of the cited results, not new theorems.
+
+*Novel observation — recovery has two orthogonal failure channels.* The literature documents two reasons a recovered physical measure $\hat f^{\mathbb P}$ is wrong, but treats them in separate papers. Stated as an additive decomposition of the recovered-drift error, they are orthogonal:
+
+$$\text{(IV.21)}\qquad \underbrace{\hat f^{\mathbb P} - f^{\mathbb P}}_{\text{recovery error}} \;=\; \underbrace{\mathcal E_{\text{perm}}\big[\,\text{martingale SDF component}\,\big]}_{\text{(a) misspecified map, BHS 2016}} \;+\; \underbrace{\mathcal E_{\text{dem}}\big[\,\text{net end-user option demand}\,\big]}_{\text{(b) contaminated input, GPP 2009}} \qquad [\textbf{heuristic}].$$
+
+Channel **(a)** is a misspecification of the recovery *map* even when the true $f^{\mathbb Q}$ is fed in: Ross transition-independence assumes away the SDF's permanent component, which the data demand (Alvarez–Jermann; BHS), biasing recovered long-run drift. Channel **(b)** contaminates the *input*: under limited intermediary capacity the observed $f^{\mathbb Q}$ is itself shifted by net end-user demand (Gârleanu–Pedersen–Poteshman), so even a perfectly specified recovery map starts from a price that is not the frictionless kernel's. The observation: a recovery exercise can be "fixed" for one channel and remain biased by the other — closing the permanent-component gap does nothing about demand contamination, and vice versa. *Flag:* heuristic — this is a decomposition of the error into two independently-documented channels, not a quantitative theorem; the two signs depend on which states carry the permanent loading and on the sign of net option demand, respectively.
+
 ---
 
 What this construction cannot capture, and why — concretely.
@@ -811,6 +853,7 @@ Confidence key: ★ = standard result, attribution confident (entries marked "Ve
 - ★ Rietz, T. (1988), "The Equity Risk Premium: A Solution," *JME*.
 - ◐ Rubinstein, M. (1974), "An Aggregation Theorem for Securities Markets," *JFE*.
 - ★ Shleifer, A. & R. Vishny (1997), "The Limits of Arbitrage," *JF*.
+- ◐ Vives, X. (2008), *Information and Learning in Markets: The Impact of Market Microstructure*, Princeton UP. — Dynamic information acquisition (II.OS conjecture II.24).
 - ★ Weil, P. (1989), "The Equity Premium Puzzle and the Risk-Free Rate Puzzle," *JME*.
 - ★ Wilson, R. (1968), "The Theory of Syndicates," *Econometrica*. — Risk-tolerance aggregation (I.9)–(I.10).
 - ★ Knight, F. (1921), *Risk, Uncertainty and Profit*, Houghton Mifflin.
