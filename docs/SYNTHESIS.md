@@ -26,6 +26,74 @@ The one-sentence thesis that unifies them:
 
 **7. The verification gate is not bureaucracy — the math guarantees the naive number will lie.** Backtest overfitting can yield *negative* out-of-sample returns, not merely zero (Bailey–Borwein–López de Prado–Zhu, under serial-dependence/memory effects). So the gate — purged + embargoed CV, the **up-rate** (not 50%) baseline, transaction costs, the deflated Sharpe / PBO / t>3 corrections, point-in-time + delisting-inclusive data, and reporting P&L *and* AUC rather than raw accuracy — is the only thing standing between you and a confidently-wrong result.
 
+## What is new in this synthesis
+
+Almost every individual result below is borrowed; the contribution is the *frame*
+that makes three mature literatures say one thing, and the stricter practical
+rules that frame forces. Set against the standard textbook treatments:
+
+**Kernel non-identification — sharper than Cochrane or Duffie.** Cochrane's
+*Asset Pricing* (2005) builds everything on `p = E(mx)` and teaches the SDF as an
+object to be *estimated* (GMM on Euler equations, factor-model specifications,
+Hansen–Jagannathan bounds); Duffie's *Dynamic Asset Pricing Theory* (2001) gives
+the rigorous existence of the equivalent martingale measure and the Q-side
+machinery. Both foreground that the kernel *exists*; neither centers the inverse
+question this compendium makes its spine — *can you recover the physical measure
+P from prices?* The answer (no: the kernel's permanent/martingale component is
+unidentified — Hansen–Scheinkman 2009, Alvarez–Jermann 2005; Ross recovery
+appears to deliver P but fails — Borovička–Hansen–Scheinkman 2016) is the wall.
+The stricter practical implication the textbooks do not draw: an option-implied
+(risk-neutral) density is a *valuation, not a forecast*, so reading "the market's
+probability of a crash" off option prices is a category error — the usable
+objects are bounds (Martin 2017) and risk premia *paired with* a physical
+forecast, never the physical density itself.
+
+**ML evaluation discipline — grounded, not just tooled, relative to López de
+Prado.** *Advances in Financial Machine Learning* (López de Prado 2018) supplies
+the gate this volume uses wholesale: purged + embargoed CPCV, the Probability of
+Backtest Overfitting, the deflated Sharpe ratio. What the integration adds is
+*why* the gate is not bureaucracy: the no-look-ahead rule and the
+endogenous-kernel rule are **the same anti-circularity discipline** — don't
+smuggle in the answer — so the evaluation gate is the econometric image of
+"prices are not odds." It is also stricter on two points AFML's directional
+examples can blur: the baseline is the **up-rate, never 50%**, and a
+cross-sectional rank-IC is **not** a single-series directional hit rate. And it
+demonstrates the leak in *its own* code (Chapter 5; Appendix A.3), which turns the
+abstract warning into a worked autopsy.
+
+**Microstructure as an alpha-source-and-capacity theory, not just a cost theory.**
+Grinold–Kahn's *Active Portfolio Management* (2000) gives the Fundamental Law
+(IR = IC·√BR) but takes IC as an *input* — "suppose you have skill" — with no
+structural account of where it comes from or why it lasts. O'Hara's *Market
+Microstructure Theory* (1995) and the Kyle/Glosten–Milgrom tradition model price
+impact and the spread as the *cost of trading*. This compendium fuses them through
+the inelastic-markets and limits-to-arbitrage literatures (Koijen–Yogo,
+Gabaix–Koijen, Gârleanu–Pedersen, Shleifer–Vishny, He–Krishnamurthy): IC's source
+is a **named structural counterparty's willing loss** observable as a flow
+(Chapter 6 §5b), its persistence is set by the moat and finite arbitrage capital,
+and the microstructure λ is the **capacity ceiling** on that same edge. Stricter
+implication: do not hunt for edges in price patterns (no counterparty ⇒ no
+durability); identify the flow and its counterparty, size to the impact-implied
+capacity, and expect decay once the flow is named — the disappearing index effect
+as the worked example.
+
+**The payoff is one wall, one discipline, one economics.** The three contributions
+are the same observation at three altitudes. *One wall:* the non-identification of
+P **is** the ~50–55% directional ceiling **is** the reason a backtest can be
+confidently wrong — so "more data, more model" cannot close a gap that is
+structural, and treating the three as separate problems is the central error this
+book exists to prevent. *One discipline:* the endogenous-kernel rule and the
+no-look-ahead rule are one rule, so a practitioner who has internalised the
+asset-pricing version is inoculated against the machine-learning version of the
+same sin. *One economics:* "a counterparty's willing loss" is simultaneously the
+model's largest open tension (inelastic demand breaks the representative-agent
+kernel) and the positive theory of edge (where durable IC is born) — the thing
+that makes the model *incomplete* is the thing that makes *edge possible*. Each
+separate literature is correct; placed in one frame, they forbid three moves each
+permits alone — reading Q-densities as forecasts, trusting backtest accuracy
+without the up-rate + deflated-Sharpe gate on out-of-sample data, and seeking
+alpha in patterns with no willing counterparty.
+
 ## From theory to code
 
 Insights 6 and 7 are not just advice — they are implemented in this repository as a runnable, tested recipe:

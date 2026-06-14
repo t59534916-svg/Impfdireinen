@@ -71,7 +71,7 @@ A strategy that looks brilliant on historical data is usually fooling you. There
 </aside>
 
 <aside class="insert" markdown="1">
-**In plain words — the three ways a backtest cheats.** (1) **Look-ahead:** the model quietly uses information that wasn't available yet. (2) **Overfitting / data-snooping:** try a thousand strategies and the luckiest looks brilliant *by chance alone*. (3) **No costs:** paper profits that real trading fees would erase. The cures have names: *purged cross-validation* (test only on genuinely future, non-overlapping data) and the *deflated Sharpe ratio* (discount your result for how many attempts it took to find it).
+**In plain words — the three ways a backtest cheats.** (1) **Look-ahead:** the model quietly uses information that wasn't available yet. (2) **Overfitting / data-snooping:** try a thousand strategies and the luckiest looks brilliant *by chance alone*. (3) **No costs:** paper profits that real trading fees would erase. The cures have names: *purged cross-validation* (test only on genuinely future, non-overlapping data) and the *deflated Sharpe ratio* (a *Sharpe ratio* — reward earned per unit of risk taken — discounted for how many attempts it took to find the result).
 </aside>
 
 <aside class="insert" markdown="1">
@@ -96,6 +96,18 @@ $$\text{your overall edge} \;=\; (\text{skill per bet}) \times \sqrt{\text{numbe
 
 <aside class="insert" markdown="1">
 **In plain words — "breadth" and the "information ratio."** *Breadth* is how many genuinely **independent** bets you make. The *information ratio* is your return per unit of risk — the scorecard of skill. The law says that even a near-coin-flip skill — a hit rate just *two or three points above* the 50/50 coin (a "skill" of about 0.05) — spread across enough independent bets becomes excellent: $0.05 \times \sqrt{1{,}000} \approx 1.6$, institutional-grade. The trap: market bets are *correlated*, so a thousand *trades* are far fewer than a thousand *independent* bets — which is why breadth, not the size of the edge, is the binding constraint. A tiny edge × huge *real* breadth, levered and defended, *is* Renaissance's Medallion fund: roughly 39% a year, after fees, for thirty years.
+</aside>
+
+<aside class="insert" markdown="1">
+**By the numbers — a tiny edge, with and without real breadth.** Take a skill so small it is a *hair* above a coin: a 52.5% hit rate, which is a "skill" (information coefficient) of about **0.05**. Your overall edge — the information ratio — is that skill times the square root of the number of **independent** bets:
+
+| What you actually have | Independent bets that count | Overall edge (information ratio) |
+|---|---|---|
+| one bet | 1 | 0.05 — invisible |
+| 1,000 *genuinely independent* bets | 1,000 | **1.58 — world-class** |
+| 1,000 *correlated* trades (each ~10% alike) | ≈ 10 | 0.16 — mediocre |
+
+The edge *per bet* never changed between the second row and the third. The only thing that moved is how many of the bets were *truly independent* — and that is the whole game. A thousand trades that secretly all ride the same market wave are worth about **ten** real bets, not a thousand. Breadth is the lever; genuine independence is the scarce, expensive ingredient — which is exactly the catch in Step 6.
 </aside>
 
 ![Figure 5 — The casino made concrete. Left: many gamblers with the same tiny edge (a point or two over a coin) — on a few bets they scatter and some lose, but across thousands of *independent* bets they fan into reliable profit. Right: the share of them in profit climbs from a coin-flip toward certainty as the number of bets grows. A small edge and large *independent* breadth is the whole game.](book/img/fig11_lln_convergence.png)

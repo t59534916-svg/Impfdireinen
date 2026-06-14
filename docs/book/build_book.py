@@ -249,6 +249,37 @@ to a deflated Sharpe of 0.000. The episode is the strongest possible argument fo
 the verification gate: the leak is easy to introduce, it produces a confident and
 entirely false number, and only out-of-sample evaluation exposes it.
 
+**Anatomy of the leak.** The change was a single line — *which* stream of
+information coefficients you hand the significance gate. On a panel of **pure
+noise** (no planted signal whatsoever, 120 dates × 40 names), the two versions
+disagree completely:
+
+| Pure-noise panel — same data both rows | Mean rank-IC | Per-date Sharpe | Deflated Sharpe (50 trials) | Verdict |
+|---|---|---|---|---|
+| In-sample refit (**the bug**) | +0.217 | +1.43 | **1.000** | "significant" — a **false positive** |
+| Out-of-sample purged CPCV (**the fix**) | −0.007 | −0.05 | **0.000** | correctly **not** significant |
+
+The data is identical and contains no edge; only the *evaluation* changed. An
+in-sample fit lets the model grade its own homework, so a learner with enough
+capacity to memorise noise posts a mean IC of +0.22 and a perfect deflated
+Sharpe. Feed the gate only the IC the model earned on dates it never trained on,
+and the phantom edge evaporates to a deflated Sharpe of zero. The minimal diff:
+
+```diff
+- # WRONG: refit on all rows, then score the gate on that same (in-sample) fit
+- model = GradientBoostedTrees(...).fit(panel.X, panel.y)
+- ics   = [rank_ic(model.predict(X_d), y_d) for d in dates]   # in-sample IC
+- gate  = deflated_sharpe_ratio(ics, n_trials=50)             # -> 1.000 on pure noise
++ # RIGHT: gate on the OUT-OF-SAMPLE IC stream from purged + embargoed CPCV
++ res   = gbrt_cross_sectional_eval(panel, ...)               # model never sees its test fold
++ gate  = deflated_sharpe_ratio(res.oos_ics, n_trials=50)     # -> 0.000 on pure noise
+```
+
+One line — the IC stream you hand the gate — is the entire distance between a
+confident lie and the truth. That is why the gate is worthless unless it runs on
+data the model has never touched, and why every number in Chapter 5 is computed
+that way.
+
 ## A.4 — Reproducibility
 
 All sources, figures, code, and this builder live in the repository under
