@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.7.0"  # + structural analytics (synthetic delta, shape, decay)
+__version__ = "1.8.0"  # + vpts.stats: anti-overfitting / data-snooping controls
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (
@@ -91,6 +91,22 @@ from vpts.structure.analytics import (
 )
 from vpts.structure.dataset import build_structural_dataset, build_structural_meta_dataset
 from vpts.structure.models import STRUCTURAL_FEATURES, StructuralFeatures
+from vpts.stats import (
+    DeflatedSharpeResult,
+    HaircutResult,
+    MinTRLResult,
+    PBOResult,
+    PSRResult,
+    adjusted_pvalues,
+    annualized_sharpe_lo,
+    deflated_sharpe_ratio,
+    expected_max_sharpe,
+    haircut_sharpe,
+    min_track_record_length,
+    probabilistic_sharpe_ratio,
+    probability_of_backtest_overfitting,
+    sharpe_ratio,
+)
 
 __all__ = [
     "__version__",
@@ -168,4 +184,19 @@ __all__ = [
     "MetaDataset",
     "MetaCVResult",
     "MetaPermutationResult",
+    # stats (anti-overfitting / data-snooping controls)
+    "sharpe_ratio",
+    "probabilistic_sharpe_ratio",
+    "deflated_sharpe_ratio",
+    "expected_max_sharpe",
+    "min_track_record_length",
+    "annualized_sharpe_lo",
+    "probability_of_backtest_overfitting",
+    "adjusted_pvalues",
+    "haircut_sharpe",
+    "PSRResult",
+    "DeflatedSharpeResult",
+    "MinTRLResult",
+    "PBOResult",
+    "HaircutResult",
 ]

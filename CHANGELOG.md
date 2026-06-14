@@ -6,6 +6,13 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ---
 
+## Act III — production hardening
+
+### `1.8.0` — Anti-overfitting statistics suite (`vpts.stats`)
+- **Added** `vpts.stats`: selection-aware significance tests that sit on top of the CPCV + permutation harness — **Probabilistic** and **Deflated Sharpe Ratio** (Bailey & López de Prado), **minimum track-record length**, **Probability of Backtest Overfitting** via Combinatorial Symmetric CV (Bailey–Borwein–López de Prado–Zhu), the **Harvey–Liu–Zhu** multiple-testing Sharpe haircut (Bonferroni/Holm/BH/BY adjusted p-values), and **Lo's** autocorrelation-corrected annualized Sharpe.
+- **Why:** the harness tells you whether *one* signal clears its shuffled null; these tell you whether a *selected-best* strategy survives the multiplicity and short-sample corrections — the controls that turn the repo's "in-sample 0.94 / OOS 0.49" XGBoost trap into a measured PBO. Prerequisite for an honest edge-hunt.
+- **Fixed** tail-cancellation in the haircut path (`1 − cdf` → survival function), so large t-stats no longer explode to an infinite haircut.
+
 ## Act II — the validation
 
 ### `1.7.0` — Structural microstructure analytics *(the strongest, and most instructive, signal)*
