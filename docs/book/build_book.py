@@ -177,7 +177,7 @@ credulity, not because it is pessimistic — its conclusion is that markets *are
 beatable, rarely and specifically (Chapter 6 supplies the positive theory; Chapter
 7 the synthesis), and the severity is in service of finding where.
 
-- **The thesis with no mathematics:** Part I, the plain-language Field Guide.
+- **The thesis with no mathematics:** Book One, the plain-language Field Guide.
 - **What a price means (theory):** Chapter 2 — assumes comfort with expected
   utility and Itô calculus; its boundary and self-consistency sections need no
   calculus.
@@ -635,7 +635,7 @@ def build():
       <div class="sub">A scientific compendium of one research session — opening with a
         plain-language field guide, then the full theory, the evidence, and tested code</div>
       <ul>
-        <li>Part I — a plain-language field guide: the whole argument, no mathematics</li>
+        <li>Book One — a plain-language field guide: the whole argument, no mathematics</li>
         <li>A four-level model of a market and its participants</li>
         <li>The mathematics of analysing financial time series</li>
         <li>A SWOT of AI architectures for directional forecasting</li>
@@ -654,10 +654,10 @@ def build():
 
     # toc — two parts, chapters nested under Part II
     toc_items = [
-        '<li class="part"><span class="cnum">I</span>'
-        '<a href="#partI">The Short Road — A Plain-Language Field Guide</a></li>',
-        '<li class="part"><span class="cnum">II</span>'
-        '<a href="#partII">The Full Compendium</a></li>']
+        '<li class="part">'
+        '<a href="#partI"><span class="cnum">Book One</span> The Short Road — A Plain-Language Field Guide</a></li>',
+        '<li class="part">'
+        '<a href="#partII"><span class="cnum">Book Two</span> The Full Compendium</a></li>']
     toc_items += [
         f'<li class="ch"><span class="cnum">{c["num"]}</span>'
         f'<a href="#{c["id"]}">{c["title"]}</a>'
@@ -677,13 +677,13 @@ def build():
                  r'<figure class="fg"><img src="\2"/><figcaption>\1</figcaption></figure>', fgb)
     fgb = fgb.replace("<p><em>The full compendium proves",
                       '<p class="lead"><em>The full compendium proves', 1)
-    part1_divider = ('<section class="partdivider" id="partI"><div class="pnum">Part I</div>'
+    part1_divider = ('<section class="partdivider" id="partI"><div class="pnum">Book One</div>'
                      '<div class="ptitle">The Short Road</div>'
                      '<div class="psub">A plain-language field guide — the whole argument in six '
                      'stepping-stones, with metaphors, plain-word inserts, and the load-bearing figures. '
                      'No derivations; just the path.</div></section>')
     fieldguide = part1_divider + f'<div class="fieldguide">{fgb}</div>'
-    part2_divider = ('<section class="partdivider" id="partII"><div class="pnum">Part II</div>'
+    part2_divider = ('<section class="partdivider" id="partII"><div class="pnum">Book Two</div>'
                      '<div class="ptitle">The Full Compendium</div>'
                      '<div class="psub">The same argument proved in detail — general-equilibrium theory, '
                      'the mathematics of time series, the AI survey, the implemented model, and the '
@@ -701,6 +701,14 @@ def build():
             body_html = md_to_html(text)
         else:
             body_html = md_to_html(CH5_BODY if c["body"] == "CH5" else CH6_BODY)
+        # map inter-chapter references from filenames to chapter numbers (book context);
+        # only touches <code>-wrapped reference text, never an href, so links stay valid.
+        for _fn, _ch in (("MARKET_EQUILIBRIUM_MODEL.md", "Chapter 2"),
+                         ("TIMESERIES_MATH.md", "Chapter 3"),
+                         ("AI_TIMESERIES_FORECASTING_SWOT.md", "Chapter 4"),
+                         ("EDGE_METHODOLOGY.md", "Chapter 6"),
+                         ("EDGE_METHODOLOGY", "Chapter 6")):
+            body_html = body_html.replace(f"<code>{_fn}</code>", _ch)
         lead = figure(c["lead"][0], c["lead"][1], c["lead"][2], "lead") if c.get("lead") else ""
         plate = (f'<section class="chapter" id="{c["id"]}">'
                  f'<div class="kicker">Chapter {c["num"]}</div>'
