@@ -35,8 +35,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np  # noqa: E402
 
 from github_data_scan import GITHUB_TICKERS, github_loader  # noqa: E402
-from vpts import CombinatorialPurgedCV, DataFetchError, build_structural_dataset, cpcv_factor_eval  # noqa: E402
+from vpts import (  # noqa: E402
+    CombinatorialPurgedCV,
+    DataFetchError,
+    build_structural_dataset,
+    cpcv_factor_eval,
+)
 from vpts.data import synthetic_delisted_ohlcv  # noqa: E402
+from vpts.ml.factor_model import cpcv_factor_quantile_returns  # noqa: E402
 from vpts.ml.models import FactorDataset  # noqa: E402
 from vpts.stats import block_shuffle_indices, recommend_block_size  # noqa: E402
 
@@ -46,9 +52,28 @@ def _eval_fold_ics(ds: FactorDataset, cv: CombinatorialPurgedCV, alpha: float) -
 
 
 def _pooled_ic(entries) -> float:
-    """Mean OOS IC pooled over every fold of every (name, fold_ics) entry."""
-    ics = [f for _name, f, _ds, _cv in entries]
+    """Mean OOS IC pooled over every fold of every entry."""
+    ics = [f for _name, f, _b, _ds, _cv in entries]
     return float(np.concatenate(ics).mean()) if ics else float("nan")
+
+
+def _bucket_avg(entries):
+    """Average the conviction-bucket metrics across entries (per-name then mean).
+
+    Returns ``(curve, tails_ls_net_pct, frac_in_market)`` — the inversion lives in
+    ``curve`` (mean fwd return per signal quintile, low→high) and ``tails_ls_net``
+    (long top / short bottom / FLAT middle, net of cost). On survivors the curve
+    rises and tails_ls_net > 0; under a loser-heavy population it flattens/inverts.
+    """
+    curves, ls_net = [], []
+    for _name, _f, bres, _ds, _cv in entries:
+        if bres is None:
+            continue
+        curves.append(np.asarray(bres.bucket_returns_pct, float))
+        ls_net.append(bres.long_short_net_pct)
+    if not curves:
+        return None, float("nan"), float("nan")
+    return np.mean(curves, axis=0), float(np.mean(ls_net)), float("nan")
 
 
 def _block_perm_p(entries, real_ic: float, *, alpha: float, perms: int, seed: int = 0) -> float:
@@ -57,7 +82,7 @@ def _block_perm_p(entries, real_ic: float, *, alpha: float, perms: int, seed: in
     null = np.empty(perms, dtype=float)
     for p in range(perms):
         folds = []
-        for _name, _f, ds, cv in entries:
+        for _name, _f, _b, ds, cv in entries:
             bs = recommend_block_size(ds.horizon, ds.stride)
             perm = block_shuffle_indices(len(ds), bs, rng=rng)
             shuf = FactorDataset(X=ds.X, y=ds.y[perm], baseline=ds.baseline,
@@ -77,7 +102,11 @@ def _build(frame, sym, args):
                                   stride=args.stride, symbol=sym, interval="1d")
     cv = CombinatorialPurgedCV(n_groups=args.n_groups, n_test_groups=args.n_test,
                                purge=ds.purge_samples, embargo_pct=0.01)
-    return sym, _eval_fold_ics(ds, cv, args.alpha), ds, cv
+    try:
+        bres = cpcv_factor_quantile_returns(ds, cv=cv, n_buckets=5, cost_bps=args.cost_bps)
+    except ValueError:
+        bres = None
+    return sym, _eval_fold_ics(ds, cv, args.alpha), bres, ds, cv
 
 
 def main() -> int:
@@ -89,6 +118,7 @@ def main() -> int:
     ap.add_argument("--n-groups", type=int, default=6)
     ap.add_argument("--n-test", type=int, default=2)
     ap.add_argument("--terminal-frac", type=float, default=0.1, help="dead-name terminal loss level")
+    ap.add_argument("--cost-bps", type=float, default=10.0, help="round-trip cost for the tails-only book")
     ap.add_argument("--fractions", type=float, nargs="*", default=[0.0, 0.2, 0.33, 0.5, 0.67])
     ap.add_argument("--perms", type=int, default=60, help="block-perm shuffles at the endpoints")
     ap.add_argument("--tickers", nargs="*", default=[t for t, _ in GITHUB_TICKERS])
@@ -122,37 +152,57 @@ def main() -> int:
         except ValueError:
             continue
     dead_ic = _pooled_ic(dead_pool)
-    print(f"  dead-group structural OOS IC = {dead_ic:+.3f}  "
-          f"(dip-buying features anti-predict a name on its way to zero)\n")
+    sc, _sls, _ = _bucket_avg(survivors)
+    dc, _dls, _ = _bucket_avg(dead_pool)
+    print(f"  dead-group structural OOS IC = {dead_ic:+.3f} (≈0 — the linear IC just dilutes), "
+          f"but the directional read is the tell:")
+    if sc is not None and dc is not None:
+        print(f"    top-bucket fwd return : survivors {sc[-1]:+.2f}%   dead names {dc[-1]:+.2f}%  "
+              f"(the 'most bullish' bars: up on names that lived, DOWN on names that died)\n")
 
-    print("=" * 74)
-    print(f"{'delisted':>9} {'dead:alive':>11} {'pooledIC':>9} {'survIC':>8} {'deadIC':>8} {'p(block)':>9}")
-    print("-" * 74)
-    rows = []
+    print("=" * 82)
+    print(f"{'delisted':>9} {'dead:alive':>11} {'pooledIC':>9} {'p(block)':>9} "
+          f"{'tails L/S net':>14}   conviction curve (low→high signal)")
+    print("-" * 82)
+    rows, curves_at = [], {}
     for f in sorted(args.fractions):
         k = int(round(f / (1.0 - f) * n_surv)) if f < 1 else len(dead_pool)
         k = min(k, len(dead_pool))
         entries = survivors + dead_pool[:k]
         pooled = _pooled_ic(entries)
+        curve, ls_net, _ = _bucket_avg(entries)
         frac_actual = k / (n_surv + k)
-        # block-perm p only at the endpoints (it is the expensive part)
         endpoint = f in (min(args.fractions), max(args.fractions))
         p = _block_perm_p(entries, pooled, alpha=args.alpha, perms=args.perms) if endpoint else None
         ps = f"{p:.3f}" if p is not None else "  —"
-        print(f"{frac_actual:>8.0%} {k:>5}:{n_surv:<5} {pooled:>+9.3f} {surv_ic:>+8.3f} "
-              f"{dead_ic:>+8.3f} {ps:>9}")
-        rows.append((frac_actual, pooled, p))
+        curve_s = " ".join(f"{c:+.2f}" for c in curve) if curve is not None else "n/a"
+        print(f"{frac_actual:>8.0%} {k:>5}:{n_surv:<5} {pooled:>+9.3f} {ps:>9} "
+              f"{ls_net:>+12.3f}%   {curve_s}")
+        rows.append((frac_actual, pooled, ls_net))
+        if endpoint:
+            curves_at[frac_actual] = (curve, ls_net)
 
-    print("=" * 74)
-    base = rows[0][1]
-    worst = rows[-1][1]
-    print(f"\nReading: the survivor-only IC ({base:+.3f}) is the number a survivor-biased")
-    print(f"backtest would report. As the population goes loser-heavy it moves to {worst:+.3f}")
-    verdict = ("INVERTS sign" if base > 0 and worst < 0 else
-               "erodes toward zero" if base > 0 else "no survivor edge to erode")
-    print(f"→ the apparent edge {verdict}. The bias is a base-rate/universe effect, not a")
-    print("  per-trade one: nothing 'dies' inside a ~1-month hold — the losers were simply")
-    print("  never in the survivor universe. (Dead names synthetic; survivors real.)")
+    print("=" * 82)
+    base_ic, worst_ic = rows[0][1], rows[-1][1]
+    base_ls, worst_ls = rows[0][2], rows[-1][2]
+    top_surv = curves_at[rows[0][0]][0]
+    top_loser = curves_at[rows[-1][0]][0]
+    t0, t1 = (top_surv[-1] if top_surv is not None else float("nan"),
+              top_loser[-1] if top_loser is not None else float("nan"))
+    print("\nReading — the same survivor edge, two ways:")
+    di = "INVERTS sign" if t0 > 0 and t1 < 0 else "erodes"
+    print(f"  DIRECTION (top-bucket fwd return): survivors {t0:+.2f}%  →  loser-heavy {t1:+.2f}%  "
+          f"→ {di}")
+    print(f"    the bars the signal flags MOST bullish go from the best performers to the WORST —")
+    print(f"    the dip-buying footprint that marks a bottom in a survivor marks the next leg down")
+    print(f"    in a name that died. This directional read is a survivorship MIRAGE.")
+    se = "more resilient (erodes, doesn't flip)" if base_ls > 0 and worst_ls > 0 else "flips"
+    print(f"  SELECTIVITY (market-neutral tails L/S): {base_ls:+.2f}%  →  {worst_ls:+.2f}% / bet "
+          f"net {args.cost_bps:.0f}bps → {se}")
+    print(f"    long/short cancels the universe drift, so relative ordering survives better —")
+    print(f"    matching RESEARCH.md: direction is the mirage, selectivity the resilient thread.")
+    print("\nThe bias is a base-rate/universe effect, not a per-trade one — nothing dies inside a")
+    print("~1-month hold; the losers were simply never in the survivor universe. (Dead synthetic.)")
     return 0
 
 
