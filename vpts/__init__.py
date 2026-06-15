@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.14.1"  # fix: AnthropicClient wraps construction/auth errors so fallback works
+__version__ = "1.15.0"  # + DataLakeSource: parquet data lake (survivor + delisted)
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (

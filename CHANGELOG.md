@@ -8,6 +8,10 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.15.0` — Parquet data-lake source (survivor + delisted)
+- **Added** `DataLakeSource` (`vpts.data`): reads a Hive-partitioned parquet lake (`{root}/{TICKER}/year=YYYY/data.parquet`) into the `DataSource` interface — the layout of a real `data_lake/eod/{source}/daily/` tree. Enumerates the universe (`available_symbols`) and builds a **point-in-time `Universe` with inferred delist dates** (`build_universe` — a name whose last bar predates the lake's global last date by `active_gap_days` is marked delisted), so a **survivorship-free** backtest runs straight from the lake. Optional `parquet` extra (`pip install vpts[parquet]`). 5 tests on a synthetic parquet lake (incl. delist inference), skip cleanly where pyarrow is absent.
+- **Why:** this is the ingester for real survivorship-free data (delisted + micro-cap) — the one thing the free feeds couldn't provide. The harness is finally pointed at the actual binding constraint.
+
 ### `1.14.1` — Fix: LLM client failures degrade instead of crashing
 - **Fixed** `AnthropicClient.complete`: the `anthropic.Anthropic()` construction was outside the try/except, so an auth/credential-resolution failure raised a raw `TypeError` that the `InsightGenerator` template fallback did not catch — the layer would crash instead of degrading. Now every backend failure (missing package, unresolved auth, API error) surfaces as `InsightLLMError` and the deterministic template takes over. Surfaced by actually attempting a live call (which cannot authenticate in this environment — the live Claude path remains unverified; only the mock/template paths are tested).
 
