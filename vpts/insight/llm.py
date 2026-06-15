@@ -54,19 +54,23 @@ class AnthropicClient:
                 "Install it (`pip install anthropic`) or pass a different LLMClient."
             ) from exc
 
-        client = anthropic.Anthropic()
-        kwargs: dict = {
-            "model": self.model,
-            "max_tokens": self.max_tokens,
-            "system": system,
-            "messages": [{"role": "user", "content": user}],
-        }
-        if self.effort is not None:
-            kwargs["output_config"] = {"effort": self.effort}
         try:
+            client = anthropic.Anthropic()
+            kwargs: dict = {
+                "model": self.model,
+                "max_tokens": self.max_tokens,
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+            }
+            if self.effort is not None:
+                kwargs["output_config"] = {"effort": self.effort}
             resp = client.with_options(timeout=self.timeout).messages.create(**kwargs)
         except anthropic.APIError as exc:
             raise InsightLLMError(f"Anthropic API error: {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 - incl. auth/credential resolution failures
+            # Construction (e.g. missing API key) and any other failure must surface as
+            # InsightLLMError so InsightGenerator's template fallback can catch it.
+            raise InsightLLMError(f"Anthropic client error: {exc}") from exc
 
         if getattr(resp, "stop_reason", None) == "refusal":
             raise InsightLLMError("Model declined to respond (stop_reason='refusal').")

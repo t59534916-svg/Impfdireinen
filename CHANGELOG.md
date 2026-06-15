@@ -8,6 +8,9 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.14.1` — Fix: LLM client failures degrade instead of crashing
+- **Fixed** `AnthropicClient.complete`: the `anthropic.Anthropic()` construction was outside the try/except, so an auth/credential-resolution failure raised a raw `TypeError` that the `InsightGenerator` template fallback did not catch — the layer would crash instead of degrading. Now every backend failure (missing package, unresolved auth, API error) surfaces as `InsightLLMError` and the deterministic template takes over. Surfaced by actually attempting a live call (which cannot authenticate in this environment — the live Claude path remains unverified; only the mock/template paths are tested).
+
 ### `1.14.0` — Unsupervised regime detection / pattern discovery (`vpts.ml.regime`)
 - **Added** the one ML gap the project was missing: unsupervised **pattern discovery** (`RegimeClusterer` — transparent k-means on standardized features, chosen over GMM/HMM for explainability), **walk-forward regime assignment** (`walk_forward_regimes` — fit on prior bars only, refit periodically, labels aligned across refits; no look-ahead, unit-tested via future-scramble invariance), and an honest **permutation-tested evaluator** (`regime_forward_stats` — best-minus-worst regime forward-return spread vs a label-shuffle null).
 - **`examples/regime_discovery.py`** — walk-forward regimes on the real stocknet survivors. **Finding: 3/20 names clear p<0.05 vs ~1 expected by chance (P(≥3)≈0.075) → ≈ chance; the discovered regimes do NOT predict forward returns out of sample.** As predicted and consistent with the rest of the arc: a real new capability, no robust edge — judged by the harness, negative reported as negative.

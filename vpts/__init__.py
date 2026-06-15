@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.14.0"  # + unsupervised regime detection / pattern discovery (walk-forward)
+__version__ = "1.14.1"  # fix: AnthropicClient wraps construction/auth errors so fallback works
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (

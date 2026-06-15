@@ -176,6 +176,20 @@ def test_anthropic_client_constructs_without_sdk() -> None:
     assert c.model == "claude-opus-4-8" and c.max_tokens == 800
 
 
+def test_anthropic_client_failure_surfaces_as_insight_llm_error() -> None:
+    # A backend failure — missing package (CI) OR unresolved auth (here) — must be
+    # wrapped as InsightLLMError, NOT raised raw, so the template fallback can catch
+    # it. (Regression: construction was previously outside the try/except.)
+    from vpts.insight.llm import InsightLLMError
+
+    try:
+        AnthropicClient(max_tokens=50).complete("system", "user")
+    except InsightLLMError:
+        pass
+    else:  # pragma: no cover - would mean a live key resolved in CI
+        raise AssertionError("expected InsightLLMError on backend failure")
+
+
 # --------------------------------------------------------------------------- #
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
