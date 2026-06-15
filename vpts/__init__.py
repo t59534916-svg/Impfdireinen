@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.13.0"  # base-rate-calibrated (loser-heavy) survivorship injection
+__version__ = "1.14.0"  # + unsupervised regime detection / pattern discovery (walk-forward)
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (
@@ -69,6 +69,12 @@ from vpts.ml.meta_model import (
     cpcv_meta_eval,
     permutation_test_meta,
 )
+from vpts.ml.regime import (
+    RegimeClusterer,
+    regime_forward_stats,
+    walk_forward_regimes,
+)
+from vpts.ml.regime_models import RegimeForwardStats
 from vpts.ml.models import (
     CrossSectionalICResult,
     CrossSectionalPanel,
@@ -206,6 +212,11 @@ __all__ = [
     "MetaDataset",
     "MetaCVResult",
     "MetaPermutationResult",
+    # ml (unsupervised regime detection / pattern discovery, walk-forward)
+    "RegimeClusterer",
+    "walk_forward_regimes",
+    "regime_forward_stats",
+    "RegimeForwardStats",
     # stats (anti-overfitting / data-snooping controls)
     "sharpe_ratio",
     "probabilistic_sharpe_ratio",
