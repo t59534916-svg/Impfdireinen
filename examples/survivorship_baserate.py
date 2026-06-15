@@ -16,8 +16,8 @@ p-value at the endpoints. The dead names decline *slowly* to a calibrated termin
 loss (``--terminal-frac``), so the only thing changing across the sweep is the base
 rate of losers — exactly the survivorship lever.
 
-    python examples/survivorship_baserate.py
-    python examples/survivorship_baserate.py --fractions 0 0.2 0.33 0.5 0.67 --terminal-frac 0.1
+    python examples/survivorship_baserate.py                       # Bessembinder-calibrated (default)
+    python examples/survivorship_baserate.py --preset custom --fractions 0 0.2 0.5 0.67
 
 Honest scope: the dead names are *synthetic* (no free delisted prices — verified
 across Polygon/FMP free tiers), so this is a calibrated stress, not ground truth.
@@ -45,6 +45,22 @@ from vpts.data import synthetic_delisted_ohlcv  # noqa: E402
 from vpts.ml.factor_model import cpcv_factor_quantile_returns  # noqa: E402
 from vpts.ml.models import FactorDataset  # noqa: E402
 from vpts.stats import block_shuffle_indices, recommend_block_size  # noqa: E402
+
+# Empirical calibration — US common stocks, CRSP 1926-2016 (verified against the
+# published record):
+#  • Bessembinder (2018, J. Financial Economics, "Do Stocks Outperform Treasury
+#    Bills?"): ~57% of stocks underperform 1-month T-bills over their lifetime;
+#    ~4% of firms create ALL net wealth; of ~26,000 stocks, 9,187 (~35%) delisted
+#    with a MEDIAN lifetime buy-and-hold return of -91.95% → end ≈ 0.08× start.
+#  • Shumway (1997, JF) / Shumway & Warther (1999, JF): performance-related
+#    delisting-month returns average ~-30% (NYSE/AMEX) to ~-55% (NASDAQ).
+EMPIRICAL = {
+    # death severity: the -91.95% median delisted lifetime return → terminal ≈ 0.08×.
+    "terminal_frac": 0.08,
+    # base-rate ladder: 0 (survivor backtest) · ~10% (a realistic large-cap 5y delist
+    # rate) · 35% (Bessembinder delisted share) · 57% (lifetime under-T-bill rate).
+    "fractions": [0.0, 0.10, 0.35, 0.57],
+}
 
 
 def _eval_fold_ics(ds: FactorDataset, cv: CombinatorialPurgedCV, alpha: float) -> np.ndarray:
@@ -117,12 +133,25 @@ def main() -> int:
     ap.add_argument("--alpha", type=float, default=1.0)
     ap.add_argument("--n-groups", type=int, default=6)
     ap.add_argument("--n-test", type=int, default=2)
-    ap.add_argument("--terminal-frac", type=float, default=0.1, help="dead-name terminal loss level")
+    ap.add_argument("--preset", choices=["bessembinder", "custom"], default="bessembinder",
+                    help="'bessembinder' calibrates terminal_frac/fractions to the empirical record")
+    ap.add_argument("--terminal-frac", type=float, default=None, help="dead-name terminal loss level")
     ap.add_argument("--cost-bps", type=float, default=10.0, help="round-trip cost for the tails-only book")
-    ap.add_argument("--fractions", type=float, nargs="*", default=[0.0, 0.2, 0.33, 0.5, 0.67])
+    ap.add_argument("--fractions", type=float, nargs="*", default=None)
     ap.add_argument("--perms", type=int, default=60, help="block-perm shuffles at the endpoints")
     ap.add_argument("--tickers", nargs="*", default=[t for t, _ in GITHUB_TICKERS])
     args = ap.parse_args()
+
+    # Apply the empirical calibration to any value the user didn't override.
+    cal = args.preset == "bessembinder"
+    if args.terminal_frac is None:
+        args.terminal_frac = EMPIRICAL["terminal_frac"] if cal else 0.1
+    if args.fractions is None:
+        args.fractions = EMPIRICAL["fractions"] if cal else [0.0, 0.2, 0.33, 0.5, 0.67]
+    if cal:
+        print("Calibration: Bessembinder (2018) — terminal_frac=0.08 (median delisted "
+              "lifetime return -91.95%);\n  base-rate ladder 0 / 10% / 35% (delisted share) "
+              "/ 57% (lifetime under-T-bill rate).")
 
     load = github_loader()
     print(f"Loading {len(args.tickers)} real stocknet survivors (5y daily) …")
@@ -189,20 +218,22 @@ def main() -> int:
     top_loser = curves_at[rows[-1][0]][0]
     t0, t1 = (top_surv[-1] if top_surv is not None else float("nan"),
               top_loser[-1] if top_loser is not None else float("nan"))
-    print("\nReading — the same survivor edge, two ways:")
-    di = "INVERTS sign" if t0 > 0 and t1 < 0 else "erodes"
-    print(f"  DIRECTION (top-bucket fwd return): survivors {t0:+.2f}%  →  loser-heavy {t1:+.2f}%  "
-          f"→ {di}")
-    print(f"    the bars the signal flags MOST bullish go from the best performers to the WORST —")
-    print(f"    the dip-buying footprint that marks a bottom in a survivor marks the next leg down")
-    print(f"    in a name that died. This directional read is a survivorship MIRAGE.")
-    se = "more resilient (erodes, doesn't flip)" if base_ls > 0 and worst_ls > 0 else "flips"
-    print(f"  SELECTIVITY (market-neutral tails L/S): {base_ls:+.2f}%  →  {worst_ls:+.2f}% / bet "
+    print("\nReading — the same survivor edge through three lenses:")
+    print(f"  IC (linear)  : {base_ic:+.3f} → {worst_ic:+.3f} — barely moves, stays positive: the")
+    print(f"    linear lens is BLIND to the inversion (a near-constant decline can't correlate).")
+    di = "INVERTS sign" if t0 > 0 and t1 < 0 else "erodes" if t0 > 0 else "n/a"
+    print(f"  DIRECTION (top-bucket fwd return): survivors {t0:+.2f}% → loser-heavy {t1:+.2f}% → {di}")
+    print(f"    the bars flagged MOST bullish go from best performers to WORST — the dip-buying")
+    print(f"    footprint that marks a bottom in a survivor marks the next leg down in a name that")
+    print(f"    died. The whole conviction curve goes negative: the directional edge is a MIRAGE.")
+    se = "resilient (does NOT flip sign)" if base_ls > 0 and worst_ls > 0 else "flips"
+    print(f"  SELECTIVITY (market-neutral tails L/S): {base_ls:+.2f}% → {worst_ls:+.2f}% / bet "
           f"net {args.cost_bps:.0f}bps → {se}")
-    print(f"    long/short cancels the universe drift, so relative ordering survives better —")
-    print(f"    matching RESEARCH.md: direction is the mirage, selectivity the resilient thread.")
+    print(f"    long/short cancels the universe drift, so relative ordering survives — matching")
+    print(f"    RESEARCH.md: direction is the mirage, selectivity the resilient thread.")
     print("\nThe bias is a base-rate/universe effect, not a per-trade one — nothing dies inside a")
-    print("~1-month hold; the losers were simply never in the survivor universe. (Dead synthetic.)")
+    print("~1-month hold; the losers were simply never in the survivor universe. (Dead synthetic;")
+    print("severity & base rate calibrated to Bessembinder 2018 / Shumway 1997.)")
     return 0
 
 
