@@ -5,7 +5,7 @@
 **A free, explainable Volume‑Profile trading system — and an honest, adversarial study of whether it actually has an edge.**
 
 ![version](https://img.shields.io/badge/version-1.11.0-blue)
-![tests](https://img.shields.io/badge/tests-250%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-256%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![deps](https://img.shields.io/badge/core%20deps-numpy%20·%20pandas%20·%20scipy-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -63,7 +63,7 @@ Run any phase or experiment directly — every demo is a single file in [`exampl
 ```bash
 python examples/phase4_demo.py AAPL 1y 1d reversion    # the product (needs internet)
 python examples/structural_swing_rater.py              # the research (a swing setup-rater)
-python -m pytest -q                                    # 250 offline, deterministic tests
+python -m pytest -q                                    # 256 offline, deterministic tests
 ```
 
 ---
@@ -150,6 +150,30 @@ flowchart LR
 | 11 | Selectivity stress‑test | robust **9/9** params | p 0.023→**0.106** | DIP‑carried, n.s. injected → closed |
 
 Full narrative, numbers and caveats: [**`RESEARCH.md`**](RESEARCH.md) · [**📄 PDF**](docs/Quiet-Volume-Research.pdf).
+
+### The honest backtest harness (one call)
+
+The durable asset here is the harness, not a signal — so it has a single entry point.
+Hand [`honest_backtest`](vpts/harness.py) a `(features → forward-return)` dataset and it
+returns the whole skeptic's checklist at once: purged‑CPCV OOS IC, a block‑permutation
+p‑value, the conviction‑bucket curve, the Deflated Sharpe (selection‑adjusted for the
+variants you tried) and PBO, and an optional survivorship‑injection sweep.
+
+```python
+from vpts import build_structural_dataset, honest_backtest
+from vpts.data import synthetic_survivor_ohlcv            # ← swap for your {symbol: OHLCV}
+
+frames = {f"SYM{i}": synthetic_survivor_ohlcv(900, seed=i) for i in range(6)}
+features = lambda frame, sym: build_structural_dataset(frame, lookback=120, horizon=20,
+                                                       stride=8, symbol=sym)
+report = honest_backtest([features(f, s) for s, f in frames.items()],
+                         n_trials=11,                     # be honest: variants you tried
+                         frames=frames, feature_builder=features)   # → + survivorship sweep
+print(report.summary())     # OOS IC · block-perm p · bucket curve · DSR · PBO · sweep · verdict
+```
+
+Runnable end‑to‑end (offline): [`examples/honest_harness_demo.py`](examples/honest_harness_demo.py).
+Every evaluator keeps a **null‑clearing** test — it reports *no edge* on random input.
 
 ---
 
@@ -263,7 +287,7 @@ vpts/                      core library — lightweight (numpy · pandas · scip
 └─ insight/                Act III — LLM explanation layer with edge-claim guardrails
 
 examples/                  one runnable file per phase, per experiment, + behavioral_ai_demo
-tests/                     250 offline, deterministic tests
+tests/                     256 offline, deterministic tests
 docs/                      ARCHITECTURE.md · img/ (committed figures + generator)
 RESEARCH.md                the eleven-experiment validation log
 streamlit_app.py           dashboard entry point
@@ -276,7 +300,7 @@ streamlit_app.py           dashboard entry point
 ## Testing
 
 ```bash
-python -m pytest -q            # 250 tests, all offline & deterministic (no network)
+python -m pytest -q            # 256 tests, all offline & deterministic (no network)
 python tests/test_phase1.py    # or run any file directly
 ```
 

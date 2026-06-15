@@ -97,6 +97,7 @@ from vpts.structure.analytics import (
 )
 from vpts.structure.dataset import build_structural_dataset, build_structural_meta_dataset
 from vpts.structure.models import STRUCTURAL_FEATURES, StructuralFeatures
+from vpts.harness import HonestReport, InjectionPoint, honest_backtest
 from vpts.stats import (
     DeflatedSharpeResult,
     HaircutResult,
@@ -193,6 +194,9 @@ __all__ = [
     "CrossSectionalICResult",
     # structure (synthetic delta, profile shape, footprints, decay)
     "build_structural_dataset",
+    "honest_backtest",
+    "HonestReport",
+    "InjectionPoint",
     "build_structural_meta_dataset",
     "STRUCTURAL_FEATURES",
     "StructuralFeatures",
