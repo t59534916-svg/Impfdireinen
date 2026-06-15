@@ -76,7 +76,7 @@ unavoidable confound throughout. There is no delisted/point-in-time data in this
 | 6 | **Cross-sectional rank, 88 names (well-powered)** | combined OOS IC **−0.009** | p **0.856** | near-miss **washed out**; **no edge** |
 | 7 | **Structural microstructure** (synthetic delta, shape, VACR-z, decay) | OOS IC **+0.103** (8 names) → **+0.035** (88 names, 1,308 folds) | p **0.005** (both) | **real signal — survives widening** |
 | 8 | **Structural + survivorship injection** | pooled IC +0.041 → +0.013 (5 dead, 20%) → +0.001 (9 dead, 31%) | p 0.005 → **0.085** → 0.473 | **survivorship-*sensitive*; graceful decay, not a cliff** |
-| 9 | **Structural decomposition + cost** | DIP features carry it (REGIME n.s., p 0.254); tails-only L/S **+0.26%/bet net (survivors) → −1.07%/bet (injected)** — curve inverts | — | **survivorship mirage: the edge inverts off survivors** |
+| 9 | **Structural decomposition + cost** | DIP features carry it (REGIME n.s., p 0.254); tails-only L/S **+0.26%/bet net (survivors) → −1.07%/bet (injected)** — curve inverts | DSR **0.884** (<0.95) | **survivorship mirage: fails the selection-adjusted bar even on survivors, then inverts off them** |
 | 10 | **Swing setup-rater (MFE/MAE meta-labeling)** | direction +0.17%→−0.58%/trade (survivorship); selectivity LIFT +0.14%/bet (surv) → +0.09% (injected) | p 0.005 → **0.10** | **selectivity resists inversion but loses significance & stays unprofitable injected** |
 | 11 | **Selectivity stress-test** (grid + decomposition + power) | survivors lift positive in **9/9** param cells; carried by **DIP** (+0.08) not REGIME (−0.02); injected lift +0.075% | p 0.023 → **0.106** | **robust but DIP-carried & n.s. injected — thread closed** |
 
@@ -171,7 +171,8 @@ Three diagnostics settle what the +0.035 actually is — and the answer is sober
 So the structural result is **real and even tradeable-looking on survivors, but the apparent edge is
 manufactured by survivorship** — it does not merely fade, it reverses sign. The decomposition is the
 discipline working: betting the conviction tails turned a dismissive "−0.08%, empty" into a tempting
-"+0.26% net," and only the injection test revealed that tempting number to be a survivorship artifact.
+"+0.26% net" — which then failed *both* the injection test (→ −1.07%/bet) *and*, even on survivors,
+the repo's own selection-adjusted Sharpe bar (below).
 
 <p align="center"><img src="docs/img/survivorship_inversion.png" width="70%" alt="Conviction-bucket forward return inverts under survivorship injection"/></p>
 
@@ -191,6 +192,27 @@ discipline working: betting the conviction tails turned a dismissive "−0.08%, 
 >   so the one thread that looked survivorship-resilient owes that resilience to the deaths being
 >   smooth. Under realistic bear rallies, neither direction nor selectivity is safe. (Reproduce:
 >   `python examples/survivorship_baserate.py --rally strong`.)
+
+> **Selection-adjusted test — does the +0.26%/bet survivor book clear the repo's OWN bar?** Every
+> other claim in this log is held to a Deflated Sharpe (selection-adjusted for the ~11 strategy
+> variants tried across the arc) and a PBO; the tempting survivor book should be too. Exposing the
+> conviction-tail book's per-bet return stream and applying the same stats (`structural_decompose.py`
+> section D, `--trials 11`):
+> - The book **reproduces exactly** — **+0.46%/bet gross, +0.26%/bet net** on the 20 survivors — but
+>   its **per-bet Sharpe is only +0.024** (n = 14,120 tail bets). The headline is a difference of
+>   bucket means; the realized per-bet Sharpe is near zero.
+> - **Deflated Sharpe = 0.884**, *below* the 0.95 bar: even granting survivors, the edge does **not**
+>   clear selection adjustment for the variants tried. PBO is 6% — the weak per-name ranking is stable
+>   in the CSCV sense, but PBO is blind to survivorship and to arc-wide selection, so **DSR is the
+>   binding test** here, and it falls short.
+> - And that 0.884 is **optimistic**: `deflated_sharpe_ratio` treats all 14,120 tail bets as the
+>   effective sample, but they **overlap** (20-bar horizon, stride 3) and the 20 names **co-move**, so
+>   the effective *n* is far smaller and no Lo autocorrelation correction is applied — the honest figure
+>   is weaker still.
+>
+> So the single most tempting number in the whole log fails the repo's own anti-snooping bar *before a
+> single delisted name is injected*; the injection test (→ −1.07%/bet) then closes it. (Reproduce:
+> `python examples/structural_decompose.py --trials 11`.)
 
 **Phase C — the MFE/MAE re-framing + XGBoost don't rescue it.** Re-labeling each bar by whether a long
 bet's *Maximum Favorable Excursion* beat its *Maximum Adverse Excursion* (a volatility-scaled triple

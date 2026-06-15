@@ -161,6 +161,27 @@ def test_factor_quantile_returns_signal_vs_null() -> None:
     assert abs(rn.long_short_spread_pct) < 0.5 * abs(r.long_short_spread_pct)
 
 
+def test_factor_quantile_returns_stream_matches_net_spread() -> None:
+    """``return_stream=True`` yields the per-bet tails-only book (longs = top
+    bucket, shorts = bottom). Each leg's mean reconstructs its bucket mean, so
+    the per-bet stream is consistent with the reported net long/short spread —
+    this is the stream the Deflated-Sharpe / PBO anti-snooping test consumes."""
+    ds = _dataset(n=400, signal=0.6, seed=1)
+    plain = cpcv_factor_quantile_returns(ds, n_buckets=5, cost_bps=10.0)
+    out = cpcv_factor_quantile_returns(ds, n_buckets=5, cost_bps=10.0, return_stream=True)
+    assert isinstance(out, tuple) and len(out) == 2
+    result, stream = out
+    stream = np.asarray(stream, float)
+    # Backward compatible: the result object is identical to the plain call.
+    assert result.bucket_returns_pct == plain.bucket_returns_pct
+    assert stream.ndim == 1 and stream.size > 0 and np.isfinite(stream).all()
+    # CPCV reuses each sample across combinatorial test folds, so the pooled
+    # per-bet book legitimately exceeds the count of distinct samples.
+    assert stream.size >= result.n_buckets
+    # leg -> pair: with ~equal tail counts, 2 * per-bet mean == net L/S spread (%).
+    assert abs(2.0 * stream.mean() * 100.0 - result.long_short_net_pct) < 0.05
+
+
 # --------------------------------------------------------------------------- #
 # Dataset builder (real pipeline, synthetic OHLCV)
 # --------------------------------------------------------------------------- #

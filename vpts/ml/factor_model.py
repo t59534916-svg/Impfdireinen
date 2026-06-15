@@ -215,7 +215,8 @@ def cpcv_factor_quantile_returns(
     alpha: float = 1.0,
     n_buckets: int = 5,
     cost_bps: float = 10.0,
-) -> "FactorBucketResult":
+    return_stream: bool = False,
+) -> "FactorBucketResult | tuple[FactorBucketResult, np.ndarray]":
     """OOS forward return per signal **quantile** — for a long/short/**flat** strategy.
 
     Unlike the always-in-market ``oos_ls_return_pct`` (which forces ``sign``-based
@@ -226,6 +227,12 @@ def cpcv_factor_quantile_returns(
     ``≈2/n_buckets`` of the time, betting just the conviction tails. ``cost_bps`` is
     a per-round-trip cost; the long/short leg pays it on both legs (non-overlapping
     approximation).
+
+    With ``return_stream=True`` also returns the per-bet net return *stream* of the
+    tails-only book (each top-bucket OOS sample is a long, each bottom-bucket sample a
+    short, both net of cost) so the book can be held to the same Deflated-Sharpe / PBO
+    bar as every other claim. Each leg's mean reconstructs its bucket mean, so
+    ``2·stream.mean() == long_short_net_pct`` (fractional) when the tail counts match.
     """
     from vpts.ml.models import FactorBucketResult
 
@@ -266,7 +273,7 @@ def cpcv_factor_quantile_returns(
     spear = _corr(np.arange(n_buckets, dtype=float),
                   np.argsort(np.argsort(bucket_ret)).astype(float))
     rt = cost_bps / 1e4
-    return FactorBucketResult(
+    result = FactorBucketResult(
         n_buckets=n_buckets,
         bucket_returns_pct=tuple(round(float(b) * 100.0, 4) for b in bucket_ret),
         top_return_pct=top * 100.0,
@@ -283,6 +290,14 @@ def cpcv_factor_quantile_returns(
         n_samples=m,
         symbol=dataset.symbol,
     )
+    if return_stream:
+        # Per-bet net return of the tails-only book: each top-bucket sample is a
+        # long (yy − rt), each bottom-bucket sample a short (−yy − rt). The stream
+        # feeds Deflated Sharpe / PBO so the conviction book is held to the same bar.
+        longs = yy[idx == n_buckets - 1] - rt
+        shorts = -yy[idx == 0] - rt
+        return result, np.concatenate([longs, shorts])
+    return result
 
 
 def permutation_test_factor(

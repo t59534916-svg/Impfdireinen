@@ -38,6 +38,8 @@ from vpts import (  # noqa: E402
     DataFetchError,
     cpcv_factor_eval,
     cpcv_factor_quantile_returns,
+    deflated_sharpe_ratio,
+    probability_of_backtest_overfitting,
 )
 from vpts.ml.models import FactorDataset  # noqa: E402
 from vpts.stats import block_shuffle_indices, recommend_block_size  # noqa: E402
@@ -105,6 +107,7 @@ def main() -> int:
     ap.add_argument("--stride", type=int, default=3)
     ap.add_argument("--n-delisted", type=int, default=9)
     ap.add_argument("--perms", type=int, default=200)
+    ap.add_argument("--trials", type=int, default=11, help="strategy variants tried (Deflated Sharpe)")
     ap.add_argument("--survivors", nargs="*", default=[t for t, _ in GITHUB_TICKERS][:20])
     args = ap.parse_args()
 
@@ -167,10 +170,41 @@ def main() -> int:
         print(f"   tails-only L/S    : {sp:+.3f}% / bet   (in market {fim * 100:.0f}%)  "
               f"-> net long/short {ls:+.3f}% / bet")
 
+    # ---- D: hold the +0.26%/bet survivor book to the repo's OWN anti-snooping bar ---- #
+    # The tempting "+net %/bet" on survivors should clear Deflated Sharpe (selection-
+    # adjusted for the ~K variants tried across the arc) and PBO, like everything else.
+    streams = []
+    for ds, cv in surv:
+        try:
+            _, s = cpcv_factor_quantile_returns(ds, cv=cv, n_buckets=5, cost_bps=10.0,
+                                                return_stream=True)
+            streams.append(np.asarray(s, float))
+        except ValueError:
+            continue
+    print(f"\nD) Anti-snooping on the survivor tails-only book (n_trials={args.trials} arc variants)")
+    if streams:
+        pooled = np.concatenate(streams)
+        dsr = deflated_sharpe_ratio(returns=pooled, n_trials=args.trials)
+        print(f"   per-bet stream    : n={pooled.size}  mean {pooled.mean() * 100:+.3f}%  "
+              f"Sharpe/bet {pooled.mean() / (pooled.std() + 1e-12):+.3f}")
+        print(f"   Deflated Sharpe   : DSR {dsr.dsr:.3f}  "
+              f"({'clears' if dsr.dsr >= 0.95 else 'FAILS'} the 0.95 selection-adjusted bar)")
+        T = min(s.size for s in streams)
+        if len(streams) >= 2 and T >= 8:
+            mat = np.column_stack([s[:T] for s in streams])      # names as 'configs'
+            n_splits = max(4, min(10, (T // 2) * 2))
+            try:
+                pbo = probability_of_backtest_overfitting(mat, n_splits=n_splits, metric="mean")
+                print(f"   PBO (per-name)    : {pbo.pbo:.0%}  "
+                      f"({'overfit' if pbo.pbo >= 0.5 else 'generalizes'})")
+            except ValueError as exc:
+                print(f"   PBO               : n/a ({exc})")
+
     print("\nRead: the fair test is long/short with a FLAT middle — only bet the conviction tails. If "
           "tails-only is positive net on survivors but collapses with delisted names injected, the "
-          "edge is survivorship; if it holds, it is a (small) genuine lead. (Synthetic delisted; gross "
-          "of survivorship drag; non-overlap cost approx; research decomposition.)")
+          "edge is survivorship; if it holds, it is a (small) genuine lead. The DSR/PBO in (D) hold the "
+          "survivor book to the same bar as every other claim. (Synthetic delisted; gross of "
+          "survivorship drag; non-overlap cost approx; research decomposition.)")
     return 0
 
 
