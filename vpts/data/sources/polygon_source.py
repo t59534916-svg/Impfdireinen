@@ -132,11 +132,17 @@ class PolygonSource(DataSource):
         except Exception as exc:  # noqa: BLE001 - normalize transport errors
             raise DataFetchError(f"{symbol}: Polygon request failed: {exc}") from exc
 
+        # Surface Polygon's own error (e.g. NOT_AUTHORIZED → "upgrade your plan" for
+        # delisted/old data) rather than a generic "no bars".
+        status = payload.get("status")
+        if status in ("NOT_AUTHORIZED", "ERROR") or payload.get("error"):
+            msg = payload.get("message") or payload.get("error") or "request rejected"
+            raise DataFetchError(f"{symbol}: Polygon {status}: {msg}")
         results = payload.get("results") or []
         if not results:
             raise DataFetchError(
                 f"{symbol}: Polygon returned no bars "
-                f"(status={payload.get('status')!r}, count={payload.get('resultsCount')})."
+                f"(status={status!r}, count={payload.get('resultsCount')})."
             )
         df = pd.DataFrame(results).rename(
             columns={"o": "Open", "h": "High", "l": "Low", "c": "Close", "v": "Volume", "t": "ts"}
@@ -154,7 +160,10 @@ class PolygonSource(DataSource):
         """Point-in-time delisted status via the reference-ticker endpoint.
 
         Returns ``True``/``False`` from the ticker's ``active`` flag, or ``None`` if
-        Polygon doesn't report it.
+        Polygon doesn't report it. **Note (live-verified):** Polygon's single-ticker
+        endpoint returns ``NOT_FOUND`` for many already-delisted symbols, so this
+        yields ``None`` for them — use :meth:`list_delisted` (``active=false``) to
+        enumerate the delisted universe, which is the reliable point-in-time source.
         """
         key = self._require_key()
         url = f"{self.BASE_URL}/v3/reference/tickers/{symbol}?apiKey={key}"

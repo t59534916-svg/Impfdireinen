@@ -103,6 +103,20 @@ def test_empty_results_raises() -> None:
         raise AssertionError("expected DataFetchError on empty results")
 
 
+def test_not_authorized_surfaces_polygon_message() -> None:
+    # Live-observed case: a free plan blocks delisted/old history with NOT_AUTHORIZED
+    # and a helpful message — surface it, don't bury it as "no bars".
+    payload = {"status": "NOT_AUTHORIZED",
+               "message": "Your plan doesn't include this data timeframe. Please upgrade your plan."}
+    src = PolygonSource(api_key="d", http_get=_stub(payload))
+    try:
+        src.get_bars("AABA", start="2018-01-01", end="2019-10-01")
+    except DataFetchError as exc:
+        assert "NOT_AUTHORIZED" in str(exc) and "upgrade" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected DataFetchError surfacing the plan message")
+
+
 def test_unknown_interval_raises() -> None:
     src = PolygonSource(api_key="dummy", http_get=_stub(_agg_payload()))
     try:
