@@ -208,6 +208,36 @@ def test_injector_uses_true_median_length_even_count() -> None:
     assert len(res.frames["DEAD0"]) == 270             # median(200,240,300,360) = 270
 
 
+def test_delisted_terminal_frac_calibrates_severity() -> None:
+    # terminal_frac sets the MEDIAN terminal level ≈ frac×start (single draws are
+    # high-variance over a long decline, so assert on the median over seeds).
+    import numpy as np
+
+    def med_ratio(tf: float) -> float:
+        rs = [synthetic_delisted_ohlcv(600, seed=s, terminal_frac=tf)["Close"]
+              .pipe(lambda c: c.iloc[-1] / c.iloc[0]) for s in range(15)]
+        return float(np.median(rs))
+
+    assert abs(med_ratio(0.1) - 0.1) < 0.06             # ≈ 90% terminal loss
+    assert med_ratio(0.5) > med_ratio(0.1)              # milder death ends higher
+    for bad in (0.0, 1.0, -0.1):
+        try:
+            synthetic_delisted_ohlcv(100, terminal_frac=bad)
+        except ValueError:
+            pass
+        else:  # pragma: no cover
+            raise AssertionError(f"expected ValueError for terminal_frac={bad}")
+
+
+def test_injector_loser_heavy_fraction() -> None:
+    # delisted_fraction can make the population loser-heavy (dead > alive).
+    survivors = {f"S{i}": synthetic_survivor_ohlcv(300, seed=i) for i in range(6)}
+    res = SurvivorshipInjector(delisted_fraction=0.67, seed=200).inject(survivors)
+    assert res.n_delisted == 12                         # round(0.67/0.33 * 6)
+    assert res.n_delisted > res.n_survivors             # more losers than winners
+    assert abs(res.delisted_fraction - 12 / 18) < 1e-9
+
+
 def test_injector_zero_is_noop_universe_survivor_only() -> None:
     survivors = {"S0": synthetic_survivor_ohlcv(120, seed=0)}
     res = SurvivorshipInjector(n_delisted=0).inject(survivors)

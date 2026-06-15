@@ -15,6 +15,8 @@ seeded, so results are reproducible.
 """
 from __future__ import annotations
 
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 
@@ -61,19 +63,38 @@ def synthetic_survivor_ohlcv(
 
 
 def synthetic_delisted_ohlcv(
-    n: int = 504, *, seed: int = 0, start_date: str = "2015-01-02"
+    n: int = 504,
+    *,
+    seed: int = 0,
+    start_date: str = "2015-01-02",
+    terminal_frac: Optional[float] = None,
 ) -> pd.DataFrame:
     """A 'name that died': ~normal, then a sustained decline to pennies.
 
     Canonical survivorship-injection path (mirrors the `RESEARCH.md` harness): a
     flat-ish first phase, then a negative-drift, elevated-volatility decline
     floored near zero, with capitulation volume spikes on big down days.
+
+    Parameters
+    ----------
+    terminal_frac:
+        If given, the decline drift is set deterministically so the name ends at
+        ≈ ``terminal_frac × start`` (e.g. ``0.1`` = a 90% terminal loss, calibrated
+        to performance-related delisting returns). ``None`` uses a random
+        −0.2%…−0.5%/day drift. Realistic delistings are *slow* (months/quarters),
+        which this preserves — the decline spans the post-``cut`` portion, not days.
     """
     rng = np.random.default_rng(seed)
     start = rng.uniform(40.0, 160.0)
     cut = int(rng.uniform(0.2, 0.5) * n)               # when the decline begins
     vol_n, vol_d = rng.uniform(0.012, 0.022), rng.uniform(0.03, 0.06)
-    drift_d = -rng.uniform(0.002, 0.005)               # -0.2%..-0.5% / day
+    m = max(n - cut, 1)
+    if terminal_frac is not None:
+        if not 0.0 < terminal_frac < 1.0:
+            raise ValueError("terminal_frac must be in (0, 1).")
+        drift_d = float(np.log(terminal_frac) / m)     # hit ≈ start*terminal_frac
+    else:
+        drift_d = -rng.uniform(0.002, 0.005)           # -0.2%..-0.5% / day
     rets = np.empty(n)
     rets[:cut] = rng.normal(0.0, vol_n, cut)
     rets[cut:] = rng.normal(drift_d, vol_d, n - cut)

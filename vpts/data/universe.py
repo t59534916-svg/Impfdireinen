@@ -149,30 +149,59 @@ class SurvivorshipInjector:
         Prefix for the synthetic symbols (default ``"DEAD"``).
     """
 
-    def __init__(self, n_delisted: int = 10, *, seed: int = 100, label: str = "DEAD") -> None:
+    def __init__(
+        self,
+        n_delisted: int = 10,
+        *,
+        seed: int = 100,
+        label: str = "DEAD",
+        delisted_fraction: Optional[float] = None,
+        terminal_frac: Optional[float] = None,
+    ) -> None:
         if n_delisted < 0:
             raise ValueError("n_delisted must be >= 0.")
+        if delisted_fraction is not None and not 0.0 <= delisted_fraction < 1.0:
+            raise ValueError("delisted_fraction must be in [0, 1).")
         self.n_delisted = int(n_delisted)
         self.seed = int(seed)
         self.label = str(label)
+        self.delisted_fraction = delisted_fraction
+        self.terminal_frac = terminal_frac
+
+    def _count(self, n_survivors: int) -> int:
+        """How many dead names to add — from a target fraction if set, else n_delisted.
+
+        ``delisted_fraction`` is the share of the *augmented* universe that should be
+        delisted, so ``dead = round(f/(1-f) · survivors)`` — which can exceed the
+        survivor count (a **loser-heavy** population), matching the empirical reality
+        that most names underperform/delist over their lifetime (Bessembinder 2018).
+        """
+        if self.delisted_fraction is None:
+            return self.n_delisted
+        f = self.delisted_fraction
+        return int(round(f / (1.0 - f) * n_survivors))
 
     def inject(self, survivors: dict[str, pd.DataFrame]) -> InjectionResult:
-        """Return survivors + ``n_delisted`` synthetic dead names and a universe.
+        """Return survivors + synthetic dead names and a point-in-time universe.
 
         Each dead name's length and calendar are matched to the *median* survivor
         length so the injection is comparable to the real data, and its
-        :class:`Membership` carries a ``delist`` date at its last bar.
+        :class:`Membership` carries a ``delist`` date at its last bar. The number of
+        dead names is ``n_delisted`` (or derived from ``delisted_fraction``, which may
+        make the population loser-heavy); ``terminal_frac`` sets the death severity.
         """
         if not survivors:
             raise ValueError("Need at least one survivor frame to inject into.")
         frames: dict[str, pd.DataFrame] = dict(survivors)
         n_bars = int(np.median([len(v) for v in survivors.values()]))   # true median length
         start_date = str(min(v.index[0] for v in survivors.values()).date())
+        n_dead = self._count(len(survivors))
 
         members = [Membership(symbol=s) for s in survivors]  # survivors: no delist
-        for k in range(self.n_delisted):
+        for k in range(n_dead):
             sym = f"{self.label}{k}"
-            dead = synthetic_delisted_ohlcv(n_bars, seed=self.seed + k, start_date=start_date)
+            dead = synthetic_delisted_ohlcv(n_bars, seed=self.seed + k, start_date=start_date,
+                                            terminal_frac=self.terminal_frac)
             frames[sym] = dead
             members.append(Membership(
                 symbol=sym, start=pd.Timestamp(dead.index[0]),
@@ -181,5 +210,5 @@ class SurvivorshipInjector:
             ))
         return InjectionResult(
             frames=frames, universe=Universe(members),
-            n_survivors=len(survivors), n_delisted=self.n_delisted,
+            n_survivors=len(survivors), n_delisted=n_dead,
         )

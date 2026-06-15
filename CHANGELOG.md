@@ -8,6 +8,10 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.13.0` — Base-rate-calibrated (loser-heavy) survivorship injection
+- **`SurvivorshipInjector`** gains `delisted_fraction` (target share of the *augmented* universe that is delisted — can exceed the survivors, making the population **loser-heavy** to match the empirical reality that most stocks underperform/delist over their lifetime, Bessembinder 2018) and `terminal_frac` (calibrated death severity). `synthetic_delisted_ohlcv` gains `terminal_frac` (deterministic drift to ≈ `frac×start`, a slow decline — delistings take months, not a week).
+- **`examples/survivorship_baserate.py`** — sweeps the loser:winner ratio on the *real* free stocknet survivors and reports how the structural OOS edge degrades. Finding: the survivor-only IC (**+0.082, p=0.024 significant**) **erodes to +0.031 and loses significance (p=0.098)** once the population is loser-heavy (41 dead : 20 alive) — a base-rate/universe effect, not a per-trade one. Consistent with `RESEARCH.md`'s "graceful decay" (exp 8). Dead names synthetic (no free delisted prices); survivors real.
+
 ### `1.12.1` — Review fixes (correctness double-check)
 A 7-angle adversarial code review of the Act III diff (math verified against references) surfaced edge-case fixes, all now tested:
 - **`vpts.insight`** — `VALIDATED` (which licenses edge-claims) now requires the deflated-Sharpe bar to have been **tested and passed**; a missing DSR downgrades to `weak_unvalidated`. Closes a hole where edge-language could be licensed with no selection control.

@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.12.1"  # review fixes: validation gate, tz/range/null edge cases
+__version__ = "1.13.0"  # base-rate-calibrated (loser-heavy) survivorship injection
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (
