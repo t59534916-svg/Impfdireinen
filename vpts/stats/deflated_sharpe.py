@@ -235,8 +235,14 @@ def min_track_record_length(
         return MinTRLResult(float("inf"), float(sr), float(benchmark_sr),
                             float(skew), float(kurt), float(prob), n_obs)
     var_term = 1.0 - skew * sr + (kurt - 1.0) / 4.0 * sr * sr
+    if var_term <= 0.0:
+        # Inconsistent higher moments (a real distribution has kurt ≥ 1 + skew²); a
+        # non-positive variance term has no valid track-record length — don't report
+        # the clamp's misleading "~1 observation suffices".
+        return MinTRLResult(float("inf"), float(sr), float(benchmark_sr),
+                            float(skew), float(kurt), float(prob), n_obs)
     z = norm.ppf(prob)
-    min_trl = 1.0 + max(var_term, 1e-12) * (z / (sr - benchmark_sr)) ** 2
+    min_trl = 1.0 + var_term * (z / (sr - benchmark_sr)) ** 2
     return MinTRLResult(float(min_trl), float(sr), float(benchmark_sr),
                         float(skew), float(kurt), float(prob), n_obs)
 

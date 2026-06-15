@@ -59,6 +59,11 @@ def test_verdict_validated_only_when_everything_clears() -> None:
     weak = Evidence("clean", oos_ic=0.05, p_value=0.001,
                     survives_injection=True, deflated_sharpe=0.80)
     assert assess(weak).verdict is Verdict.WEAK_UNVALIDATED
+    # Significant + survives but DSR NOT tested ⇒ must NOT validate (selection bar
+    # skipped); otherwise edge-claims get licensed with no selection control.
+    no_dsr = Evidence("clean", oos_ic=0.05, p_value=0.001, survives_injection=True)
+    assert assess(no_dsr).verdict is Verdict.WEAK_UNVALIDATED
+    assert assess(no_dsr).verdict.permits_edge_claim is False
 
 
 def test_verdict_weak_when_no_significance_test() -> None:

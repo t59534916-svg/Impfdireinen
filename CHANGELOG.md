@@ -8,6 +8,14 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.12.1` — Review fixes (correctness double-check)
+A 7-angle adversarial code review of the Act III diff (math verified against references) surfaced edge-case fixes, all now tested:
+- **`vpts.insight`** — `VALIDATED` (which licenses edge-claims) now requires the deflated-Sharpe bar to have been **tested and passed**; a missing DSR downgrades to `weak_unvalidated`. Closes a hole where edge-language could be licensed with no selection control.
+- **`vpts.stats`** — the multiple-testing haircut now **preserves the sign** of a significant *negative* Sharpe (was zeroed out); `block_permutation_test` **raises** instead of returning a degenerate `p≈1` when `block_size` leaves < 2 blocks (and precomputes the partition); `min_track_record_length` returns `inf` for inconsistent moments; PBO no longer recomputes the IS-best statistic in a second pass.
+- **`vpts.data`** — `PolygonSource` returns a **tz-naive** index (matching the other sources, so `Universe.members_asof` doesn't crash on tz mismatch) and handles `period="ytd"` correctly; `SyntheticSource` honors a **partial** `start`/`end`; `SurvivorshipInjector` uses the **true median** survivor length.
+- **`vpts.altdata`** — `StaticAltSource` no longer forward-fills a stale value **past the data span** (NaN outside it, per the contract).
+- Demo now uses the **block-permutation** null (honest regardless of `--stride`); behavioral-frame warm-up caveat documented.
+
 ### `1.12.0` — Delisted-capable data source, an honest null, and alt-data hooks
 - **Added** `PolygonSource` (`vpts.data`): a `DataSource` over Polygon.io that serves **delisted** history and point-in-time reference status (`is_delisted`, `list_delisted`) — the survivorship escape hatch. Activates on `POLYGON_API_KEY` and is placed first in `default_registry()` when present; the HTTP layer is injectable, so parsing is unit-tested with no key/network.
 - **Added** the **block-permutation** test (`vpts.stats`): `block_permutation_test` / `block_shuffle_indices` / `recommend_block_size`. The per-row label shuffle is anti-conservative for **overlapping** labels (it destroys autocorrelation); the block null preserves it and gives an honest p-value — demonstrated by a spurious-regression test where per-row falsely rejects and the block null does not.

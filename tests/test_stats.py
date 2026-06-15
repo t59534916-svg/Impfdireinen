@@ -212,6 +212,22 @@ def test_haircut_grows_with_more_tests() -> None:
     assert "haircut" in haircut_sharpe(n_tests=200, **kw).summary().lower()
 
 
+def test_haircut_preserves_sign_of_negative_sharpe() -> None:
+    # A strongly-significant NEGATIVE Sharpe must keep its sign and shrink in
+    # magnitude — not be zeroed out.
+    res = haircut_sharpe(sr=-2.5, n_obs=2520, n_tests=200, annualization=252)
+    assert res.haircut_sr < 0.0                         # sign preserved
+    assert res.haircut_sr > -2.5                        # magnitude reduced
+    assert 0.0 <= res.haircut_ratio < 1.0
+
+
+def test_min_trl_infinite_for_inconsistent_moments() -> None:
+    # kurt < 1 + skew^2 is impossible for a real distribution; the variance term
+    # goes non-positive and minTRL must be inf, not a misleading ~1.
+    res = min_track_record_length(sr=2.0, benchmark_sr=0.0, skew=1.0, kurt=1.0)
+    assert math.isinf(res.min_trl)
+
+
 def test_haircut_holm_needs_other_pvalues() -> None:
     try:
         haircut_sharpe(sr=1.5, n_obs=252, n_tests=10, method="holm")

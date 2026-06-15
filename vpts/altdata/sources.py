@@ -61,8 +61,15 @@ class StaticAltSource(AltSignalSource):
     def _serve(self, store: dict, symbol: str, index: pd.Index) -> pd.Series:
         if symbol not in store:
             return self._nan_series(index)
-        # reindex onto the target index; ffill only within the provided span (causal).
-        return store[symbol].reindex(index).ffill()
+        s = store[symbol].sort_index()
+        if s.empty:
+            return self._nan_series(index)
+        # Forward-fill within the provided span only (causal); bars before the first
+        # and after the last provided observation stay NaN — never extrapolate a
+        # stale value into the future (which the harness would trade as if live).
+        out = s.reindex(s.index.union(index)).ffill().reindex(index)
+        out[(index < s.index.min()) | (index > s.index.max())] = float("nan")
+        return out
 
     def options_flow(self, symbol: str, index: pd.Index) -> pd.Series:
         return self._serve(self._of, symbol, index)

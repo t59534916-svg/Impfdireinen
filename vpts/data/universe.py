@@ -20,6 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
+import numpy as np
 import pandas as pd
 
 from vpts.data.synthetic import synthetic_delisted_ohlcv
@@ -165,8 +166,7 @@ class SurvivorshipInjector:
         if not survivors:
             raise ValueError("Need at least one survivor frame to inject into.")
         frames: dict[str, pd.DataFrame] = dict(survivors)
-        lengths = sorted(len(v) for v in survivors.values())
-        n_bars = lengths[len(lengths) // 2]               # median survivor length
+        n_bars = int(np.median([len(v) for v in survivors.values()]))   # true median length
         start_date = str(min(v.index[0] for v in survivors.values()).date())
 
         members = [Membership(symbol=s) for s in survivors]  # survivors: no delist

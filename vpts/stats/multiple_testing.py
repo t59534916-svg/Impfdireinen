@@ -149,11 +149,13 @@ def haircut_sharpe(
     else:
         raise ValueError("method must be one of 'bonferroni', 'holm', 'bh', 'by'.")
 
-    # Map the adjusted p-value back to a t-stat, then scale the Sharpe by t_adj/t_obs.
+    # Map the adjusted p-value back to a t-stat, then scale the Sharpe by t_adj/|t_obs|.
     # isf(p/2) is the stable inverse of the two-sided sf used above (no 1-x cancellation).
+    # Use |t_obs| so a strongly-significant NEGATIVE Sharpe keeps its sign and shrinks
+    # in magnitude, rather than being zeroed out.
     t_adj = float(norm.isf(p_adj / 2.0)) if p_adj < 1.0 else 0.0
     t_adj = max(t_adj, 0.0)
-    ratio = t_adj / t_obs if t_obs > 0 else 0.0
+    ratio = t_adj / abs(t_obs) if t_obs != 0 else 0.0
     haircut_sr = sr * ratio
     return HaircutResult(
         method=method,

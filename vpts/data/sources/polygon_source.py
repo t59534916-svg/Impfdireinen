@@ -98,6 +98,8 @@ class PolygonSource(DataSource):
         end_ts = pd.Timestamp(end) if end else pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
         if start:
             start_ts = pd.Timestamp(start)
+        elif period.lower() == "ytd":
+            start_ts = pd.Timestamp(year=end_ts.year, month=1, day=1)   # Jan-1 of end's year
         else:
             days = _PERIOD_DAYS.get(period.lower(), 186)
             start_ts = end_ts - pd.Timedelta(days=days)
@@ -139,7 +141,10 @@ class PolygonSource(DataSource):
         df = pd.DataFrame(results).rename(
             columns={"o": "Open", "h": "High", "l": "Low", "c": "Close", "v": "Volume", "t": "ts"}
         )
-        df["ts"] = pd.to_datetime(df["ts"], unit="ms", utc=True)
+        # Naive UTC index, consistent with YFinanceSource/SyntheticSource — a
+        # tz-aware index here would crash any comparison against the tz-naive rest
+        # of the system (e.g. Universe.members_asof).
+        df["ts"] = pd.to_datetime(df["ts"], unit="ms")
         df = df.set_index("ts")[["Open", "High", "Low", "Close", "Volume"]].sort_index()
         df.attrs["symbol"] = symbol
         return validate_ohlcv(df, symbol=symbol, min_bars=1)

@@ -64,6 +64,19 @@ def test_static_source_skips_unknown_symbol() -> None:
     assert "alt_options_flow" not in merged.columns    # all-NaN column omitted
 
 
+def test_static_source_nan_outside_provided_span() -> None:
+    # Provider data spans only the first 10 bars; the rest must stay NaN, not a
+    # forward-filled stale constant.
+    frame = _frame(30)
+    span = frame.index[:10]
+    of = pd.Series(np.arange(10, dtype=float) + 1.0, index=span)
+    src = StaticAltSource(options_flow={"X": of})
+    merged = merge_alt_features(frame, src, "X")
+    col = merged["alt_options_flow"]
+    assert col.iloc[:10].notna().all()                 # within span: present
+    assert col.iloc[10:].isna().all()                  # beyond span: NaN (no stale fill)
+
+
 def test_merge_does_not_look_ahead() -> None:
     # The merged alt column at bar t must equal the provider's value at t (no shift).
     frame = _frame(40)

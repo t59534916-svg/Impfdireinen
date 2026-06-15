@@ -44,18 +44,24 @@ def assess(evidence: Evidence) -> VerdictResult:
 
     # 3) Survivorship is the binding constraint in this repo — check it before celebrating.
     if e.inverts_under_injection:
-        reasons.append("conviction edge inverts sign once delisted names are injected — a survivorship mirage.")
+        reasons.append("signal inverts sign under survivorship injection — a survivorship mirage "
+                       "(the survivor pattern reverses on delisted names).")
         return VerdictResult(Verdict.SURVIVORSHIP_FRAGILE, tuple(reasons))
     if significant and e.survives_injection is False:
         reasons.append("significant on survivors but loses significance under survivorship injection.")
         return VerdictResult(Verdict.SURVIVORSHIP_FRAGILE, tuple(reasons))
 
-    # 4) Significant and survivorship-robust — but still gate on selection-adjusted Sharpe.
+    # 4) Significant and survivorship-robust — but VALIDATED requires the
+    # selection-adjusted bar to have been *tested and passed*, not merely skipped.
     if significant and (e.survives_injection is True):
-        if e.deflated_sharpe is not None and e.deflated_sharpe < DSR_BAR:
+        if e.deflated_sharpe is None:
+            reasons.append("survives injection, but the selection-adjusted Sharpe (DSR) "
+                           "was not computed — cannot validate without it.")
+            return VerdictResult(Verdict.WEAK_UNVALIDATED, tuple(reasons))
+        if e.deflated_sharpe < DSR_BAR:
             reasons.append(f"survives injection but DSR {e.deflated_sharpe:.2f} < {DSR_BAR}: not selection-proof.")
             return VerdictResult(Verdict.WEAK_UNVALIDATED, tuple(reasons))
-        reasons.append("clears permutation, survivorship injection, and (where tested) the deflated-Sharpe bar.")
+        reasons.append("clears permutation, survivorship injection, and the deflated-Sharpe bar.")
         return VerdictResult(Verdict.VALIDATED, tuple(reasons))
 
     # 5) Anything else is suggestive at best.

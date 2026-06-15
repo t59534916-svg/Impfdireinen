@@ -39,6 +39,7 @@ from vpts import (  # noqa: E402
 from vpts.data import SurvivorshipInjector, SyntheticSource  # noqa: E402
 from vpts.features import BEHAVIORAL_FEATURES, behavioral_feature_frame  # noqa: E402
 from vpts.ml.models import FactorDataset  # noqa: E402
+from vpts.stats import block_shuffle_indices, recommend_block_size  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -62,13 +63,19 @@ def _pooled_ic(frames: dict, *, horizon: int, stride: int, alpha: float,
 
 
 def _permutation_p(built, real_ic: float, *, alpha: float, perms: int) -> float:
-    """Label-shuffle permutation p-value for the pooled IC (the decisive test)."""
+    """Block-permutation p-value for the pooled IC (the decisive test).
+
+    Uses block shuffling keyed to each dataset's horizon/stride so the null preserves
+    label autocorrelation — honest even when ``--stride < --horizon`` (overlapping
+    labels), where a per-row shuffle would over-reject.
+    """
     rng = np.random.default_rng(0)
     null = np.empty(perms, dtype=float)
     for p in range(perms):
         folds = []
         for _sym, ds, cv in built:
-            perm = rng.permutation(len(ds))
+            bs = recommend_block_size(ds.horizon, ds.stride)
+            perm = block_shuffle_indices(len(ds), bs, rng=rng)
             shuf = FactorDataset(X=ds.X, y=ds.y[perm], baseline=ds.baseline,
                                  feature_names=ds.feature_names, horizon=ds.horizon,
                                  stride=ds.stride, symbol=ds.symbol)
@@ -86,10 +93,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Behavioral-AI end-to-end demo (offline).")
     ap.add_argument("--names", type=int, default=6, help="number of synthetic survivors")
     ap.add_argument("--horizon", type=int, default=20)
-    # stride >= horizon ⇒ non-overlapping labels. Overlapping labels (stride < horizon)
-    # share most of their forward window, and the per-row permutation null does not
-    # preserve that autocorrelation — which makes the test anti-conservative (it will
-    # flag spurious significance). Non-overlapping sampling keeps the null honest.
+    # stride >= horizon ⇒ non-overlapping labels (the safe default). With stride <
+    # horizon the labels overlap; the permutation null here uses BLOCK shuffling
+    # (recommend_block_size) to preserve that autocorrelation, so the test stays
+    # honest either way — unlike a per-row shuffle, which would over-reject.
     ap.add_argument("--stride", type=int, default=20)
     ap.add_argument("--alpha", type=float, default=1.0)
     ap.add_argument("--n-groups", type=int, default=6)

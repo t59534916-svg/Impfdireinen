@@ -27,8 +27,13 @@ def behavioral_feature_frame(
 ) -> pd.DataFrame:
     """Return the causal behavioral feature matrix (one column per feature).
 
-    Early rows (before each window's warm-up) are NaN; callers sample only warmed,
-    finite rows. Column order matches :func:`~vpts.features.models.feature_spec`.
+    **Warm-up caveat:** most primitives end in ``.fillna(0.0)``, so rows before a
+    feature's window has filled hold a *neutral 0.0*, not NaN (only the RVOL columns
+    stay NaN during their first window). Do **not** treat early rows as genuine —
+    :func:`build_behavioral_dataset` skips the first ``warmup`` bars
+    (``max(long, med, grab_lookback)``) for exactly this reason; direct callers
+    should apply the same skip. Column order matches
+    :func:`~vpts.features.models.feature_spec`.
     """
     ensure_ohlcv(df, min_bars=2)
     cols = {name: fn(df, **kw) for name, fn, kw in feature_spec(config)}

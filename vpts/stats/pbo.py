@@ -95,8 +95,8 @@ def probability_of_backtest_overfitting(
 
     logits: list[float] = []
     oos_losses = 0
-    is_ranks: list[float] = []   # normalized IS rank of the IS-best (always ~1.0)
-    oos_perf_best: list[float] = []
+    is_best_perf: list[float] = []   # IS-best config's IS performance, per combo
+    oos_perf_best: list[float] = []  # ... and its OOS performance
 
     for combo in combinations(block_ids, n_splits // 2):
         is_rows = np.concatenate([blocks[b] for b in combo])
@@ -115,19 +115,17 @@ def probability_of_backtest_overfitting(
 
         if r_oos[n_star] < 0:
             oos_losses += 1
-        is_ranks.append(1.0)  # the IS-best is, by definition, IS rank 1
+        is_best_perf.append(float(r_is[n_star]))   # captured here — no second pass
         oos_perf_best.append(float(r_oos[n_star]))
 
     arr = np.asarray(logits, dtype=float)
     n_combos = arr.size
     pbo = float((arr <= 0).mean())
 
-    # OOS performance-degradation slope: regress the IS-best's OOS performance on
-    # its (normalized) IS performance rank. A steep negative slope corroborates
-    # overfitting (the more you optimised IS, the worse it did OOS).
-    is_best_perf = np.array([float(stat(M[np.concatenate([blocks[b] for b in combo])]).max())
-                             for combo in combinations(block_ids, n_splits // 2)])
-    slope = _ols_slope(is_best_perf, np.asarray(oos_perf_best))
+    # OOS performance-degradation slope: regress the IS-best's OOS performance on its
+    # IS performance. A negative slope corroborates overfitting (more IS optimisation
+    # → worse OOS). Computed from values captured in the loop above (no recompute).
+    slope = _ols_slope(np.asarray(is_best_perf), np.asarray(oos_perf_best))
 
     return PBOResult(
         pbo=pbo,

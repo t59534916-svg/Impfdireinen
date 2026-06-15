@@ -88,12 +88,23 @@ def block_permutation_test(
         raise ValueError("target must have at least 2 elements.")
     if alternative not in ("greater", "less", "two-sided"):
         raise ValueError("alternative must be 'greater', 'less', or 'two-sided'.")
+    block_size = max(1, min(int(block_size), n))
+    if n // block_size < 2:
+        raise ValueError(
+            f"block_size={block_size} yields < 2 blocks for n={n}: the shuffle would be "
+            "the identity (a degenerate null with p≈1). Use a smaller block_size, more "
+            "data, or recommend_block_size() with non-overlapping labels."
+        )
 
     real = float(stat_fn(y))
     rng = np.random.default_rng(seed)
+    # Precompute the contiguous block partition once; only the block *order* changes
+    # per permutation (no per-iteration arange/partition rebuild).
+    blocks = [np.arange(s, min(s + block_size, n)) for s in range(0, n, block_size)]
     null = np.empty(n_permutations, dtype=float)
     for i in range(n_permutations):
-        null[i] = stat_fn(y[block_shuffle_indices(n, block_size, rng=rng)])
+        order = rng.permutation(len(blocks))
+        null[i] = stat_fn(y[np.concatenate([blocks[j] for j in order])])
     null = null[np.isfinite(null)]
     m = null.size
 

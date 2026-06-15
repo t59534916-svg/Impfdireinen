@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.12.0"  # + Polygon delisted source, block-permutation null, alt-data points
+__version__ = "1.12.1"  # review fixes: validation gate, tz/range/null edge cases
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (

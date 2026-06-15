@@ -78,6 +78,12 @@ class SyntheticSource(DataSource):
         if start and end:
             n = max(int(len(pd.bdate_range(start, end))), 30)
             start_date = start
+        elif start:                         # start only: span `period` forward from start
+            n = _PERIOD_BARS.get(period.lower(), 504)
+            start_date = start
+        elif end:                           # end only: span `period` backward to end
+            n = _PERIOD_BARS.get(period.lower(), 504)
+            start_date = (pd.Timestamp(end) - pd.tseries.offsets.BDay(n)).strftime("%Y-%m-%d")
         else:
             n = _PERIOD_BARS.get(period.lower(), 504)
             start_date = self._start_date

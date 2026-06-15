@@ -83,8 +83,9 @@ class MockLLMClient:
     behavior (including an adversarial model that tries to overclaim).
     """
 
-    def __init__(self, response: "str | Callable[[str, str], str]") -> None:
+    def __init__(self, response: "str | Callable[[str, str], str]", *, model: str = "mock") -> None:
         self._response = response
+        self.model = model        # so InsightGenerator records provenance for mocked runs
 
     def complete(self, system: str, user: str) -> str:
         if callable(self._response):

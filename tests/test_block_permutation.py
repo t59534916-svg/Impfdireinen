@@ -100,6 +100,21 @@ def test_alternatives_and_validation() -> None:
         raise AssertionError("expected ValueError for bad alternative")
 
 
+def test_block_size_too_large_raises_not_degenerate() -> None:
+    # block_size >= n would give a single block ⇒ identity shuffle ⇒ degenerate p≈1.
+    # That must raise rather than silently return "not significant".
+    rng = np.random.default_rng(0)
+    y = rng.normal(size=40)
+    for bs in (40, 100, 21):                            # ≥ n, or > n/2 (one block)
+        try:
+            block_permutation_test(y, lambda yy: float(yy.mean()), block_size=bs,
+                                   n_permutations=50)
+        except ValueError:
+            pass
+        else:  # pragma: no cover
+            raise AssertionError(f"expected ValueError for block_size={bs} on n=40")
+
+
 # --------------------------------------------------------------------------- #
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]

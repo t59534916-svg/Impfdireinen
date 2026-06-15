@@ -51,6 +51,24 @@ def test_parses_aggregates_into_ohlcv() -> None:
     assert (df["High"] >= df["Low"]).all() and (df["Volume"] > 0).all()
 
 
+def test_index_is_tz_naive_for_cross_source_consistency() -> None:
+    # Must be tz-NAIVE like YFinance/Synthetic, or comparisons against the rest of
+    # the system (e.g. Universe.members_asof) raise on tz mismatch.
+    src = PolygonSource(api_key="dummy", http_get=_stub(_agg_payload(5)))
+    df = src.get_bars("TEST", period="1y")
+    assert df.index.tz is None
+    # And it actually works with a tz-naive Universe query.
+    from vpts.data import Membership, Universe
+    u = Universe([Membership("TEST")])
+    assert "TEST" in u.members_asof(df.index[0])
+
+
+def test_ytd_window_starts_at_jan_1() -> None:
+    stub = _stub(_agg_payload())
+    PolygonSource(api_key="K", http_get=stub).get_bars("X", period="ytd", end="2026-06-15")
+    assert "/range/1/day/2026-01-01/2026-06-15" in stub.captured["url"]  # true YTD
+
+
 def test_capabilities_advertise_delisted() -> None:
     caps = PolygonSource(api_key="dummy").capabilities
     assert caps.provides_delisted is True and caps.requires_api_key is True

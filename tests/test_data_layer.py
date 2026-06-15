@@ -65,6 +65,17 @@ def test_synthetic_is_deterministic() -> None:
     assert not a.equals(synthetic_survivor_ohlcv(200, seed=43))
 
 
+def test_synthetic_source_honors_partial_range() -> None:
+    src = SyntheticSource()
+    # start only ⇒ series must be anchored at start (not the default _start_date).
+    s = src.get_bars("AAPL", period="1y", start="2021-03-01")
+    assert s.index[0] == pd.Timestamp("2021-03-01")
+    # end only ⇒ series must end at/near end.
+    e = src.get_bars("AAPL", period="1y", end="2019-12-31")
+    assert e.index[-1] <= pd.Timestamp("2019-12-31")
+    assert e.index[0] < pd.Timestamp("2019-12-31")
+
+
 def test_synthetic_source_seed_is_process_stable() -> None:
     # Must NOT use the builtin hash() (salted per-process) — pin the digest so the
     # source returns identical data across processes / CI runs.
@@ -187,6 +198,14 @@ def test_injector_augments_frames_and_universe() -> None:
     # Injected dead names carry a delist date at their last bar.
     dead0 = res.universe.membership("DEAD0")
     assert dead0.delisted and dead0.delist == res.frames["DEAD0"].index[-1]
+
+
+def test_injector_uses_true_median_length_even_count() -> None:
+    # Even number of survivors with distinct lengths: dead names use the TRUE median.
+    survivors = {f"S{i}": synthetic_survivor_ohlcv(n, seed=i)
+                 for i, n in enumerate([200, 240, 300, 360])}
+    res = SurvivorshipInjector(n_delisted=1, seed=11).inject(survivors)
+    assert len(res.frames["DEAD0"]) == 270             # median(200,240,300,360) = 270
 
 
 def test_injector_zero_is_noop_universe_survivor_only() -> None:
