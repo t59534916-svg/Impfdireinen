@@ -307,6 +307,43 @@ lake). The reusable artifact from this pass is `vpts.data.audit_coverage` / `KNO
 
 ---
 
+### Tier-2 addendum — what IS the structural signal, and does it generalize?
+
+Two follow-ups sharpen (not overturn) the one real signal. Both run on a reduced **20-name** survivor
+subset at `stride=8` for tractability, so the baseline structural IC here is **+0.024 (p=0.209)** —
+lower-powered than the 88-name/1,308-fold headline (+0.035, p=0.005); read the deltas, not the absolute
+significance.
+
+**2a — is it just reversal/momentum?** The carrying features (`cost_basis_migration`, `delta_net`) are
+dip-buying/accumulation signals, so a skeptic asks whether they are merely **k-day reversal** or **12-1
+momentum** relabelled. We built both classic factors at the *same* decision bars and **orthogonalized**
+every structural feature against them (per-name OLS on `[1, reversal, momentum]`, residuals only), then
+re-ran purged-CPCV. The structural IC did **not** collapse — it was *unchanged-to-higher*:
+
+| factor (20 names, 2,400 samples) | pooled OOS IC | p(block) |
+|---|---|---|
+| structural (raw) | +0.024 | 0.209 |
+| reversal only (k=21d) | +0.026 | — |
+| 12-1 momentum only | **+0.083** | — |
+| **structural ⟂ reversal + momentum (residual)** | **+0.045** | **0.055** |
+
+So 12-1 momentum is the strongest *standalone* factor, yet removing all linear reversal/-momentum
+content leaves the structural signal intact (residual retains ~188% of the raw IC, p improves
+0.209 → 0.055). **The "it's just reversal" hypothesis is not supported** — there is a profile-specific
+component beyond the generic factors (borderline on this subset; the headline test was p=0.005).
+
+**2b — out of regime.** Reusing the harness **unchanged** on a no-delisting-confound contrast — 10
+large-cap crypto pairs (Binance.US, ~3y of 24/7 daily bars) — the structural IC is **+0.017 (p=0.358)**
+vs the equity baseline **+0.024 (p=0.209)**: the **same (positive) sign but weaker and not significant**.
+At this power it neither confirms a general microstructure law nor flips — the equity finding does not
+*obviously* generalize, with a consistent-but-underpowered direction out-of-regime.
+
+Net: 2a makes the structural signal look *more* like a real, profile-specific OOS correlation (not a
+reversal artifact); 2b bounds how far that reads as universal. Neither changes the tradeability verdict —
+on survivors it still fails the selection-adjusted bar (DSR 0.884) and inverts under injection.
+
+---
+
 ## Honest conclusion
 
 On 88 survivorship-biased US large-caps (2012–2017, daily), **none** of the studied inputs yields a
@@ -377,6 +414,8 @@ python examples/structural_mfe_xgb.py                 # 9: MFE/MAE triple-barrie
 python examples/structural_swing_rater.py             # 10: swing setup-rater (R:R + selectivity)
 python examples/structural_selectivity.py             # 11: selectivity stress-test (grid/decomp/power)
 python examples/real_delisted_audit.py                # Tier 1: free-feed delisted-coverage audit
+python examples/structural_reversal.py                # Tier 2a: orthogonalize vs reversal + momentum
+python examples/structural_out_of_regime.py           # Tier 2b: structural IC out-of-regime (crypto)
 ```
 
 ## Limitations
