@@ -62,12 +62,17 @@ def synthetic_survivor_ohlcv(
     )
 
 
+#: Expected bear-rally bursts per bar of the decline, by `rally` mode.
+_RALLY_RATE = {"off": 0.0, "mild": 0.02, "strong": 0.05}
+
+
 def synthetic_delisted_ohlcv(
     n: int = 504,
     *,
     seed: int = 0,
     start_date: str = "2015-01-02",
     terminal_frac: Optional[float] = None,
+    rally: str = "off",
 ) -> pd.DataFrame:
     """A 'name that died': ~normal, then a sustained decline to pennies.
 
@@ -83,21 +88,45 @@ def synthetic_delisted_ohlcv(
         to performance-related delisting returns). ``None`` uses a random
         −0.2%…−0.5%/day drift. Realistic delistings are *slow* (months/quarters),
         which this preserves — the decline spans the post-``cut`` portion, not days.
+    rally:
+        Counter-trend **bear-rally** structure layered on the decline:
+        ``"off"`` (monotone, the original), ``"mild"``, or ``"strong"`` (or a float
+        rate). Poisson-timed +15–40% bounces over 5–20 bars. When ``terminal_frac``
+        is set the base drift is **rescaled so the terminal loss is unchanged** — so
+        this tests whether a result depends on the decline being structureless, not
+        on how far it falls. (The original "inversion" was found with ``rally="off"``;
+        dip-buying signals can win on a bounce, so rallies are the adversarial case.)
     """
     rng = np.random.default_rng(seed)
     start = rng.uniform(40.0, 160.0)
     cut = int(rng.uniform(0.2, 0.5) * n)               # when the decline begins
     vol_n, vol_d = rng.uniform(0.012, 0.022), rng.uniform(0.03, 0.06)
     m = max(n - cut, 1)
+
+    # Bear-rally bursts over the decline phase (positive log-return runs).
+    rate = _RALLY_RATE[rally] if isinstance(rally, str) and rally in _RALLY_RATE else None
+    if rate is None:
+        try:
+            rate = float(rally)
+        except (TypeError, ValueError):
+            raise ValueError(f"rally must be one of {sorted(_RALLY_RATE)} or a float.")
+    rally_rets = np.zeros(m)
+    for _ in range(int(rng.poisson(rate * m))):
+        w = int(rng.integers(5, 21))
+        s0 = int(rng.integers(0, max(1, m - w)))
+        rally_rets[s0:s0 + w] += np.log1p(rng.uniform(0.15, 0.40)) / w   # +15–40% over w bars
+    rally_total = float(rally_rets.sum())
+
     if terminal_frac is not None:
         if not 0.0 < terminal_frac < 1.0:
             raise ValueError("terminal_frac must be in (0, 1).")
-        drift_d = float(np.log(terminal_frac) / m)     # hit ≈ start*terminal_frac
+        # rescale base drift so terminal ≈ start*terminal_frac DESPITE the rallies
+        drift_d = float((np.log(terminal_frac) - rally_total) / m)
     else:
         drift_d = -rng.uniform(0.002, 0.005)           # -0.2%..-0.5% / day
     rets = np.empty(n)
     rets[:cut] = rng.normal(0.0, vol_n, cut)
-    rets[cut:] = rng.normal(drift_d, vol_d, n - cut)
+    rets[cut:] = rng.normal(drift_d, vol_d, m) + rally_rets
     close = np.maximum(start * np.exp(np.cumsum(rets)), 0.20)   # penny floor
     bar_vol = np.where(np.arange(n) < cut, vol_n, vol_d)
     open_, high, low = _ohlc_from_close(close, bar_vol, rng)

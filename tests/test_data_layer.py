@@ -229,6 +229,33 @@ def test_delisted_terminal_frac_calibrates_severity() -> None:
             raise AssertionError(f"expected ValueError for terminal_frac={bad}")
 
 
+def test_delisted_rally_mode_preserves_terminal_adds_bounces() -> None:
+    # Bear rallies must grow with the mode WITHOUT changing the calibrated terminal
+    # (drift is rescaled), so the synthetic isn't just a structureless monotone fall.
+    import numpy as np
+
+    def stats(mode):
+        terms, bounces = [], []
+        for s in range(20):
+            c = synthetic_delisted_ohlcv(800, seed=s, terminal_frac=0.08, rally=mode)["Close"]
+            terms.append(c.iloc[-1] / c.iloc[0])
+            r = np.log(c).diff().fillna(0).to_numpy()
+            bounces.append(max((np.exp(r[i:i + 10].sum()) - 1 for i in range(len(r) - 10)), default=0))
+        return float(np.median(terms)), float(np.median(bounces))
+
+    t_off, b_off = stats("off")
+    t_str, b_str = stats("strong")
+    assert b_str > b_off + 0.15                          # strong injects real counter-trend rallies
+    assert abs(t_off - t_str) < 0.04                     # terminal ~unchanged across modes
+    for bad in ("sideways", None):
+        try:
+            synthetic_delisted_ohlcv(100, rally=bad)
+        except (ValueError, TypeError):
+            pass
+        else:  # pragma: no cover
+            raise AssertionError(f"expected error for rally={bad!r}")
+
+
 def test_injector_loser_heavy_fraction() -> None:
     # delisted_fraction can make the population loser-heavy (dead > alive).
     survivors = {f"S{i}": synthetic_survivor_ohlcv(300, seed=i) for i in range(6)}

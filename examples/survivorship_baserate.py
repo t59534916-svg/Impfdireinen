@@ -136,6 +136,7 @@ def main() -> int:
     ap.add_argument("--preset", choices=["bessembinder", "custom"], default="bessembinder",
                     help="'bessembinder' calibrates terminal_frac/fractions to the empirical record")
     ap.add_argument("--terminal-frac", type=float, default=None, help="dead-name terminal loss level")
+    ap.add_argument("--rally", default="off", help="bear-rally structure in deaths: off|mild|strong")
     ap.add_argument("--cost-bps", type=float, default=10.0, help="round-trip cost for the tails-only book")
     ap.add_argument("--fractions", type=float, nargs="*", default=None)
     ap.add_argument("--perms", type=int, default=60, help="block-perm shuffles at the endpoints")
@@ -175,7 +176,7 @@ def main() -> int:
     dead_pool = []
     for k in range(n_dead_max):
         df = synthetic_delisted_ohlcv(cal_bars, seed=500 + k, start_date=start_date,
-                                      terminal_frac=args.terminal_frac)
+                                      terminal_frac=args.terminal_frac, rally=args.rally)
         try:
             dead_pool.append(_build(df, f"DEAD{k}", args))
         except ValueError:

@@ -175,6 +175,23 @@ discipline working: betting the conviction tails turned a dismissive "−0.08%, 
 
 <p align="center"><img src="docs/img/survivorship_inversion.png" width="70%" alt="Conviction-bucket forward return inverts under survivorship injection"/></p>
 
+> **Robustness check — is the inversion just a structureless monotone decline?** A fair
+> objection: the synthetic decliner was a monotone negative-drift path, and a dip-buying signal
+> *must* lose on a name engineered only to fall — so the inversion could be mechanical. We tested
+> it by adding **bear-rally structure** (`synthetic_delisted_ohlcv(..., rally=)`: Poisson-timed
+> +15–40% counter-trend bounces, with drift rescaled so the calibrated terminal loss is unchanged)
+> and re-ran the calibrated sweep (`survivorship_baserate.py --rally {off,mild,strong}`):
+> - **Directional inversion is robust** — the top-bucket (most-bullish-flagged) forward return flips
+>   from **+1.49%** (survivors) to **negative** under every rally mode (off −0.84%, mild −0.37%,
+>   strong −0.75%). It is *not* an artifact of a structureless decline: a name that ends ~92% down
+>   (the Bessembinder-calibrated terminal) drags any long-biased read negative even with realistic
+>   bounces. State it as "the **direction** inverts," which holds across decline dynamics.
+> - **But the "resilient selectivity" was the artifact.** The market-neutral tails L/S, which only
+>   *decayed* under monotone deaths (+1.05% → +1.69%), **flips to −1.20%/bet under *strong* rallies** —
+>   so the one thread that looked survivorship-resilient owes that resilience to the deaths being
+>   smooth. Under realistic bear rallies, neither direction nor selectivity is safe. (Reproduce:
+>   `python examples/survivorship_baserate.py --rally strong`.)
+
 **Phase C — the MFE/MAE re-framing + XGBoost don't rescue it.** Re-labeling each bar by whether a long
 bet's *Maximum Favorable Excursion* beat its *Maximum Adverse Excursion* (a volatility-scaled triple
 barrier) and learning `P(win)` from the structural features gives, on identical purged-CPCV splits:

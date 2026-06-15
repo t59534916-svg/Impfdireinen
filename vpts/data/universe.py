@@ -157,6 +157,7 @@ class SurvivorshipInjector:
         label: str = "DEAD",
         delisted_fraction: Optional[float] = None,
         terminal_frac: Optional[float] = None,
+        rally: str = "off",
     ) -> None:
         if n_delisted < 0:
             raise ValueError("n_delisted must be >= 0.")
@@ -167,6 +168,7 @@ class SurvivorshipInjector:
         self.label = str(label)
         self.delisted_fraction = delisted_fraction
         self.terminal_frac = terminal_frac
+        self.rally = rally
 
     def _count(self, n_survivors: int) -> int:
         """How many dead names to add — from a target fraction if set, else n_delisted.
@@ -201,7 +203,7 @@ class SurvivorshipInjector:
         for k in range(n_dead):
             sym = f"{self.label}{k}"
             dead = synthetic_delisted_ohlcv(n_bars, seed=self.seed + k, start_date=start_date,
-                                            terminal_frac=self.terminal_frac)
+                                            terminal_frac=self.terminal_frac, rally=self.rally)
             frames[sym] = dead
             members.append(Membership(
                 symbol=sym, start=pd.Timestamp(dead.index[0]),
