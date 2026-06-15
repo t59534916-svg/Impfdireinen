@@ -40,7 +40,7 @@ and volume-pattern factors. A single backtest of the breakout style on 2012–20
 ## Methodology (the harness)
 
 Every claim below clears the same bars, implemented in `vpts.validation` and `vpts.ml` and covered
-by 256 unit tests:
+by 265 unit tests:
 
 - **No look-ahead.** Features at bar *t* use only data ≤ *t*; labels are strictly future. The
   dataset/panel builders are unit-tested for this.
@@ -301,9 +301,11 @@ what excludes it. Running the harness on the 2 reachable (acquisition) names is 
 **Conclusion: the survivorship wall is a data-availability fact, not a modelling limitation.** The
 synthetic injection of Experiments 8–9 remains the only way to probe the death leg without paid
 point-in-time data — and the harness is already wired to drop in real delisted history the moment it
-exists, via `PolygonSource` (`provides_delisted=True`, needs a key) or `DataLakeSource` (a user parquet
-lake). The reusable artifact from this pass is `vpts.data.audit_coverage` / `KNOWN_DELISTED`: a one-call
-**survivorship audit** that turns any source's `provides_delisted` flag into a measured number.
+exists, via `PolygonSource` (`provides_delisted=True`, needs a key), `DataLakeSource` (a user parquet
+lake), or `StooqSource` (free; Stooq retains delisted US names, but its live endpoint is JS-walled and
+its bulk DB is paywalled, so it serves best from a local Stooq bulk export). The reusable artifact from
+this pass is `vpts.data.audit_coverage` / `KNOWN_DELISTED`: a one-call **survivorship audit** that turns
+any source's `provides_delisted` flag into a measured number.
 
 ---
 
@@ -394,7 +396,7 @@ asset. Any new idea plugs in and is judged honestly:
   position and MFE/MAE-XGBoost stress tests.
 - `vpts.data` — provider-agnostic `DataSource` layer, point-in-time `Universe` + survivorship injector,
   and `audit_coverage` (a one-call survivorship audit that measures a feed's delisted coverage).
-- 256 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- 265 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 

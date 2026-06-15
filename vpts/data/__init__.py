@@ -39,7 +39,13 @@ from vpts.data.fetcher import (
     NoVolumeError,
 )
 from vpts.data.registry import SourceRegistry, default_registry
-from vpts.data.sources import DataLakeSource, PolygonSource, SyntheticSource, YFinanceSource
+from vpts.data.sources import (
+    DataLakeSource,
+    PolygonSource,
+    StooqSource,
+    SyntheticSource,
+    YFinanceSource,
+)
 from vpts.data.synthetic import synthetic_delisted_ohlcv, synthetic_survivor_ohlcv
 from vpts.data.universe import (
     InjectionResult,
@@ -63,6 +69,7 @@ __all__ = [
     "SyntheticSource",
     "PolygonSource",
     "DataLakeSource",
+    "StooqSource",
     "SourceRegistry",
     "default_registry",
     # survivorship-coverage audit (measure the bias on a live feed)
