@@ -23,7 +23,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.11.0"  # + vpts.insight: LLM explanation layer with honesty guardrails
+__version__ = "1.12.0"  # + Polygon delisted source, block-permutation null, alt-data points
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (
@@ -99,13 +99,21 @@ from vpts.stats import (
     PSRResult,
     adjusted_pvalues,
     annualized_sharpe_lo,
+    block_permutation_test,
     deflated_sharpe_ratio,
     expected_max_sharpe,
     haircut_sharpe,
     min_track_record_length,
     probabilistic_sharpe_ratio,
     probability_of_backtest_overfitting,
+    recommend_block_size,
     sharpe_ratio,
+)
+from vpts.altdata import (
+    AltSignalSource,
+    NullAltSource,
+    StaticAltSource,
+    merge_alt_features,
 )
 from vpts.features import (
     BEHAVIORAL_FEATURES,
@@ -208,11 +216,18 @@ __all__ = [
     "probability_of_backtest_overfitting",
     "adjusted_pvalues",
     "haircut_sharpe",
+    "block_permutation_test",
+    "recommend_block_size",
     "PSRResult",
     "DeflatedSharpeResult",
     "MinTRLResult",
     "PBOResult",
     "HaircutResult",
+    # alt-data integration points (options flow / sentiment)
+    "AltSignalSource",
+    "NullAltSource",
+    "StaticAltSource",
+    "merge_alt_features",
     # features (multi-timeframe behavioral dynamics)
     "BEHAVIORAL_FEATURES",
     "BehavioralConfig",

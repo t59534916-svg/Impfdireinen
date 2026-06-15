@@ -33,7 +33,13 @@ from vpts.stats.deflated_sharpe import (
     sample_skew_kurt,
     sharpe_ratio,
 )
+from vpts.stats.block_permutation import (
+    block_permutation_test,
+    block_shuffle_indices,
+    recommend_block_size,
+)
 from vpts.stats.models import (
+    BlockPermutationResult,
     DeflatedSharpeResult,
     HaircutResult,
     MinTRLResult,
@@ -60,6 +66,11 @@ __all__ = [
     # multiple testing
     "adjusted_pvalues",
     "haircut_sharpe",
+    # block permutation (honest null for autocorrelated labels)
+    "block_permutation_test",
+    "block_shuffle_indices",
+    "recommend_block_size",
+    "BlockPermutationResult",
     # results
     "PSRResult",
     "DeflatedSharpeResult",

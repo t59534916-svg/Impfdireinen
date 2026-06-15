@@ -31,7 +31,7 @@ from vpts.data.fetcher import (
     NoVolumeError,
 )
 from vpts.data.registry import SourceRegistry, default_registry
-from vpts.data.sources import SyntheticSource, YFinanceSource
+from vpts.data.sources import PolygonSource, SyntheticSource, YFinanceSource
 from vpts.data.synthetic import synthetic_delisted_ohlcv, synthetic_survivor_ohlcv
 from vpts.data.universe import (
     InjectionResult,
@@ -53,6 +53,7 @@ __all__ = [
     "validate_ohlcv",
     "YFinanceSource",
     "SyntheticSource",
+    "PolygonSource",
     "SourceRegistry",
     "default_registry",
     # synthetic generators

@@ -111,12 +111,21 @@ class SourceRegistry:
 
 
 def default_registry(cache_dir: str = ".cache/vpts") -> SourceRegistry:
-    """Free, production-sensible default: yfinance primary, synthetic fallback.
+    """Production-sensible default chain.
 
-    The synthetic fallback keeps demos and tests running offline; it does **not**
-    make the chain survivorship-free for real tickers (its delisted paths are for
-    named synthetic symbols / the injector only).
+    If ``POLYGON_API_KEY`` is set, a :class:`~vpts.data.sources.PolygonSource` is
+    placed **first** — it is the only source that can serve delisted / point-in-time
+    history, so it makes the chain survivorship-capable. Otherwise the chain is
+    yfinance (free, survivor-only) → synthetic (offline fallback for demos/tests),
+    which is **not** survivorship-free for real tickers.
     """
-    from vpts.data.sources import SyntheticSource, YFinanceSource
+    import os
 
-    return SourceRegistry([YFinanceSource(cache_dir=cache_dir), SyntheticSource()])
+    from vpts.data.sources import PolygonSource, SyntheticSource, YFinanceSource
+
+    sources: list = []
+    if os.environ.get("POLYGON_API_KEY"):
+        sources.append(PolygonSource())          # delisted-capable → goes first
+    sources.append(YFinanceSource(cache_dir=cache_dir))
+    sources.append(SyntheticSource())
+    return SourceRegistry(sources)

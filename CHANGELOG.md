@@ -8,6 +8,11 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act III — production hardening
 
+### `1.12.0` — Delisted-capable data source, an honest null, and alt-data hooks
+- **Added** `PolygonSource` (`vpts.data`): a `DataSource` over Polygon.io that serves **delisted** history and point-in-time reference status (`is_delisted`, `list_delisted`) — the survivorship escape hatch. Activates on `POLYGON_API_KEY` and is placed first in `default_registry()` when present; the HTTP layer is injectable, so parsing is unit-tested with no key/network.
+- **Added** the **block-permutation** test (`vpts.stats`): `block_permutation_test` / `block_shuffle_indices` / `recommend_block_size`. The per-row label shuffle is anti-conservative for **overlapping** labels (it destroys autocorrelation); the block null preserves it and gives an honest p-value — demonstrated by a spurious-regression test where per-row falsely rejects and the block null does not.
+- **Added** `vpts.altdata`: integration points for **options-flow** (dealer gamma/skew positioning) and **sentiment** (news/social/retail) signals — `AltSignalSource` ABC, `NullAltSource`, `StaticAltSource`, and a causal `merge_alt_features`. Interfaces only (no live feed); alt signals plug into the same harness as hypotheses.
+
 ### `1.11.0` — LLM insight layer that cannot fabricate an edge (`vpts.insight`)
 - **Added** `vpts.insight`: turns validated harness statistics into a human-readable behavioral-finance explanation via Claude (`AnthropicClient`, default `claude-opus-4-8`) — with a structural honesty guarantee rather than a trust-the-model hope. The **verdict** (no-edge / survivorship-fragile / overfit / weak / validated) is computed *in code* (`assess`) from the same bars as `RESEARCH.md`; the LLM only narrates it; the output is **scanned** for edge-claims the verdict forbids (`scan_for_overclaims`) and corrected if it overclaims; with no client (or on failure) a faithful, non-overclaiming **template** is rendered, so the layer is fully offline-capable.
 - **Added** the optional `llm` extra (`pip install vpts[llm]`). 16 tests, all offline (incl. an adversarial mock model that *tries* to claim a tradeable edge and is caught + corrected).

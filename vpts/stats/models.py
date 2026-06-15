@@ -183,6 +183,49 @@ class PBOResult:
 # Multiple-testing haircut (Harvey, Liu & Zhu)
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True)
+class BlockPermutationResult:
+    """A permutation test whose null preserves label autocorrelation.
+
+    The ordinary per-row label shuffle destroys autocorrelation, so for
+    **overlapping** labels (forward returns sampled finer than the horizon) it
+    underestimates the null's spread and reports spurious significance. A block
+    permutation reshuffles *contiguous blocks*, keeping within-block structure, so
+    the p-value is honest for autocorrelated targets.
+    """
+
+    real_stat: float
+    null_mean: float
+    null_std: float
+    p_value: float
+    n_permutations: int
+    block_size: int
+    alternative: str
+
+    @property
+    def significant(self) -> bool:
+        return self.p_value < 0.05
+
+    def as_dict(self) -> dict:
+        return {
+            "real_stat": round(self.real_stat, 5),
+            "null_mean": round(self.null_mean, 5),
+            "null_std": round(self.null_std, 5),
+            "p_value": round(self.p_value, 4),
+            "n_permutations": self.n_permutations,
+            "block_size": self.block_size,
+            "alternative": self.alternative,
+        }
+
+    def summary(self) -> str:
+        sig = "SIGNIFICANT" if self.significant else "not significant"
+        return (
+            f"Block permutation ({self.n_permutations} shuffles, block={self.block_size}): "
+            f"real {self.real_stat:+.4f} vs null {self.null_mean:+.4f}±{self.null_std:.4f} "
+            f"→ p = {self.p_value:.3f} ({sig})"
+        )
+
+
+@dataclass(frozen=True)
 class HaircutResult:
     """Multiple-testing haircut of a Sharpe ratio (Harvey, Liu & Zhu 2016).
 

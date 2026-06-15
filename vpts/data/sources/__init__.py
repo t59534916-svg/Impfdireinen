@@ -8,7 +8,8 @@
 """
 from __future__ import annotations
 
+from vpts.data.sources.polygon_source import PolygonSource
 from vpts.data.sources.synthetic_source import SyntheticSource
 from vpts.data.sources.yfinance_source import YFinanceSource
 
-__all__ = ["YFinanceSource", "SyntheticSource"]
+__all__ = ["YFinanceSource", "SyntheticSource", "PolygonSource"]
