@@ -291,24 +291,37 @@ def permutation_test_factor(
     n_permutations: int = 200,
     alpha: float = 1.0,
     seed: int = 0,
+    null: str = "row",
 ) -> "FactorPermutationResult":
     """Label-shuffle significance test for the out-of-sample factor IC.
 
     Re-runs :func:`cpcv_factor_eval` with the targets ``y`` shuffled against the
     features (same CV splits throughout); the p-value is the fraction of
     permutations whose OOS IC is at least the real one.
+
+    ``null``:
+        ``"row"`` (default) shuffles every row independently. ``"block"`` shuffles
+        **contiguous blocks** sized by ``recommend_block_size(horizon, stride)`` so
+        the null preserves the label autocorrelation of overlapping forward returns
+        (``stride < horizon``) — the honest null when labels overlap, since a per-row
+        shuffle destroys that autocorrelation and reports optimistic p-values.
     """
     from vpts.ml.models import FactorPermutationResult
+    from vpts.stats import block_shuffle_indices, recommend_block_size
 
+    if null not in ("row", "block"):
+        raise ValueError("null must be 'row' or 'block'.")
     m = len(dataset)
+    block_size = recommend_block_size(dataset.horizon, dataset.stride) if null == "block" else None
     cv = cv or CombinatorialPurgedCV(
         n_groups=6, n_test_groups=2, purge=dataset.purge_samples, embargo_pct=0.01)
     real = cpcv_factor_eval(dataset, cv, alpha)
     rng = np.random.default_rng(seed)
 
-    null: list[float] = []
+    null_ics: list[float] = []
     for _ in range(n_permutations):
-        perm = rng.permutation(m)
+        perm = (block_shuffle_indices(m, block_size, rng=rng) if null == "block"
+                else rng.permutation(m))
         shuffled = FactorDataset(
             X=dataset.X, y=dataset.y[perm], baseline=dataset.baseline,
             feature_names=dataset.feature_names, horizon=dataset.horizon,
@@ -318,11 +331,12 @@ def permutation_test_factor(
         except ValueError:
             continue
         if np.isfinite(r.oos_ic_mean):
-            null.append(r.oos_ic_mean)
+            null_ics.append(r.oos_ic_mean)
 
-    arr = np.array(null, dtype=float)
+    arr = np.array(null_ics, dtype=float)
     p = float((np.sum(arr >= real.oos_ic_mean) + 1) / (arr.size + 1))
     return FactorPermutationResult(
         real_ic=real.oos_ic_mean,
         null_ic_mean=float(arr.mean()) if arr.size else float("nan"),
         p_value=p, n_permutations=int(arr.size), symbol=dataset.symbol)
+

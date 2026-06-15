@@ -36,6 +36,7 @@ from vpts import (  # noqa: E402
 )
 from vpts.ml.factor_model import permutation_test_factor  # noqa: E402
 from vpts.ml.models import FactorDataset  # noqa: E402
+from vpts.stats import block_shuffle_indices, recommend_block_size  # noqa: E402
 
 DEFAULT_BASKET = [t for t, _ in GITHUB_TICKERS][:8]
 
@@ -101,33 +102,44 @@ def main() -> int:
     print("  Top weights       : "
           + ", ".join(f"{STRUCTURAL_FEATURES[i]} {w[i]:+.2f}" for i in order[:6]))
 
-    # ---- pooled label-shuffle permutation test ---------------------------- #
-    print(f"\nPooled permutation test ({args.perms} shuffles) …")
-    rng = np.random.default_rng(0)
-    null = np.empty(args.perms, dtype=float)
-    for p in range(args.perms):
-        folds: list[np.ndarray] = []
-        for _sym, ds, cv in built:
-            perm = rng.permutation(len(ds))
-            shuf = FactorDataset(
-                X=ds.X, y=ds.y[perm], baseline=ds.baseline, feature_names=ds.feature_names,
-                horizon=ds.horizon, stride=ds.stride, symbol=ds.symbol)
-            try:
-                folds.append(np.array(cpcv_factor_eval(shuf, cv=cv, alpha=args.alpha).fold_ics, float))
-            except ValueError:
-                continue
-        null[p] = _pooled(folds)
-    null = null[np.isfinite(null)]
-    p_value = float((np.sum(null >= real) + 1) / (null.size + 1))
-    print(f"  Real pooled IC    : {real:+.3f}")
-    print(f"  Null pooled IC    : mean {null.mean():+.3f}  σ {null.std():.3f}  "
-          f"(95th pct {np.quantile(null, 0.95):+.3f})")
-    print(f"  p-value           : {p_value:.3f}  "
-          f"({'SIGNIFICANT' if p_value < 0.05 else 'not significant'})")
+    # ---- pooled label-shuffle permutation test (per-row vs block null) ------ #
+    # The per-row shuffle destroys label autocorrelation; with overlapping labels
+    # (stride < horizon) it understates the null's spread and reports optimistic p.
+    # The block null preserves that autocorrelation and is the honest test.
+    def _pooled_p(null_kind: str) -> tuple[float, float]:
+        rng = np.random.default_rng(0)
+        null = np.empty(args.perms, dtype=float)
+        for p in range(args.perms):
+            folds: list[np.ndarray] = []
+            for _sym, ds, cv in built:
+                if null_kind == "block":
+                    perm = block_shuffle_indices(len(ds), recommend_block_size(ds.horizon, ds.stride),
+                                                 rng=rng)
+                else:
+                    perm = rng.permutation(len(ds))
+                shuf = FactorDataset(
+                    X=ds.X, y=ds.y[perm], baseline=ds.baseline, feature_names=ds.feature_names,
+                    horizon=ds.horizon, stride=ds.stride, symbol=ds.symbol)
+                try:
+                    folds.append(np.array(cpcv_factor_eval(shuf, cv=cv, alpha=args.alpha).fold_ics, float))
+                except ValueError:
+                    continue
+            null[p] = _pooled(folds)
+        null = null[np.isfinite(null)]
+        return (float((np.sum(null >= real) + 1) / (null.size + 1)),
+                float(null.std()) if null.size else float("nan"))
 
-    verdict = ("structural features carry REAL, significant OOS signal"
-               if (p_value < 0.05 and real > 0.02)
-               else "NO robust OOS edge — real IC sits inside the shuffled null")
+    print(f"\nPooled permutation test ({args.perms} shuffles) — per-row vs block null …")
+    p_row, _ = _pooled_p("row")
+    p_blk, sd_blk = _pooled_p("block")
+    print(f"  Real pooled IC    : {real:+.3f}")
+    print(f"  p (per-row null)  : {p_row:.3f}   (optimistic — destroys label autocorrelation)")
+    print(f"  p (block null)    : {p_blk:.3f}   (honest — block σ {sd_blk:.3f})  "
+          f"{'SIGNIFICANT' if p_blk < 0.05 else 'NOT significant'}")
+
+    verdict = ("structural features carry REAL signal that survives the block null"
+               if (p_blk < 0.05 and real > 0.02)
+               else "NO robust OOS edge under the honest (block) null")
     print(f"\n  VERDICT           : {verdict}")
 
     if args.plot:

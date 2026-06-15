@@ -34,6 +34,7 @@ from vpts import (  # noqa: E402
     cpcv_factor_eval,
 )
 from vpts.ml.models import FactorDataset  # noqa: E402
+from vpts.stats import block_shuffle_indices, recommend_block_size  # noqa: E402
 
 Built = list[tuple[FactorDataset, CombinatorialPurgedCV]]
 
@@ -48,14 +49,21 @@ def _pooled_ic(built: Built, alpha: float) -> float:
     return float(np.concatenate(folds).mean()) if folds else float("nan")
 
 
-def _pooled_permutation(built: Built, alpha: float, n_perms: int, seed: int = 0):
+def _pooled_permutation(built: Built, alpha: float, n_perms: int, seed: int = 0,
+                        null: str = "block"):
+    """Pooled label-shuffle test. ``null='block'`` preserves the autocorrelation of
+    overlapping labels (the honest null); ``'row'`` is the old per-row shuffle."""
     real = _pooled_ic(built, alpha)
     rng = np.random.default_rng(seed)
-    null = []
+    null_ics = []
     for _ in range(n_perms):
         folds = []
         for ds, cv in built:
-            perm = rng.permutation(len(ds))
+            if null == "block":
+                perm = block_shuffle_indices(len(ds), recommend_block_size(ds.horizon, ds.stride),
+                                             rng=rng)
+            else:
+                perm = rng.permutation(len(ds))
             shuf = FactorDataset(X=ds.X, y=ds.y[perm], baseline=ds.baseline,
                                  feature_names=ds.feature_names, horizon=ds.horizon,
                                  stride=ds.stride, symbol=ds.symbol)
@@ -64,8 +72,8 @@ def _pooled_permutation(built: Built, alpha: float, n_perms: int, seed: int = 0)
             except ValueError:
                 continue
         if folds:
-            null.append(float(np.concatenate(folds).mean()))
-    arr = np.array(null, float)
+            null_ics.append(float(np.concatenate(folds).mean()))
+    arr = np.array(null_ics, float)
     p = float((np.sum(arr >= real) + 1) / (arr.size + 1))
     return real, (float(arr.mean()) if arr.size else float("nan")), p
 
@@ -109,15 +117,17 @@ def main() -> int:
     if not surv:
         print("No survivors built."); return 1
 
-    print(f"{'mix':>26}{'nDead':>7}{'pooledIC':>11}{'nullIC':>9}{'p':>8}")
+    print(f"{'mix':>26}{'nDead':>7}{'pooledIC':>11}{'p(row)':>9}{'p(block)':>10}   "
+          "(block = honest null for overlapping labels)")
     S = len(surv)
     for rate in (0.0, 0.05, 0.10, 0.20, 0.30):
         d = min(int(round(rate * S / (1 - rate))) if rate < 1 else len(dead), len(dead))
         built = surv + dead[:d]
-        real, null, p = _pooled_permutation(built, args.alpha, args.perms, seed=0)
+        real, _, p_row = _pooled_permutation(built, args.alpha, args.perms, seed=0, null="row")
+        _, _, p_blk = _pooled_permutation(built, args.alpha, args.perms, seed=0, null="block")
         tag = f"survivors+{d} delisted" if d else "survivors only"
-        flag = " *" if p < 0.05 else ""
-        print(f"{tag:>26}{d:>7}{real:>+11.3f}{null:>+9.3f}{p:>8.3f}{flag}")
+        flag = " *block" if p_blk < 0.05 else ""
+        print(f"{tag:>26}{d:>7}{real:>+11.3f}{p_row:>9.3f}{p_blk:>10.3f}{flag}")
 
     print("\nRead: if the pooled IC / p-value collapses at a low delisting rate, the "
           "structural signal was largely survivorship (as meta-labeling proved to be). "

@@ -133,6 +133,20 @@ to clear the bars:
 
 <p align="center"><img src="docs/img/structural_ic_sweep.png" width="70%" alt="Structural IC decays gracefully under survivorship injection"/></p>
 
+> **Methodology update — block-permutation null (the honest test for overlapping labels).**
+> The p-values above use a **per-row** label shuffle, which destroys serial correlation; with
+> overlapping labels (horizon 20, stride 3) that null is *anti-conservative* (optimistic p). Re-running
+> the 8-name structural test under the **block-permutation null** (`recommend_block_size`/`block_shuffle_indices`,
+> which preserves the label autocorrelation) gives:
+> - **Survivors only:** IC +0.103, **p = 0.002 under *both* per-row and block** (500 perms) — so the
+>   per-row shuffle was *not* inflating the survivors-only headline; it clears the honest null too.
+> - **Under injection (8 survivors + k synthetic dead, 200 perms):** the per-row p stays ~0.005 across
+>   k, but the **block** p rises fast — k=1 → **0.045**, k=2 → **0.060 (n.s.)**, k=3 → **0.139**. So the
+>   per-row null *overstated* robustness-to-injection; under the honest null the signal loses significance
+>   at only ~2 injected names. This **strengthens** the survivorship-fragility conclusion, it does not
+>   rescue the signal. (Reproduce: `python examples/structural_survivorship.py --perms 500`. The 88-name
+>   block re-test is pending — expensive — and is not claimed here.)
+
 ### 9 — Decomposition + cost: the signal is survivorship-leaning and economically empty
 Three diagnostics settle what the +0.035 actually is — and the answer is sobering:
 

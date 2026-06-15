@@ -40,6 +40,7 @@ from vpts import (  # noqa: E402
     cpcv_factor_quantile_returns,
 )
 from vpts.ml.models import FactorDataset  # noqa: E402
+from vpts.stats import block_shuffle_indices, recommend_block_size  # noqa: E402
 
 DIP = ("delta_net", "delta_poc", "poc_loc", "cost_basis_migration")
 REGIME = ("vacr_z", "poc_slope", "skew", "kurtosis", "n_ledges", "poor_high",
@@ -69,15 +70,21 @@ def _pooled(built: Built, names: tuple[str, ...] | None, alpha: float = 1.0) -> 
 
 
 def _perm_p(built: Built, names: tuple[str, ...] | None, n_perms: int,
-            alpha: float = 1.0, seed: int = 0) -> float:
+            alpha: float = 1.0, seed: int = 0, null: str = "block") -> float:
+    """Pooled permutation p. ``null='block'`` preserves overlapping-label
+    autocorrelation (honest); ``'row'`` is the old, optimistic per-row shuffle."""
     real, _ = _pooled(built, names, alpha)
     rng = np.random.default_rng(seed)
-    null = []
+    null_ics = []
     for _ in range(n_perms):
         ics = []
         for ds, cv in built:
             d = _subset(ds, names) if names else ds
-            perm = rng.permutation(len(d))
+            if null == "block":
+                perm = block_shuffle_indices(len(d), recommend_block_size(d.horizon, d.stride),
+                                             rng=rng)
+            else:
+                perm = rng.permutation(len(d))
             sh = FactorDataset(X=d.X, y=d.y[perm], baseline=d.baseline,
                                feature_names=d.feature_names, horizon=d.horizon,
                                stride=d.stride, symbol=d.symbol)
@@ -86,8 +93,8 @@ def _perm_p(built: Built, names: tuple[str, ...] | None, n_perms: int,
             except ValueError:
                 continue
         if ics:
-            null.append(float(np.mean(ics)))
-    arr = np.array(null, float)
+            null_ics.append(float(np.mean(ics)))
+    arr = np.array(null_ics, float)
     return float((np.sum(arr >= real) + 1) / (arr.size + 1))
 
 
