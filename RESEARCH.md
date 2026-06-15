@@ -40,7 +40,7 @@ and volume-pattern factors. A single backtest of the breakout style on 2012–20
 ## Methodology (the harness)
 
 Every claim below clears the same bars, implemented in `vpts.validation` and `vpts.ml` and covered
-by 242 unit tests:
+by 250 unit tests:
 
 - **No look-ahead.** Features at bar *t* use only data ≤ *t*; labels are strictly future. The
   dataset/panel builders are unit-tested for this.
@@ -272,6 +272,41 @@ nuance: meta-labeling selectivity is the least-survivorship-fragile thing here �
 
 ---
 
+### Tier-1 addendum — feeding the harness real delisted names (the free-data ceiling)
+
+Every survivorship result above leans on *synthetic* dead names, with the standing caveat "no free
+delisted prices." That caveat was an assertion; we set out to make it a number — to finally feed the
+harness **real** delisted history — and the attempt is itself the finding. `examples/real_delisted_audit.py`
+audits a curated catalogue of **26 well-known US delistings** (11 bankruptcy/liquidation — the names
+that went to ≈0 — and 15 acquisition/merger; `vpts.data.KNOWN_DELISTED`) against the only free,
+no-key feed reachable in the sandbox (Yahoo v8), each name's window **capped at its delisting year**
+so we only count genuine pre-delisting history:
+
+| leg | reachable | examples |
+|-----|-----------|----------|
+| **bankruptcy / liquidation** | **0 / 11 (0%)** | LEH, WAMUQ, ENE, ABK, WCOM, GGP, MTLQQ, CIT, GTATQ, SHLDQ, HTZGQ — all dropped |
+| **acquisition / merger** | **2 / 15 (13%)** | only TWX (to 2018-06) and COL (to 2018-12) survive; the rest dropped |
+| **total** | **2 / 26 (8%)** | — |
+
+The leg that drives the survivorship mirage — the bankruptcies, which actually went to zero — has
+**0% coverage**: a free feed drops a name the day it delists, so the dead are gone precisely when they
+matter. Cross-checking the other free routes closes the door: Stooq's interactive CSV is now behind a
+JavaScript proof-of-work wall, its bulk database download returns HTTP 401 (paywalled), SEC bulk is
+reachable but serves identifiers only (no OHLCV), and Tiingo/SimFin are key-gated. A second trap also
+surfaced: **ticker reuse** — `STI` post-2019 is a *different* company that claimed SunTrust's old
+symbol, which a naive fetch would silently splice onto the dead firm; capping at the delisting year is
+what excludes it. Running the harness on the 2 reachable (acquisition) names is statistically empty
+(n = 2 is noise) and, by construction, can't probe the death leg at all.
+
+**Conclusion: the survivorship wall is a data-availability fact, not a modelling limitation.** The
+synthetic injection of Experiments 8–9 remains the only way to probe the death leg without paid
+point-in-time data — and the harness is already wired to drop in real delisted history the moment it
+exists, via `PolygonSource` (`provides_delisted=True`, needs a key) or `DataLakeSource` (a user parquet
+lake). The reusable artifact from this pass is `vpts.data.audit_coverage` / `KNOWN_DELISTED`: a one-call
+**survivorship audit** that turns any source's `provides_delisted` flag into a measured number.
+
+---
+
 ## Honest conclusion
 
 On 88 survivorship-biased US large-caps (2012–2017, daily), **none** of the studied inputs yields a
@@ -298,7 +333,8 @@ delisted names are present, so it too is closed. Eleven experiments, one consist
 **What would actually change this** (in rough order of expected value):
 
 1. **Survivorship-free / point-in-time data**, including delisted names — the dominant confound,
-   untestable in this source. This is the real wall, not model complexity.
+   untestable in this source. This is the real wall, not model complexity — and the Tier-1 addendum
+   above now *quantifies* the ceiling: free feeds serve **0%** of the bankruptcy names that drive it.
 2. **A wider, deeper cross-section** (hundreds–thousands of names). The 88-name washout suggests
    breadth *within survivors* isn't enough; genuine breadth + delisted names is the test.
 3. **Different data regimes** — intraday microstructure, or non-equity assets where Volume-Profile
@@ -319,7 +355,9 @@ asset. Any new idea plugs in and is judged honestly:
 - `vpts.structure` — synthetic delta, profile-shape moments, footprints and time-decay, emitted as a
   `FactorDataset`/`MetaDataset` straight into the harness; plus survivorship-injection, feature-decom-
   position and MFE/MAE-XGBoost stress tests.
-- 242 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- `vpts.data` — provider-agnostic `DataSource` layer, point-in-time `Universe` + survivorship injector,
+  and `audit_coverage` (a one-call survivorship audit that measures a feed's delisted coverage).
+- 250 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 
@@ -338,6 +376,7 @@ python examples/structural_decompose.py               # 9: per-feature + subgrou
 python examples/structural_mfe_xgb.py                 # 9: MFE/MAE triple-barrier + XGBoost (optional)
 python examples/structural_swing_rater.py             # 10: swing setup-rater (R:R + selectivity)
 python examples/structural_selectivity.py             # 11: selectivity stress-test (grid/decomp/power)
+python examples/real_delisted_audit.py                # Tier 1: free-feed delisted-coverage audit
 ```
 
 ## Limitations

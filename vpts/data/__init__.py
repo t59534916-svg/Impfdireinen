@@ -24,6 +24,14 @@ from vpts.data.base import (
     DataSourceCapabilities,
     validate_ohlcv,
 )
+from vpts.data.coverage import (
+    KNOWN_DELISTED,
+    CoverageReport,
+    DelistedTicker,
+    SymbolCoverage,
+    audit_coverage,
+    audit_known_delisted,
+)
 from vpts.data.fetcher import (
     DataFetchError,
     InsufficientDataError,
@@ -57,6 +65,13 @@ __all__ = [
     "DataLakeSource",
     "SourceRegistry",
     "default_registry",
+    # survivorship-coverage audit (measure the bias on a live feed)
+    "audit_coverage",
+    "audit_known_delisted",
+    "CoverageReport",
+    "SymbolCoverage",
+    "DelistedTicker",
+    "KNOWN_DELISTED",
     # synthetic generators
     "synthetic_survivor_ohlcv",
     "synthetic_delisted_ohlcv",
