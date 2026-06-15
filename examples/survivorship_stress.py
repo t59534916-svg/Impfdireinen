@@ -34,35 +34,24 @@ from vpts import (  # noqa: E402
     cpcv_meta_eval,
     permutation_test_meta,
 )
+from vpts.data.synthetic import synthetic_delisted_ohlcv as _delisted  # noqa: E402
 from vpts.ml.models import MetaDataset  # noqa: E402
 
 
-def synthetic_delisted_ohlcv(n: int = 1259, seed: int = 0) -> pd.DataFrame:
-    """A 'name that died': ~normal, then a sustained decline to pennies.
+def synthetic_delisted_ohlcv(n: int = 1259, seed: int = 0, **kwargs) -> pd.DataFrame:
+    """Back-compat adapter — the **canonical** delisted generator with the legacy,
+    stocknet-aligned defaults these examples were published with (length ≈ the
+    1,258-bar survivors; calendar starting 2012-09-04).
 
-    Generated from a fixed, strategy-agnostic process (not tuned to the model):
-    a flat-ish first phase, then a negative-drift, elevated-volatility decline
-    floored near zero, with capitulation volume spikes on big down days.
+    The implementation now lives once in :mod:`vpts.data.synthetic`. The old in-file
+    copy built ``High = max(High, Close)`` / ``Low = min(Low, Close)`` and so emitted
+    ~half its bars **malformed** (High < Open or Low > Open — impossible in real
+    data); the canonical builder reduces over ``{Open, High, Low, Close}`` and fixes
+    it. The Close/terminal path is unchanged (identical RNG draw order), so only the
+    intrabar High/Low — and the CLV/range features that read them — move.
     """
-    rng = np.random.default_rng(seed)
-    start = rng.uniform(40.0, 160.0)
-    cut = int(rng.uniform(0.2, 0.5) * n)              # when the decline begins
-    vol_n, vol_d = rng.uniform(0.012, 0.022), rng.uniform(0.03, 0.06)
-    drift_d = -rng.uniform(0.002, 0.005)              # -0.2%..-0.5% / day
-    rets = np.empty(n)
-    rets[:cut] = rng.normal(0.0, vol_n, cut)
-    rets[cut:] = rng.normal(drift_d, vol_d, n - cut)
-    close = np.maximum(start * np.exp(np.cumsum(rets)), 0.20)   # penny floor
-    bar_vol = np.where(np.arange(n) < cut, vol_n, vol_d)
-    high = close * (1.0 + np.abs(rng.normal(0, bar_vol, n)))
-    low = close * (1.0 - np.abs(rng.normal(0, bar_vol, n)))
-    open_ = np.concatenate([[close[0]], close[:-1]])
-    base = rng.uniform(2e6, 8e6)
-    volume = base * (1.0 + 3.0 * np.maximum(0.0, -rets) / (vol_d + 1e-9))
-    idx = pd.date_range("2012-09-04", periods=n, freq="B")
-    return pd.DataFrame({"Open": open_, "High": np.maximum(high, close),
-                         "Low": np.minimum(low, close), "Close": close,
-                         "Volume": volume}, index=idx)
+    kwargs.setdefault("start_date", "2012-09-04")
+    return _delisted(n, seed=seed, **kwargs)
 
 
 def _eval(ds: MetaDataset, cost_bps: float):

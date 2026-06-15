@@ -5,7 +5,7 @@
 **A free, explainable Volume‑Profile trading system — and an honest, adversarial study of whether it actually has an edge.**
 
 ![version](https://img.shields.io/badge/version-1.11.0-blue)
-![tests](https://img.shields.io/badge/tests-197%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-242%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![deps](https://img.shields.io/badge/core%20deps-numpy%20·%20pandas%20·%20scipy-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -63,7 +63,7 @@ Run any phase or experiment directly — every demo is a single file in [`exampl
 ```bash
 python examples/phase4_demo.py AAPL 1y 1d reversion    # the product (needs internet)
 python examples/structural_swing_rater.py              # the research (a swing setup-rater)
-python -m pytest -q                                    # 135 offline, deterministic tests
+python -m pytest -q                                    # 242 offline, deterministic tests
 ```
 
 ---
@@ -263,7 +263,7 @@ vpts/                      core library — lightweight (numpy · pandas · scip
 └─ insight/                Act III — LLM explanation layer with edge-claim guardrails
 
 examples/                  one runnable file per phase, per experiment, + behavioral_ai_demo
-tests/                     197 offline, deterministic tests
+tests/                     242 offline, deterministic tests
 docs/                      ARCHITECTURE.md · img/ (committed figures + generator)
 RESEARCH.md                the eleven-experiment validation log
 streamlit_app.py           dashboard entry point
@@ -276,7 +276,7 @@ streamlit_app.py           dashboard entry point
 ## Testing
 
 ```bash
-python -m pytest -q            # 197 tests, all offline & deterministic (no network)
+python -m pytest -q            # 242 tests, all offline & deterministic (no network)
 python tests/test_phase1.py    # or run any file directly
 ```
 

@@ -40,7 +40,7 @@ and volume-pattern factors. A single backtest of the breakout style on 2012–20
 ## Methodology (the harness)
 
 Every claim below clears the same bars, implemented in `vpts.validation` and `vpts.ml` and covered
-by 135 unit tests:
+by 242 unit tests:
 
 - **No look-ahead.** Features at bar *t* use only data ≤ *t*; labels are strictly future. The
   dataset/panel builders are unit-tested for this.
@@ -319,7 +319,7 @@ asset. Any new idea plugs in and is judged honestly:
 - `vpts.structure` — synthetic delta, profile-shape moments, footprints and time-decay, emitted as a
   `FactorDataset`/`MetaDataset` straight into the harness; plus survivorship-injection, feature-decom-
   position and MFE/MAE-XGBoost stress tests.
-- 135 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- 242 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 
