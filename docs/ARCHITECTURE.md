@@ -223,7 +223,7 @@ flowchart TD
 
 **Honesty guarantee, in order of strength:** (1) the code‑computed verdict is the hard gate; (2) the LLM is confined to narration; (3) scan + banner visibly neutralise an overclaim; (4) the template guarantees a safe output. The output scan is a heuristic *second* line, not the guarantee.
 
-> The harness emits a `HonestReport`; the insight layer consumes an `Evidence`. There is currently **no** automatic `HonestReport → Evidence` adapter — the two are bridged by hand (shown dashed in the runtime diagram).
+> The harness emits a `HonestReport`; the insight layer consumes an `Evidence`. `evidence_from_report()` / `explain_report()` (`insight/bridge.py`) bridge the two — the dashed link in the runtime diagram — so a harness run can be narrated in one step.
 
 ---
 

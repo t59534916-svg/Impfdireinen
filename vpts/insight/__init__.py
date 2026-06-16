@@ -22,6 +22,7 @@ LLM-written explanation (Claude); the guardrails apply identically.
 """
 from __future__ import annotations
 
+from vpts.insight.bridge import evidence_from_report, explain_report
 from vpts.insight.generator import SYSTEM_PROMPT, InsightGenerator, render_template
 from vpts.insight.guardrails import assess, scan_for_overclaims
 from vpts.insight.llm import AnthropicClient, InsightLLMError, LLMClient, MockLLMClient
@@ -37,6 +38,8 @@ __all__ = [
     "SYSTEM_PROMPT",
     "assess",
     "scan_for_overclaims",
+    "evidence_from_report",
+    "explain_report",
     "LLMClient",
     "AnthropicClient",
     "MockLLMClient",

@@ -22,6 +22,8 @@ from vpts.insight import (  # noqa: E402
     MockLLMClient,
     Verdict,
     assess,
+    evidence_from_report,
+    explain_report,
     render_template,
     scan_for_overclaims,
 )
@@ -110,6 +112,71 @@ def test_template_is_faithful_and_not_overclaiming() -> None:
     assert "survivorship" in text.lower() and "+0.035" in text
     assert "research finding, not a tradeable signal" in text
     assert scan_for_overclaims(text, vr.verdict) == ()
+
+
+# --------------------------------------------------------------------------- #
+# Bridge: HonestReport -> Evidence -> Insight
+# --------------------------------------------------------------------------- #
+def _mirage_report():
+    from vpts.harness import HonestReport, InjectionPoint
+    return HonestReport(
+        n_datasets=2, n_samples=1000, oos_ic_mean=0.04, oos_ic_std=0.10,
+        pct_folds_positive=60.0, block_perm_p=0.01, perms=200,
+        bucket_curve=(0.10, 0.0, -0.10), long_short_net_pct=0.26,
+        deflated_sharpe=0.80, n_trials=5, pbo=0.20,
+        injection_sweep=(InjectionPoint(0.0, 0.04, 0.26, 0.30),
+                         InjectionPoint(0.5, -0.01, -1.07, -0.20)),
+        verdict="SURVIVORSHIP MIRAGE — significant on survivors but inverts under injection.",
+    )
+
+
+def test_evidence_from_report_maps_metrics_and_survivorship() -> None:
+    ev = evidence_from_report(_mirage_report(), "structural", horizon=20)
+    assert ev.oos_ic == 0.04 and ev.p_value == 0.01 and ev.pbo == 0.20
+    assert ev.net_return_per_bet_bps == 26.0           # 0.26%/bet -> 26 bps
+    assert ev.inverts_under_injection is True           # top bucket +0.30 -> -0.20
+    assert ev.survives_injection is False
+    assert ev.horizon == 20 and "harness verdict" in ev.notes
+    assert assess(ev).verdict is Verdict.SURVIVORSHIP_FRAGILE
+
+
+def test_evidence_from_report_survives_when_no_inversion() -> None:
+    from vpts.harness import HonestReport, InjectionPoint
+    rep = HonestReport(
+        n_datasets=1, n_samples=500, oos_ic_mean=0.05, oos_ic_std=0.10,
+        pct_folds_positive=70.0, block_perm_p=0.002, perms=200,
+        bucket_curve=(0.2, 0.0, -0.1), long_short_net_pct=0.10,
+        deflated_sharpe=0.97, n_trials=8, pbo=0.10,
+        injection_sweep=(InjectionPoint(0.0, 0.05, 0.10, 0.20),
+                         InjectionPoint(0.5, 0.03, 0.05, 0.06)),
+        verdict="PASSES the honest checklist.",
+    )
+    ev = evidence_from_report(rep, "x")
+    assert ev.inverts_under_injection is False and ev.survives_injection is True
+    assert assess(ev).verdict is Verdict.VALIDATED      # sig + survives + DSR>=0.95
+
+
+def test_evidence_from_report_no_sweep_leaves_survivorship_none() -> None:
+    from vpts.harness import HonestReport
+    rep = HonestReport(
+        n_datasets=3, n_samples=1500, oos_ic_mean=float("nan"), oos_ic_std=float("nan"),
+        pct_folds_positive=float("nan"), block_perm_p=0.6, perms=120,
+        bucket_curve=(), long_short_net_pct=float("nan"),
+        deflated_sharpe=float("nan"), n_trials=1, pbo=float("nan"),
+        injection_sweep=None,
+        verdict="NO EDGE — IC does not clear its block-permutation null.",
+    )
+    ev = evidence_from_report(rep, "x")
+    assert ev.survives_injection is None and ev.inverts_under_injection is None
+    assert ev.oos_ic is None and ev.net_return_per_bet_bps is None      # NaNs -> None
+    assert "DSR not selection-adjusted" in ev.notes                     # n_trials<=1 caveat
+    assert assess(ev).verdict is Verdict.NO_EDGE
+
+
+def test_explain_report_offline_uses_template() -> None:
+    ins = explain_report(_mirage_report(), "structural")
+    assert ins.used_llm is False and ins.is_clean
+    assert ins.verdict is Verdict.SURVIVORSHIP_FRAGILE and "structural" in ins.text
 
 
 # --------------------------------------------------------------------------- #
