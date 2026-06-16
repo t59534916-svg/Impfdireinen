@@ -163,6 +163,21 @@ def test_registry_can_route_to_polygon_for_delisted() -> None:
     assert reg.has_delisted_source is True
 
 
+def test_list_delisted_follows_pagination() -> None:
+    page1 = {"results": [{"ticker": "AAA", "active": False}],
+             "next_url": "https://api.polygon.io/v3/reference/tickers?cursor=XYZ"}
+    page2 = {"results": [{"ticker": "BBB", "active": False}]}          # no next_url → stop
+    seen = []
+
+    def http_get(url: str) -> dict:
+        seen.append(url)
+        return page1 if len(seen) == 1 else page2
+
+    out = PolygonSource(api_key="K", http_get=http_get).list_delisted()
+    assert {r["ticker"] for r in out} == {"AAA", "BBB"}               # both pages collected
+    assert len(seen) == 2 and "cursor=XYZ" in seen[1] and "apiKey=K" in seen[1]
+
+
 # --------------------------------------------------------------------------- #
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]

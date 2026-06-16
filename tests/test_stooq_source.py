@@ -126,6 +126,27 @@ def test_missing_bulk_root_raises() -> None:
         raise AssertionError("expected ValueError for missing bulk_root")
 
 
+def test_cloudflare_style_challenge_detected() -> None:
+    # A challenge page that does NOT start with <!doctype must still be refused.
+    page = ("<html><head><title>Just a moment...</title><script>cf()</script></head>"
+            "<body>Checking your browser before accessing. Please enable JavaScript.</body></html>")
+    src = StooqSource(http_get=lambda url: page)
+    try:
+        src.get_bars("AAPL")
+    except DataFetchError as exc:
+        assert "anti-bot" in str(exc).lower() or "challenge" in str(exc).lower()
+    else:  # pragma: no cover
+        raise AssertionError("expected the challenge page to be refused as data")
+
+
+def test_semicolon_delimited_csv_parses() -> None:
+    csv = ("Date;Open;High;Low;Close;Volume\n"
+           "2015-01-02;100;101;99;100.5;1000\n"
+           "2015-01-05;100.5;102;100;101.5;1200\n")
+    df = StooqSource(http_get=lambda url: csv).get_bars("AAPL")        # delimiter sniffed
+    assert len(df) == 2 and df["Close"].iloc[-1] == 101.5
+
+
 # --------------------------------------------------------------------------- #
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]

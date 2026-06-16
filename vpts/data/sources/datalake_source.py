@@ -133,13 +133,27 @@ class DataLakeSource(DataSource):
         self._last_date_cache[symbol] = last
         return last
 
+    def _global_last_date(self) -> Optional[pd.Timestamp]:
+        """Lake-wide latest bar date, computed and cached on demand.
+
+        Decoupled from :meth:`build_universe` so :meth:`is_delisted` infers correctly
+        regardless of call order (previously it returned ``None`` until a
+        ``build_universe()`` call happened to populate ``_global_last``).
+        """
+        if self._global_last is None:
+            lasts = [d for d in (self._last_date(s) for s in self.available_symbols())
+                     if d is not None]
+            self._global_last = max(lasts) if lasts else None
+        return self._global_last
+
     def is_delisted(self, symbol: str) -> Optional[bool]:
         if self._explicit_delisted is not None:
             return symbol.upper() in self._explicit_delisted
         last = self._last_date(symbol)
-        if last is None or self._global_last is None:
+        global_last = self._global_last_date()
+        if last is None or global_last is None:
             return None
-        return (self._global_last - last).days > self.active_gap_days
+        return (global_last - last).days > self.active_gap_days
 
     def build_universe(self) -> Universe:
         """Point-in-time universe over the lake, with inferred delist dates.

@@ -110,18 +110,22 @@ class StooqSource(DataSource):
     def _parse(text: str, symbol: str) -> pd.DataFrame:
         """Parse either the simple ``Date,Open,…`` CSV or the bulk ``<TICKER>,…`` layout."""
         head = text.lstrip()[:400].lower()
-        # An anti-bot/JS challenge or any HTML is NOT data — fail loudly. Detect HTML
-        # specifically so Stooq's bulk "<TICKER>,<PER>,…" header is NOT misread as HTML.
-        is_html = (head.startswith("<!") or head.startswith("<html") or "<!doctype" in head
-                   or "<body" in head or "javascript" in head)
-        if is_html:
+        # An anti-bot/JS challenge or any HTML is NOT data — fail loudly. Match markers
+        # a challenge page carries (incl. Cloudflare "checking your browser") but the
+        # Stooq bulk "<TICKER>,<PER>,…" header does NOT, so it is not misread as HTML.
+        _html_markers = ("<html", "<head", "<body", "<script", "<meta", "javascript",
+                         "cloudflare", "checking your browser", "enable javascript")
+        if head.startswith("<!") or any(m in head for m in _html_markers):
             raise DataFetchError(
                 f"{symbol}: Stooq returned an anti-bot/JS-challenge page, not CSV "
                 "(the live endpoint is gated for non-browser clients; use a bulk_root export)."
             )
         if not text.strip() or "no data" in head or "brak danych" in head:
             raise DataFetchError(f"{symbol}: Stooq returned no data.")
-        df = pd.read_csv(io.StringIO(text))
+        try:                                    # sniff the delimiter (comma/semicolon/tab)
+            df = pd.read_csv(io.StringIO(text), sep=None, engine="python")
+        except Exception as exc:                # noqa: BLE001 - unparseable as CSV
+            raise DataFetchError(f"{symbol}: could not parse Stooq response as CSV ({exc}).") from exc
         cols = {c.lower().strip("<>"): c for c in df.columns}
         if "date" not in cols:
             raise DataFetchError(f"{symbol}: unrecognised Stooq columns {list(df.columns)}.")

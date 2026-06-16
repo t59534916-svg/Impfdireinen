@@ -107,6 +107,15 @@ def test_date_range_slice() -> None:
     assert df.index.max() <= pd.Timestamp("2015-12-31")
 
 
+def test_is_delisted_works_before_build_universe() -> None:
+    if not _HAS_PARQUET:
+        return
+    src = DataLakeSource(_build_lake(), active_gap_days=180)
+    # No build_universe() call first — inference must still work (ordering-hazard fix).
+    assert src.is_delisted("DEADCO") is True
+    assert src.is_delisted("S0") is False
+
+
 # --------------------------------------------------------------------------- #
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]

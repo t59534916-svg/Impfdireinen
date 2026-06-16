@@ -174,16 +174,28 @@ class PolygonSource(DataSource):
         active = res.get("active")
         return (not bool(active)) if active is not None else None
 
-    def list_delisted(self, *, market: str = "stocks", limit: int = 1000) -> list[dict]:
+    def list_delisted(self, *, market: str = "stocks", limit: int = 1000,
+                      max_pages: int = 50) -> list[dict]:
         """List delisted tickers (``active=false``) — the point-in-time universe seed.
 
-        Returns the raw reference records (each carries ``ticker`` and
-        ``delisted_utc``); pair with :meth:`get_bars` to build a survivorship-free
-        backtest. Paginated by Polygon; this fetches the first page.
+        Follows Polygon's ``next_url`` cursor pagination (up to *max_pages*) so the
+        delisted universe is **not silently truncated to one page** — a partial list
+        would reintroduce a non-random selection bias, the very thing this seed exists
+        to avoid. Each record carries ``ticker`` and ``delisted_utc``; pair with
+        :meth:`get_bars` to build a survivorship-free backtest.
         """
         key = self._require_key()
         url = (
             f"{self.BASE_URL}/v3/reference/tickers"
             f"?market={market}&active=false&limit={int(limit)}&apiKey={key}"
         )
-        return list((self._http_get(url) or {}).get("results") or [])
+        out: list[dict] = []
+        for _ in range(max(1, max_pages)):
+            payload = self._http_get(url) or {}
+            out.extend(payload.get("results") or [])
+            nxt = payload.get("next_url")
+            if not nxt:
+                break
+            # Polygon's next_url omits the apiKey — re-attach it.
+            url = nxt if "apiKey=" in nxt else f"{nxt}{'&' if '?' in nxt else '?'}apiKey={key}"
+        return out
