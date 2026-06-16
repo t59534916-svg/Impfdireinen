@@ -98,9 +98,11 @@ class DataSource(ABC):
 def validate_ohlcv(df: pd.DataFrame, *, symbol: str, min_bars: int = 1) -> pd.DataFrame:
     """Validate/normalise a source's frame to the OHLCV contract.
 
-    Raises :class:`~vpts.data.fetcher.DataFetchError` (or a subclass) on a frame
-    that is empty, too short, missing required columns, or volume-less — so the
-    registry's fallback logic can catch one exception type from every source.
+    Coerces prices/volume to numeric and drops structurally-invalid bars (NaN or
+    non-positive prices, ``High < Low``). Raises
+    :class:`~vpts.data.fetcher.DataFetchError` (or a subclass) on a frame that is
+    empty, missing required columns, too short *after cleaning*, or volume-less — so
+    the registry's fallback logic can catch one exception type from every source.
     """
     from vpts.data.fetcher import DataFetchError, InsufficientDataError, NoVolumeError
 
@@ -111,11 +113,24 @@ def validate_ohlcv(df: pd.DataFrame, *, symbol: str, min_bars: int = 1) -> pd.Da
         raise DataFetchError(f"{symbol}: missing columns {missing}.")
     out = df.copy()
     out = out[~out.index.duplicated(keep="last")].sort_index()
+
+    # Coerce numerics and drop structurally-invalid bars so a source's junk rows
+    # (NaN/non-positive prices, High < Low) can't reach the feature/structure layer.
+    # Sources that skip MarketDataFetcher._normalize (Stooq/Polygon/DataLake) rely on
+    # this, so the "clean OHLCV" contract holds regardless of the feed.
+    price_cols = [c for c in ("Open", "High", "Low", "Close") if c in out.columns]
+    for c in (*price_cols, "Volume"):
+        out[c] = pd.to_numeric(out[c], errors="coerce")
+    bad = out[price_cols].isna().any(axis=1) | (out[price_cols] <= 0).any(axis=1)
+    if "High" in out.columns and "Low" in out.columns:
+        bad = bad | (out["High"] < out["Low"])
+    out = out[~bad.to_numpy()]
+
     if len(out) < min_bars:
         raise InsufficientDataError(
-            f"{symbol}: only {len(out)} bar(s) (need >= {min_bars})."
+            f"{symbol}: only {len(out)} clean bar(s) (need >= {min_bars})."
         )
-    if float(pd.to_numeric(out["Volume"], errors="coerce").fillna(0).sum()) <= 0:
+    if float(out["Volume"].fillna(0).sum()) <= 0:
         raise NoVolumeError(f"{symbol}: data has no usable volume.")
     out.attrs.setdefault("symbol", symbol)
     return out

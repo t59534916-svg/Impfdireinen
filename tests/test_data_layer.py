@@ -89,6 +89,31 @@ def test_synthetic_source_seed_is_process_stable() -> None:
                                   src.get_bars("AAPL", period="1y"))
 
 
+def test_validate_ohlcv_drops_invalid_bars() -> None:
+    idx = pd.date_range("2020-01-01", periods=6, freq="D")
+    df = pd.DataFrame(
+        {
+            "Open":   [10, 11, 12, 13, 14, 15],
+            "High":   [11, 12, 13, 14, 9, 16],                       # row 4: High < Low
+            "Low":    [9, 10, 11, 12, 13, 14],
+            "Close":  [10.5, float("nan"), -1.0, 13.5, 14.5, 15.5],  # row 1 NaN, row 2 ≤ 0
+            "Volume": [100, 100, 100, 100, 100, 100],
+        },
+        index=idx,
+    )
+    clean = validate_ohlcv(df, symbol="X", min_bars=1)
+    assert len(clean) == 3 and clean.index.tolist() == [idx[0], idx[3], idx[5]]
+    assert clean["Close"].gt(0).all() and (clean["High"] >= clean["Low"]).all()
+
+    # Too few bars left after cleaning → one catchable exception type.
+    try:
+        validate_ohlcv(df, symbol="X", min_bars=5)
+    except DataFetchError:
+        pass
+    else:  # pragma: no cover
+        raise AssertionError("expected DataFetchError when too few clean bars remain")
+
+
 def test_ohlc_consistency() -> None:
     for gen in (synthetic_survivor_ohlcv, synthetic_delisted_ohlcv):
         df = gen(300, seed=1)
