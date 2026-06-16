@@ -130,6 +130,11 @@ def haircut_sharpe(
         raise ValueError("n_obs must be >= 2.")
     if n_tests < 1:
         raise ValueError("n_tests must be >= 1.")
+    if annualization < 1.0:
+        raise ValueError(
+            "annualization must be >= 1 (periods per year; use 1 for an already "
+            "per-period Sharpe). A value in (0, 1) was silently ignored before."
+        )
 
     sr_per_period = sr / math.sqrt(annualization) if annualization > 1 else sr
     t_obs = _sharpe_to_t(sr_per_period, n_obs)

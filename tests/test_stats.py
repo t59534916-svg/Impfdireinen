@@ -240,6 +240,32 @@ def test_haircut_holm_needs_other_pvalues() -> None:
     assert 0.0 <= res.haircut_ratio <= 1.0
 
 
+def test_haircut_rejects_subunit_annualization() -> None:
+    # annualization in (0, 1) was silently ignored before; now it's rejected.
+    try:
+        haircut_sharpe(sr=1.0, n_obs=100, n_tests=5, annualization=0.5)
+    except ValueError:
+        pass
+    else:  # pragma: no cover
+        raise AssertionError("expected ValueError for annualization < 1")
+
+
+def test_haircut_deannualizes_with_annualization() -> None:
+    per_period = haircut_sharpe(sr=0.2, n_obs=252, n_tests=10, annualization=1.0).haircut_sr
+    annual = haircut_sharpe(sr=0.2, n_obs=252, n_tests=10, annualization=252.0).haircut_sr
+    assert annual < per_period           # de-annualizing shrinks the per-period t → bigger haircut
+
+
+def test_dsr_var_trials_fallback_path() -> None:
+    rng = np.random.default_rng(0)
+    r = rng.standard_normal(200) * 0.01 + 0.0015
+    res1 = deflated_sharpe_ratio(returns=r, n_trials=1)       # no var_trials → 1/(n-1) fallback
+    res50 = deflated_sharpe_ratio(returns=r, n_trials=50)
+    assert 0.0 <= res1.dsr <= 1.0 and 0.0 <= res50.dsr <= 1.0
+    assert res50.dsr <= res1.dsr                              # more trials ⇒ stiffer bar
+    assert res1.var_trials_sr == 1.0 / (r.size - 1)
+
+
 # --------------------------------------------------------------------------- #
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
