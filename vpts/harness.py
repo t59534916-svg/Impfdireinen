@@ -23,6 +23,7 @@ its **null-clearing** test (returns non-significant on random input); see
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Callable, Optional, Sequence
 
@@ -36,8 +37,12 @@ from vpts.stats import (
     deflated_sharpe_ratio,
     probability_of_backtest_overfitting,
     recommend_block_size,
+    sample_skew_kurt,
+    sharpe_ratio,
 )
 from vpts.validation import CombinatorialPurgedCV
+
+logger = logging.getLogger(__name__)
 
 #: A signal clears this DSR bar (Bailey & López de Prado's usual 95% threshold).
 DSR_BAR = 0.95
@@ -102,6 +107,15 @@ class HonestReport:
         return np.isfinite(self.deflated_sharpe) and self.deflated_sharpe >= DSR_BAR
 
     @property
+    def dsr_selection_adjusted(self) -> bool:
+        """True iff the DSR actually deflates for selection (``n_trials > 1``).
+
+        With ``n_trials <= 1`` the expected-max-Sharpe benchmark is 0, so the DSR is a
+        plain PSR with no multiple-testing penalty — read it accordingly.
+        """
+        return self.n_trials > 1
+
+    @property
     def pbo_overfit(self) -> Optional[bool]:
         return None if not np.isfinite(self.pbo) else bool(self.pbo >= 0.5)
 
@@ -123,7 +137,8 @@ class HonestReport:
             "bucket_curve": list(self.bucket_curve),
             "long_short_net_pct": self.long_short_net_pct,
             "deflated_sharpe": self.deflated_sharpe, "dsr_clears": self.dsr_clears,
-            "n_trials": self.n_trials, "pbo": self.pbo, "pbo_overfit": self.pbo_overfit,
+            "n_trials": self.n_trials, "dsr_selection_adjusted": self.dsr_selection_adjusted,
+            "pbo": self.pbo, "pbo_overfit": self.pbo_overfit,
             "verdict": self.verdict,
         }
         if self.injection_sweep is not None:
@@ -146,7 +161,8 @@ class HonestReport:
             f"  block-perm p  : {self.block_perm_p:.3f}  ({sig}, {self.perms} perms)",
             f"  bucket curve  : {curve}   L/S net {self.long_short_net_pct:+.3f}%/bet",
             f"  Deflated SR   : {self.deflated_sharpe:.3f}  "
-            f"({'clears' if self.dsr_clears else 'FAILS'} {DSR_BAR:.2f}, n_trials={self.n_trials})",
+            f"({'clears' if self.dsr_clears else 'FAILS'} {DSR_BAR:.2f}, n_trials={self.n_trials}"
+            + ("" if self.dsr_selection_adjusted else ", NO selection adj") + ")",
             f"  PBO           : {pbo_s}"
             + ("" if self.pbo_overfit is None else f"  ({'overfit' if self.pbo_overfit else 'generalizes'})"),
         ]
@@ -227,6 +243,37 @@ def _book(datasets, cvs, alpha, n_buckets, cost_bps):
     return curve, ls_net, streams
 
 
+def _effective_n(n_raw: int, ds_list) -> int:
+    """Deflate the per-bet sample count for overlapping-label autocorrelation.
+
+    With ``stride < horizon`` consecutive bets share most of their forward window, so
+    the raw count over-states the number of *independent* observations and would
+    inflate the PSR/DSR confidence (which scales with ``√(n−1)``). Deflate by the
+    autocorrelation span — the same block size the permutation null uses — so the bar
+    isn't cleared on optimism. Always ≥ 8.
+    """
+    spans = [recommend_block_size(ds.horizon, ds.stride) for ds in ds_list] or [1]
+    span = max(1, int(np.median(spans)))
+    return max(8, n_raw // span)
+
+
+def _dsr(streams, ds_list, n_trials: int) -> float:
+    """Deflated Sharpe of the pooled tails-only book, on an overlap-adjusted sample.
+
+    The Sharpe/skew/kurtosis are estimated from the pooled per-bet stream, but the
+    sample size handed to the PSR is :func:`_effective_n` (overlap-deflated), not the
+    raw count. Returns NaN when there are too few bets to assess.
+    """
+    pooled = np.concatenate([s for s in streams if s.size]) if streams else np.array([])
+    if pooled.size < 8:
+        return float("nan")
+    sr = sharpe_ratio(pooled, ddof=1)
+    skew, kurt = sample_skew_kurt(pooled)
+    eff_n = _effective_n(pooled.size, ds_list)
+    return float(deflated_sharpe_ratio(
+        sr=sr, n=eff_n, skew=skew, kurt=kurt, n_trials=int(n_trials)).dsr)
+
+
 def _pbo(streams) -> float:
     usable = [s for s in streams if s.size]
     if len(usable) < 2:
@@ -294,8 +341,12 @@ def honest_backtest(
         :func:`~vpts.structure.build_structural_dataset`, or from any feature matrix
         by constructing ``FactorDataset(X, y, baseline, feature_names, horizon, stride)``.
     n_trials:
-        Number of strategy variants tried across your search — the selection adjustment
-        for the Deflated Sharpe Ratio. **Be honest here**; ``1`` means "no search".
+        Total number of strategy variants you have tried — **including this run** —
+        the multiple-testing penalty for the Deflated Sharpe Ratio. **Be honest
+        here**: ``n_trials <= 1`` sets the expected-max-Sharpe benchmark to 0, i.e.
+        **no** selection adjustment at all (a plain PSR), and emits a warning. The DSR
+        is otherwise computed on a sample size deflated for overlapping-label
+        autocorrelation (``stride < horizon``), so it isn't inflated by overlap.
     perms:
         Block-permutation shuffles for the IC p-value.
     frames, feature_builder:
@@ -315,10 +366,15 @@ def honest_backtest(
     p = _block_perm_p(ds_list, cvs, alpha, ic_mean, perms, seed)
     curve, ls_net, streams = _book(ds_list, cvs, alpha, n_buckets, cost_bps)
 
-    pooled_stream = np.concatenate([s for s in streams if s.size]) if streams else np.array([])
-    dsr = (deflated_sharpe_ratio(returns=pooled_stream, n_trials=n_trials).dsr
-           if pooled_stream.size >= 8 else float("nan"))
+    dsr = _dsr(streams, ds_list, n_trials)
     pbo = _pbo(streams)
+    if np.isfinite(dsr) and n_trials <= 1:
+        logger.warning(
+            "honest_backtest: n_trials=%d applies NO selection adjustment to the DSR "
+            "(expected-max-Sharpe = 0). Pass the total number of strategy variants you "
+            "have tried — including this run — for the deflation to mean anything.",
+            n_trials,
+        )
 
     sweep = None
     if frames is not None and feature_builder is not None:

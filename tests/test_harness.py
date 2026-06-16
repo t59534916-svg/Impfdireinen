@@ -64,6 +64,31 @@ def test_verdict_overfit_gate() -> None:
                     ).startswith("SURVIVORSHIP MIRAGE")
 
 
+def test_dsr_overlap_deflation_and_n_trials_monotonic() -> None:
+    from vpts.harness import _dsr, _effective_n
+    from vpts.stats import recommend_block_size
+
+    ds = _ds(400, seed=3, signal=0.4)
+    span = recommend_block_size(ds.horizon, ds.stride)
+    assert _effective_n(400, [ds]) == max(8, 400 // span)   # overlap-deflated count
+    assert _effective_n(10, [ds]) == 8                       # floored at 8
+
+    # Searching more variants ⇒ a stiffer (no-higher) DSR for the same book.
+    rng = np.random.default_rng(0)
+    stream = rng.standard_normal(300) * 0.01 + 0.002
+    d1 = _dsr([stream], [ds], n_trials=1)
+    d50 = _dsr([stream], [ds], n_trials=50)
+    assert np.isfinite(d1) and np.isfinite(d50) and d1 >= d50
+
+
+def test_report_flags_unadjusted_dsr() -> None:
+    rep = honest_backtest([_ds(500, seed=s, signal=0.5) for s in range(3)],
+                          n_trials=1, perms=40, seed=0)
+    assert rep.dsr_selection_adjusted is False
+    assert "NO selection adj" in rep.summary()
+    assert rep.to_dict()["dsr_selection_adjusted"] is False
+
+
 def test_single_dataset_accepted() -> None:
     rep = honest_backtest(_ds(600, seed=1, signal=0.0), perms=60, seed=0)
     assert rep.n_datasets == 1 and rep.n_samples == 600
