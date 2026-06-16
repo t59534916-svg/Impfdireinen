@@ -89,6 +89,19 @@ def test_report_flags_unadjusted_dsr() -> None:
     assert rep.to_dict()["dsr_selection_adjusted"] is False
 
 
+def test_inverts_uses_long_short_net_not_top_bucket() -> None:
+    from vpts.harness import InjectionPoint, _sweep_inverts
+    # Decided by the traded L/S net, not the noisier single-bucket mean.
+    flips = (InjectionPoint(0.0, 0.04, 0.30, -0.05),    # L/S +0.30, top-bucket already <0
+             InjectionPoint(0.5, -0.01, -0.40, 0.02))   # L/S -0.40, top-bucket >0
+    assert _sweep_inverts(flips) is True                 # L/S +→- ⇒ inverts
+    holds = (InjectionPoint(0.0, 0.05, 0.20, 0.30),
+             InjectionPoint(0.5, 0.03, 0.05, -0.10))     # L/S stays +, a bucket dips <0
+    assert _sweep_inverts(holds) is False
+    assert _sweep_inverts(None) is None
+    assert _sweep_inverts((InjectionPoint(0.0, 0.0, 0.1, 0.1),)) is None   # <2 rungs
+
+
 def test_single_dataset_accepted() -> None:
     rep = honest_backtest(_ds(600, seed=1, signal=0.0), perms=60, seed=0)
     assert rep.n_datasets == 1 and rep.n_samples == 600

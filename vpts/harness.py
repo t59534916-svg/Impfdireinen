@@ -69,6 +69,22 @@ def _verdict(*, sig: bool, overfit: bool, inverts: bool, dsr_ok: bool, pbo: floa
     return "PASSES the honest checklist (IC significant, PBO ok, DSR clears, no inversion)."
 
 
+def _sweep_inverts(sweep) -> Optional[bool]:
+    """Does the conviction long/short book flip +→− across the injection sweep?
+
+    Keyed on ``long_short_net_pct`` — the *traded* book's net P&L, which is the
+    economic "survivorship mirage" — rather than a single bucket's mean
+    (``top_bucket_pct``), a far noisier estimator. ``None`` without a usable 2-rung
+    sweep or when the endpoints aren't finite.
+    """
+    if not sweep or len(sweep) < 2:
+        return None
+    base, last = sweep[0].long_short_net_pct, sweep[-1].long_short_net_pct
+    if not (np.isfinite(base) and np.isfinite(last)):
+        return None
+    return bool(base > 0 and last < 0)
+
+
 @dataclass(frozen=True)
 class InjectionPoint:
     """One rung of the survivorship-injection sweep."""
@@ -121,12 +137,10 @@ class HonestReport:
 
     @property
     def inverts(self) -> Optional[bool]:
-        """Does the conviction direction flip from positive (base) to negative (most
-        injected) across the sweep? ``None`` if no sweep was run."""
-        sweep = self.injection_sweep
-        if not sweep or len(sweep) < 2:
-            return None
-        return sweep[0].top_bucket_pct > 0 and sweep[-1].top_bucket_pct < 0
+        """Does the conviction long/short book flip from profitable (survivors) to
+        losing (most injected) across the sweep? ``None`` if no sweep was run. Keyed
+        on the traded L/S net — the economic mirage — not a single bucket's mean."""
+        return _sweep_inverts(self.injection_sweep)
 
     def to_dict(self) -> dict:
         d = {
@@ -387,8 +401,7 @@ def honest_backtest(
     sig = bool(np.isfinite(p) and p < 0.05)
     overfit = bool(np.isfinite(pbo) and pbo >= PBO_BAR)
     dsr_ok = bool(np.isfinite(dsr) and dsr >= DSR_BAR)
-    inverts = bool(sweep is not None and len(sweep) >= 2
-                   and sweep[0].top_bucket_pct > 0 and sweep[-1].top_bucket_pct < 0)
+    inverts = bool(_sweep_inverts(sweep))
     verdict = _verdict(sig=sig, overfit=overfit, inverts=inverts, dsr_ok=dsr_ok, pbo=pbo)
 
     return HonestReport(
