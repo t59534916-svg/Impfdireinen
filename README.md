@@ -5,7 +5,7 @@
 **A free, explainable Volume‑Profile trading system — and an honest, adversarial study of whether it actually has an edge.**
 
 ![version](https://img.shields.io/badge/version-1.11.0-blue)
-![tests](https://img.shields.io/badge/tests-265%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-276%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![deps](https://img.shields.io/badge/core%20deps-numpy%20·%20pandas%20·%20scipy-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -63,8 +63,31 @@ Run any phase or experiment directly — every demo is a single file in [`exampl
 ```bash
 python examples/phase4_demo.py AAPL 1y 1d reversion    # the product (needs internet)
 python examples/structural_swing_rater.py              # the research (a swing setup-rater)
-python -m pytest -q                                    # 265 offline, deterministic tests
+python -m pytest -q                                    # 276 offline, deterministic tests
 ```
+
+### Optional: rotating proxies (avoid rate-limit blocks)
+
+Scanning hundreds of names trips Yahoo's per-IP rate limit. A built-in [`ProxyPool`](vpts/data/proxy.py)
+spreads requests across a pool of proxies — rotating per request, with **per-proxy cooldown** on a
+403/429, **jitter**, and **User-Agent rotation** — so a full audit completes without a block.
+
+```bash
+cp proxies.example.txt proxies.txt        # one proxy per line: host:port:user:pass (git-ignored)
+python examples/real_delisted_audit.py --proxies proxies.txt
+# or, no flag needed:  export VPTS_PROXY_FILE=proxies.txt   (or VPTS_PROXIES="h:p:u:pw, …")
+```
+
+```python
+from vpts.data import ProxyPool, YFinanceSource
+pool = ProxyPool.from_env()               # None when nothing is configured → direct fetch
+YFinanceSource(proxy_pool=pool).get_bars("AAPL", period="1y")
+```
+
+> Credentials are **never committed** — they load from `$VPTS_PROXIES` / `$VPTS_PROXY_FILE` / a
+> git-ignored `proxies.txt`. Two caveats: a proxy changes your *IP*, so it helps against
+> rate-limiting (Yahoo/yfinance) but **does not** bypass a JavaScript wall such as Stooq's live
+> CSV; and datacenter IPs are sometimes challenged *more*, not less.
 
 ---
 
@@ -287,7 +310,7 @@ vpts/                      core library — lightweight (numpy · pandas · scip
 └─ insight/                Act III — LLM explanation layer with edge-claim guardrails
 
 examples/                  one runnable file per phase, per experiment, + behavioral_ai_demo
-tests/                     265 offline, deterministic tests
+tests/                     276 offline, deterministic tests
 docs/                      ARCHITECTURE.md · img/ (committed figures + generator)
 RESEARCH.md                the eleven-experiment validation log
 streamlit_app.py           dashboard entry point
@@ -300,7 +323,7 @@ streamlit_app.py           dashboard entry point
 ## Testing
 
 ```bash
-python -m pytest -q            # 265 tests, all offline & deterministic (no network)
+python -m pytest -q            # 276 tests, all offline & deterministic (no network)
 python tests/test_phase1.py    # or run any file directly
 ```
 

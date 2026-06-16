@@ -59,7 +59,7 @@ _UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
 _V8 = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?period1={p1}&period2={p2}&interval=1d"
 
 
-def yahoo_v8_loader(start: str, end: str, delist_caps: Optional[dict] = None):
+def yahoo_v8_loader(start: str, end: str, delist_caps: Optional[dict] = None, pool=None):
     """Return ``fetch(symbol) -> OHLCV df`` over Yahoo's v8 chart JSON (no key).
 
     This is the survivor-only free feed under test: it returns clean history for
@@ -72,6 +72,10 @@ def yahoo_v8_loader(start: str, end: str, delist_caps: Optional[dict] = None):
     closes a subtle trap: a free feed may serve a *reused* ticker (a different company
     that later claimed the symbol — e.g. STI after SunTrust merged), which a naive
     symbol fetch would silently splice onto the dead company's identity.
+
+    *pool* (optional :class:`~vpts.data.ProxyPool`) routes every request through a
+    rotating proxy with cooldown-on-block, so a full audit doesn't trip Yahoo's
+    per-IP rate limit. ``None`` ⇒ direct fetch (unchanged behaviour).
     """
     p1 = int(pd.Timestamp(start).timestamp())
     p2_default = int(pd.Timestamp(end).timestamp())
@@ -80,10 +84,13 @@ def yahoo_v8_loader(start: str, end: str, delist_caps: Optional[dict] = None):
     def fetch(symbol: str) -> pd.DataFrame:
         p2 = min(p2_default, int(pd.Timestamp(caps[symbol]).timestamp())) if symbol in caps else p2_default
         url = _V8.format(sym=symbol, p1=p1, p2=p2)
-        req = urllib.request.Request(url, headers={"User-Agent": _UA})
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                doc = json.load(resp)
+            if pool is not None:                          # rotating-proxy path
+                doc = json.loads(pool.urlopen(url, headers={"User-Agent": _UA}, timeout=30))
+            else:                                         # direct path (default)
+                req = urllib.request.Request(url, headers={"User-Agent": _UA})
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    doc = json.load(resp)
         except Exception as exc:  # HTTP 404/400 for unknown symbols, network, parse
             raise DataFetchError(f"{symbol}: {type(exc).__name__}") from exc
         res = (doc.get("chart") or {}).get("result")
@@ -140,12 +147,22 @@ def main() -> int:
     ap.add_argument("--n-groups", type=int, default=6)
     ap.add_argument("--n-test", type=int, default=2)
     ap.add_argument("--cost-bps", type=float, default=10.0)
+    ap.add_argument("--proxies", default=None, metavar="PATH",
+                    help="proxy file (host:port:user:pass per line) to route Yahoo fetches "
+                         "through, avoiding rate-limit blocks; also honors $VPTS_PROXIES / "
+                         "$VPTS_PROXY_FILE. Omit to fetch directly.")
     args = ap.parse_args()
+
+    # Optional rotating-proxy pool (avoids Yahoo's per-IP rate limit on a full audit).
+    from vpts.data import ProxyPool
+    pool = ProxyPool.from_file(args.proxies) if args.proxies else ProxyPool.from_env()
+    if pool is not None:
+        print(f"[proxies] routing Yahoo fetches through {pool.size} rotating prox(ies).")
 
     # Cap each catalogued name at its delisting year → genuine pre-delisting history
     # only (and reused tickers correctly read as 'dropped', not spliced in).
     caps = {t.symbol: f"{t.year}-12-31" for t in KNOWN_DELISTED}
-    feed = yahoo_v8_loader(args.start, args.end, delist_caps=caps)
+    feed = yahoo_v8_loader(args.start, args.end, delist_caps=caps, pool=pool)
 
     print("=" * 84)
     print("TIER 1 — does a FREE feed serve real delisted names? (the survivorship ceiling)")

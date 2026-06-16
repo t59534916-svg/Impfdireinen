@@ -20,7 +20,8 @@ class YFinanceSource(DataSource):
 
     Parameters are forwarded to the underlying fetcher, so caching, retries and
     interval clamping all still apply. Pass an existing fetcher via *fetcher* to
-    share a cache directory.
+    share a cache directory. To route through rotating proxies (avoiding Yahoo's
+    per-IP rate limit), forward ``proxy_pool=ProxyPool.from_env()``.
     """
 
     def __init__(self, fetcher: Optional[MarketDataFetcher] = None, **fetcher_kwargs) -> None:

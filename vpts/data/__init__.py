@@ -38,6 +38,11 @@ from vpts.data.fetcher import (
     MarketDataFetcher,
     NoVolumeError,
 )
+from vpts.data.proxy import (
+    AllProxiesCoolingError,
+    DataFetchProxyError,
+    ProxyPool,
+)
 from vpts.data.registry import SourceRegistry, default_registry
 from vpts.data.sources import (
     DataLakeSource,
@@ -72,6 +77,10 @@ __all__ = [
     "StooqSource",
     "SourceRegistry",
     "default_registry",
+    # rotating proxy pool (avoid rate-limit blocks on free feeds)
+    "ProxyPool",
+    "AllProxiesCoolingError",
+    "DataFetchProxyError",
     # survivorship-coverage audit (measure the bias on a live feed)
     "audit_coverage",
     "audit_known_delisted",

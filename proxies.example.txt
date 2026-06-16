@@ -1,0 +1,28 @@
+# Example proxy list for vpts' rotating ProxyPool.
+#
+# Copy this file to `proxies.txt` (git-ignored) and put your REAL proxies there —
+# never commit real credentials. One proxy per line. Blank lines and lines starting
+# with '#' are ignored.
+#
+# Webshare's native export format (host:port:user:pass) is accepted directly:
+#
+#   198.51.100.10:7175:myuser:mypass
+#   203.0.113.22:7867:myuser:mypass
+#
+# Full proxy URLs also work:
+#
+#   http://myuser:mypass@198.51.100.10:7175
+#
+# Usage (rate-limited free feeds only — proxies do NOT bypass JS walls like Stooq's):
+#
+#   # Yahoo v8 audit, routed through the pool:
+#   python examples/real_delisted_audit.py --proxies proxies.txt
+#
+#   # Or via environment (no flag needed):
+#   export VPTS_PROXY_FILE=proxies.txt        # path to a proxy file, OR
+#   export VPTS_PROXIES="198.51.100.10:7175:myuser:mypass, 203.0.113.22:7867:myuser:mypass"
+#
+#   # In code:
+#   from vpts.data import ProxyPool
+#   pool = ProxyPool.from_env()               # None if nothing configured -> direct fetch
+#   YFinanceSource(proxy_pool=pool)           # route yfinance through it

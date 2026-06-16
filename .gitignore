@@ -19,3 +19,9 @@ venv/
 
 # Streamlit (Phase 5)
 .streamlit/secrets.toml
+
+# Proxy credentials — NEVER commit real proxies (see proxies.example.txt)
+proxies.txt
+*.proxies
+.env
+.env.local

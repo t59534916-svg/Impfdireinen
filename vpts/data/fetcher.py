@@ -65,6 +65,12 @@ class MarketDataFetcher:
     min_bars:
         Minimum acceptable number of bars; fewer raises
         :class:`InsufficientDataError`.
+    proxy_pool:
+        Optional :class:`~vpts.data.proxy.ProxyPool`. When set, downloads are routed
+        through a rotating proxy (re-pinned on each failed attempt) to dodge Yahoo's
+        per-IP rate limit. ``None`` ⇒ direct fetch (unchanged). yfinance proxy support
+        is **version-dependent**: this passes a proxied ``requests.Session`` via
+        ``session=`` and degrades gracefully if the installed yfinance rejects it.
     """
 
     #: Maximum lookback Yahoo serves per intraday interval, in days.
@@ -110,6 +116,7 @@ class MarketDataFetcher:
         retry_backoff: float = 2.0,
         auto_adjust: bool = True,
         min_bars: int = 20,
+        proxy_pool=None,
     ) -> None:
         self.cache_dir = Path(cache_dir)
         self.cache_ttl = int(cache_ttl)
@@ -117,6 +124,7 @@ class MarketDataFetcher:
         self.retry_backoff = float(retry_backoff)
         self.auto_adjust = bool(auto_adjust)
         self.min_bars = int(min_bars)
+        self.proxy_pool = proxy_pool
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -253,10 +261,27 @@ class MarketDataFetcher:
         """Call yfinance with retries + exponential backoff."""
         import yfinance as yf  # lazy import keeps the package importable offline
 
+        # Optional rotating-proxy session (yfinance proxy support is version-dependent;
+        # passing session= works on the >=0.2.40 line and degrades gracefully otherwise).
+        session = None
+        if self.proxy_pool is not None:
+            try:
+                session = self.proxy_pool.requests_session()
+            except Exception as exc:  # noqa: BLE001 - missing requests / all cooling
+                logger.warning("proxy_pool session unavailable, fetching direct: %s", exc)
+
+        def _make_ticker():
+            if session is not None:
+                try:
+                    return yf.Ticker(symbol, session=session)
+                except TypeError:   # this yfinance build doesn't accept session=
+                    logger.debug("yfinance rejected session=; falling back to direct.")
+            return yf.Ticker(symbol)
+
         last_err: Optional[Exception] = None
         for attempt in range(1, self.max_retries + 1):
             try:
-                ticker = yf.Ticker(symbol)
+                ticker = _make_ticker()
                 if using_range:
                     raw = ticker.history(
                         start=start,
@@ -280,6 +305,12 @@ class MarketDataFetcher:
                 logger.debug("Attempt %d/%d failed: %s", attempt, self.max_retries, exc)
 
             if attempt < self.max_retries:
+                # Re-pin to a different proxy first: the last one may be rate-limited.
+                if session is not None:
+                    try:
+                        self.proxy_pool.rotate_session(session)
+                    except Exception:  # noqa: BLE001 - all cooling; keep current session
+                        pass
                 delay = self.retry_backoff * (2 ** (attempt - 1))
                 logger.info("Retrying %s in %.0fs …", symbol, delay)
                 time.sleep(delay)
