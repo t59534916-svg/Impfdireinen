@@ -7,9 +7,11 @@
 2. The model is asked only to *explain the behavioral story* behind that verdict,
    under a system prompt that forbids asserting an unvalidated edge or inventing
    numbers.
-3. The output is **scanned** (:func:`~vpts.insight.guardrails.scan_for_overclaims`);
-   if the model overclaims anyway, a correction banner is prepended and the
-   violation is recorded on the :class:`~vpts.insight.models.Insight`.
+3. The output is **scanned** (:func:`~vpts.insight.guardrails.scan_for_overclaims`)
+   as a best-effort backstop; if the model overclaims with a recognised phrasing, a
+   correction banner is prepended and the violation is recorded on the
+   :class:`~vpts.insight.models.Insight`. The scan is heuristic, not exhaustive — the
+   real guarantee is (1) the code-computed verdict and (4) the template fallback.
 4. With **no LLM client** (or on any backend failure, if ``fallback_to_template``),
    a deterministic, faithful template is rendered instead — so the layer is always
    usable and never fabricates.

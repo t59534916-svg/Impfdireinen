@@ -85,6 +85,19 @@ def test_scan_passes_clean_text() -> None:
     assert scan_for_overclaims(text, Verdict.SURVIVORSHIP_FRAGILE) == ()
 
 
+def test_scan_catches_common_paraphrases() -> None:
+    # Best-effort backstop (NOT exhaustive): these common paraphrased edge-claims must
+    # be flagged. The authoritative honesty gate is the code-computed verdict, not this.
+    for text in (
+        "This edge is real and durable.",
+        "You can reliably profit from this pattern going forward.",
+        "It is an exploitable inefficiency that produces excess returns.",
+        "You should buy when this triggers.",
+        "This signal is highly predictive and consistently makes money.",
+    ):
+        assert scan_for_overclaims(text, Verdict.SURVIVORSHIP_FRAGILE), text
+
+
 # --------------------------------------------------------------------------- #
 # Template (deterministic, offline)
 # --------------------------------------------------------------------------- #

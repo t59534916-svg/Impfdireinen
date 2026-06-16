@@ -7,8 +7,12 @@ Two pure functions, both independent of any LLM:
   uses (permutation significance, survivorship injection, PBO, deflated Sharpe).
   **The model never decides this.**
 * :func:`scan_for_overclaims` flags language that asserts an edge the verdict
-  doesn't license — a structural backstop that does not depend on the model
-  obeying its instructions.
+  doesn't license. It is a **best-effort, defense-in-depth heuristic, not an
+  exhaustive bar**: a regex over common edge-claim phrasings, so a determined or
+  unlucky paraphrase can slip through. The authoritative honesty gate is the
+  code-computed verdict from :func:`assess` (which the model never influences) and
+  the verdict-locked template fallback — the scanner is the second line, not the
+  first.
 
 Thresholds match `RESEARCH.md` (significance at p < 0.05; PBO ≳ 0.5 is overfit;
 DSR ≥ 0.95 is the selection-adjusted bar).
@@ -73,15 +77,21 @@ def assess(evidence: Evidence) -> VerdictResult:
 
 
 # Phrases that assert a tradeable/real edge. Forbidden unless the verdict is VALIDATED.
+# NOTE: this list is illustrative, not exhaustive — see the module docstring. Paraphrases
+# that avoid these tokens are caught (if at all) by the code-computed verdict, not here.
 _OVERCLAIM_PATTERNS: tuple[str, ...] = (
     r"\bprofitabl\w*\b",
     r"\b(strong|real|genuine|reliable|robust|proven|clear)\s+(edge|signal|alpha)\b",
+    r"\b(edge|signal|alpha)\s+is\s+(real|genuine|reliable|durable|robust|proven)\b",
     r"\btradeable\s+edge\b",
     r"\b(guarantee\w*|certain(ly)?|sure[- ]?thing)\b",
     r"\b(will|should)\s+(outperform|beat the market|make money|be profitable)\b",
-    r"\b(buy|long|short)\s+(signal|now|this)\b",
+    r"\b(buy|sell|long|short)\s+(signal|now|this|when|here)\b",
     r"\bconsistently\s+(profitable|outperform\w*|wins?)\b",
-    r"\bpositive\s+expectancy\b",
+    r"\b(reliabl\w*\s+profit\w*|profit\s+from|makes?\s+money)\b",
+    r"\bhighly\s+predictive\b",
+    r"\b(excess\s+returns?|positive\s+expectancy)\b",
+    r"\bexploit\w*\s+(inefficienc\w*|edge|pattern|signal)\b",
     r"\bgenerates?\s+alpha\b",
 )
 _OVERCLAIM_RE = [re.compile(p, re.IGNORECASE) for p in _OVERCLAIM_PATTERNS]
@@ -91,8 +101,10 @@ def scan_for_overclaims(text: str, verdict: Verdict) -> tuple[str, ...]:
     """Return the overclaim phrases present in *text* that the *verdict* forbids.
 
     Empty when the verdict is VALIDATED (claims are licensed) or no forbidden
-    phrasing is found. This is a backstop against the LLM ignoring instructions —
-    it operates on the output, not on the model's good behavior.
+    phrasing is found. A **best-effort** backstop against the LLM ignoring
+    instructions — it pattern-matches common edge-claim phrasings, but is not
+    exhaustive (a novel paraphrase can pass). It is the second line of defense; the
+    first is the code-computed verdict, which the model never decides.
 
     Deliberately conservative: it is context-blind, so a *negated* phrase ("this is
     not a real edge") is also flagged. That is the safe failure direction — a
