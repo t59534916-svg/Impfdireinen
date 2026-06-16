@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pytest_changed.sh",
+            "timeout": 180,
+            "statusMessage": "Running tests for your uncommitted changes…"
+          }
+        ]
+      }
+    ]
+  }
+}
