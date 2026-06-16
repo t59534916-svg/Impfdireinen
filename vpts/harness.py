@@ -41,6 +41,27 @@ from vpts.validation import CombinatorialPurgedCV
 
 #: A signal clears this DSR bar (Bailey & López de Prado's usual 95% threshold).
 DSR_BAR = 0.95
+#: PBO at or above this means selecting the best "config" is overfitting (Bailey et al.).
+PBO_BAR = 0.5
+
+
+def _verdict(*, sig: bool, overfit: bool, inverts: bool, dsr_ok: bool, pbo: float) -> str:
+    """The one-line verdict, derived purely from the computed gates.
+
+    Order mirrors :func:`vpts.insight.guardrails.assess`: a high PBO disqualifies a
+    significant result (the *selection* is noise) before the survivorship and
+    selection-adjustment checks. Isolated so the gating is unit-testable.
+    """
+    if not sig:
+        return "NO EDGE — IC does not clear its block-permutation null."
+    if overfit:
+        return (f"OVERFIT — significant IC but PBO {pbo:.0%} ≥ {PBO_BAR:.0%}: "
+                "selecting the best config is noise.")
+    if inverts:
+        return "SURVIVORSHIP MIRAGE — significant on survivors but inverts under injection."
+    if not dsr_ok:
+        return "FAILS selection adjustment — significant IC but DSR below the 0.95 bar."
+    return "PASSES the honest checklist (IC significant, PBO ok, DSR clears, no inversion)."
 
 
 @dataclass(frozen=True)
@@ -307,18 +328,12 @@ def honest_backtest(
 
     # ---- verdict ---------------------------------------------------------- #
     n_samples = sum(len(ds) for ds in ds_list)
-    sig = np.isfinite(p) and p < 0.05
-    dsr_ok = np.isfinite(dsr) and dsr >= DSR_BAR
-    inverts = (sweep is not None and len(sweep) >= 2
-               and sweep[0].top_bucket_pct > 0 and sweep[-1].top_bucket_pct < 0)
-    if not sig:
-        verdict = "NO EDGE — IC does not clear its block-permutation null."
-    elif inverts:
-        verdict = "SURVIVORSHIP MIRAGE — significant on survivors but inverts under injection."
-    elif not dsr_ok:
-        verdict = "FAILS selection adjustment — significant IC but DSR below the 0.95 bar."
-    else:
-        verdict = "PASSES the honest checklist (IC significant, DSR clears, no inversion)."
+    sig = bool(np.isfinite(p) and p < 0.05)
+    overfit = bool(np.isfinite(pbo) and pbo >= PBO_BAR)
+    dsr_ok = bool(np.isfinite(dsr) and dsr >= DSR_BAR)
+    inverts = bool(sweep is not None and len(sweep) >= 2
+                   and sweep[0].top_bucket_pct > 0 and sweep[-1].top_bucket_pct < 0)
+    verdict = _verdict(sig=sig, overfit=overfit, inverts=inverts, dsr_ok=dsr_ok, pbo=pbo)
 
     return HonestReport(
         n_datasets=len(ds_list), n_samples=n_samples,

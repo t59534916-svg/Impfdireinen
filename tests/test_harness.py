@@ -46,6 +46,24 @@ def test_planted_signal_is_detected() -> None:
     assert rep.oos_ic_mean > 0.1 and rep.ic_significant and rep.block_perm_p < 0.05
 
 
+def test_verdict_overfit_gate() -> None:
+    # A significant IC that is also overfit (PBO ≥ 0.5) must NOT pass the checklist.
+    from vpts.harness import _verdict
+
+    assert _verdict(sig=True, overfit=True, inverts=False, dsr_ok=True, pbo=0.7
+                    ).startswith("OVERFIT")
+    # …and a clean significant result still passes.
+    assert _verdict(sig=True, overfit=False, inverts=False, dsr_ok=True, pbo=0.1
+                    ).startswith("PASSES")
+    # Order: not-significant dominates; inversion beats DSR; overfit beats inversion.
+    assert _verdict(sig=False, overfit=True, inverts=True, dsr_ok=False, pbo=0.9
+                    ).startswith("NO EDGE")
+    assert _verdict(sig=True, overfit=True, inverts=True, dsr_ok=False, pbo=0.9
+                    ).startswith("OVERFIT")
+    assert _verdict(sig=True, overfit=False, inverts=True, dsr_ok=False, pbo=0.1
+                    ).startswith("SURVIVORSHIP MIRAGE")
+
+
 def test_single_dataset_accepted() -> None:
     rep = honest_backtest(_ds(600, seed=1, signal=0.0), perms=60, seed=0)
     assert rep.n_datasets == 1 and rep.n_samples == 600
