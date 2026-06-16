@@ -305,9 +305,10 @@ class MarketDataFetcher:
                 logger.debug("Attempt %d/%d failed: %s", attempt, self.max_retries, exc)
 
             if attempt < self.max_retries:
-                # Re-pin to a different proxy first: the last one may be rate-limited.
+                # The last proxy may be rate-limited: cool it, then re-pin to a healthy one.
                 if session is not None:
                     try:
+                        self.proxy_pool.cool_session(session)
                         self.proxy_pool.rotate_session(session)
                     except Exception:  # noqa: BLE001 - all cooling; keep current session
                         pass

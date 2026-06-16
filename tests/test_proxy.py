@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 import urllib.error
 from pathlib import Path
 
@@ -133,6 +134,20 @@ def test_all_cooling_raises() -> None:
         pass
     else:  # pragma: no cover
         raise AssertionError("expected an error once all proxies are cooling")
+
+
+def test_cool_session_parks_proxy_and_rotates_away() -> None:
+    # The yfinance path holds a proxied Session; cool_session must back the bad proxy
+    # off so rotate_session doesn't immediately hand it back.
+    pool = _pool(lambda *a: b"{}")
+    s = pool.requests_session()
+    blocked = s._vpts_proxy
+    pool.cool_session(s)                                   # simulate a rate-limited fetch
+    assert blocked.cooldown_until > time.monotonic()
+    # Next rotations skip the cooled proxy entirely.
+    for _ in range(pool.size):
+        pool.rotate_session(s)
+        assert s._vpts_proxy is not blocked
 
 
 def test_from_env_inline_and_none(monkeypatch=None) -> None:

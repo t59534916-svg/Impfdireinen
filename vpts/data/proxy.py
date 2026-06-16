@@ -282,8 +282,19 @@ class ProxyPool:
             )
         session.proxies.update({"http": p.url, "https": p.url})
         session.headers.update({"User-Agent": self._ua()})
-        session._vpts_proxy = p  # type: ignore[attr-defined]  # so callers can _cool it
+        session._vpts_proxy = p  # type: ignore[attr-defined]  # so cool_session() can park it
         return session
+
+    def cool_session(self, session) -> None:
+        """Park the session's current proxy in cooldown (e.g. after a failed fetch).
+
+        Lets clients that hold a long-lived proxied ``Session`` (yfinance) apply the
+        same exponential-backoff-and-skip that :meth:`urlopen` applies automatically,
+        so a rate-limited proxy isn't immediately rotated back into use.
+        """
+        p = getattr(session, "_vpts_proxy", None)
+        if p is not None:
+            self._cool(p)
 
 
 def _urllib_transport(url: str, proxy_url: str, headers: dict, timeout: float) -> bytes:
