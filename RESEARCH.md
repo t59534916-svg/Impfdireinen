@@ -40,7 +40,7 @@ and volume-pattern factors. A single backtest of the breakout style on 2012–20
 ## Methodology (the harness)
 
 Every claim below clears the same bars, implemented in `vpts.validation` and `vpts.ml` and covered
-by 276 unit tests:
+by 280 unit tests:
 
 - **No look-ahead.** Features at bar *t* use only data ≤ *t*; labels are strictly future. The
   dataset/panel builders are unit-tested for this.
@@ -396,7 +396,7 @@ asset. Any new idea plugs in and is judged honestly:
   position and MFE/MAE-XGBoost stress tests.
 - `vpts.data` — provider-agnostic `DataSource` layer, point-in-time `Universe` + survivorship injector,
   and `audit_coverage` (a one-call survivorship audit that measures a feed's delisted coverage).
-- 276 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- 280 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 
