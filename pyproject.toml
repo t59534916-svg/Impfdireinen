@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vpts"
-version = "1.15.0"
+version = "1.16.0"
 description = "Quiet-Volume — a free, explainable Volume Profile trading system (Phases 1–6), put through an adversarial CPCV + permutation + survivorship validation (the 11-experiment RESEARCH.md study)."
 readme = "README.md"
 requires-python = ">=3.10"
