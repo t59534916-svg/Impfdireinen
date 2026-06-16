@@ -4,8 +4,10 @@ A module‑by‑module reference for `vpts`. For the story and findings see the 
 
 - [Design principles](#design-principles)
 - [Dependency graph](#dependency-graph)
+- [Runtime pipeline](#runtime-pipeline)
 - [Act I — the signal pipeline](#act-i--the-signal-pipeline)
 - [Act II — the validation stack](#act-ii--the-validation-stack)
+- [Statistics, harness & the AI insight layer](#statistics-harness--the-ai-insight-layer)
 - [Result‑object catalogue](#result-object-catalogue)
 - [Extending the system](#extending-the-system)
 
@@ -66,6 +68,58 @@ There are no import cycles: `structure` depends on `ml` (it reuses triple‑barr
 
 ---
 
+## Runtime pipeline
+
+The graph above is *static* (imports). This is the **runtime data‑flow**: two tracks share one data layer — the rule‑based **product** (Act I) and the **validation + AI** stack (Acts II–III). Nothing is called an "edge" until it clears the harness *and* a code‑computed verdict.
+
+```mermaid
+flowchart TB
+  subgraph src["data sources · vpts.data"]
+    Y["YFinanceSource<br/>(survivors only)"]
+    ST["StooqSource<br/>(delisted)"]
+    OTH["Polygon · DataLake · Synthetic"]
+    PX["ProxyPool<br/>(anti rate-limit)"]
+  end
+  REG["SourceRegistry + validate_ohlcv<br/>capability-aware fallback"]
+  Y --> REG
+  ST --> REG
+  OTH --> REG
+  PX -. proxies .-> Y
+
+  subgraph prod["Act I · product pipeline (rule-based)"]
+    direction LR
+    PRO["profile"] --> RGM["regime"] --> SCO["scoring"] --> SIG["signals"] --> BT["backtest / dashboard"]
+  end
+
+  subgraph res["Act II/III · validation & statistics"]
+    direction TB
+    FEA["features · structure · ml<br/>→ FactorDataset (X, y)"] --> CPCV["validation<br/>purged CPCV"]
+    CPCV --> EVAL["OOS-IC + block-permutation"]
+    EVAL --> STA["stats<br/>DSR · PBO · HLZ · Lo"]
+    EVAL --> INJ["SurvivorshipInjector<br/>stress sweep"]
+  end
+
+  REG --> PRO
+  REG --> FEA
+  STA --> HAR
+  INJ --> HAR
+  EVAL --> HAR
+  HAR["harness.honest_backtest()<br/>→ HonestReport + verdict"]
+  HAR -. "metrics → Evidence" .-> AI["AI / insight layer<br/>vpts.insight"]
+
+  classDef f fill:#10202e,stroke:#26a69a,color:#e6edf3;
+  classDef a fill:#1b2330,stroke:#42a5f5,color:#e6edf3;
+  classDef b fill:#221a2e,stroke:#ab47bc,color:#e6edf3;
+  class Y,ST,OTH,PX,REG f; class PRO,RGM,SCO,SIG,BT a; class FEA,CPCV,EVAL,STA,INJ,HAR,AI b;
+```
+
+- **Data layer.** One `DataSource` contract with an honest `provides_delisted` flag; `SourceRegistry` tries sources in order and `validate_ohlcv` drops structurally‑invalid bars. High‑volume free pulls can be routed through the rotating `ProxyPool` to dodge per‑IP rate limits.
+- **Product track (Act I).** `profile → regime → scoring → signals` → an explainable trade plan, fed to the walk‑forward `backtest` and the Streamlit `dashboard`.
+- **Validation track (Acts II–III).** `features/structure/ml` build a no‑look‑ahead `FactorDataset`; purged **CPCV** yields the OOS‑IC distribution; the **block‑permutation** test gives an honest p‑value; `stats` adds DSR/PBO; the `SurvivorshipInjector` stress‑tests against synthetic delisted names.
+- **Harness.** `honest_backtest()` runs that whole checklist in one call (see below).
+
+---
+
 ## Act I — the signal pipeline
 
 ### `vpts.data` — market data
@@ -122,6 +176,54 @@ There are no import cycles: `structure` depends on `ml` (it reuses triple‑barr
 | `models.py` | `StructuralFeatures` row + the canonical 13‑feature ordering (`STRUCTURAL_FEATURES`). |
 
 These 13 features feed the same harness as everything else. Their two feature families recur in the findings: **REGIME** (vacr_z, POC slope, shape, footprints) vs. **DIP** (synthetic delta, POC location, cost‑basis migration) — the decomposition (experiment 9–11) shows the signal lives in the *survivorship‑prone DIP family*.
+
+---
+
+## Statistics, harness & the AI insight layer
+
+### `vpts.stats` — anti‑data‑snooping statistics
+| File | Provides |
+|------|----------|
+| `deflated_sharpe.py` | Probabilistic & **Deflated Sharpe**, expected‑max‑Sharpe benchmark, minimum track‑record length, Lo's autocorrelation‑corrected Sharpe. |
+| `pbo.py` | **Probability of Backtest Overfitting** via CSCV (combinatorially‑symmetric cross‑validation). |
+| `block_permutation.py` | `recommend_block_size` + `block_shuffle_indices` — the honest null for **overlapping labels** (a per‑row shuffle over‑rejects). |
+| `multiple_testing.py` | Bonferroni / Holm / BH / BY adjustment + the Harvey–Liu–Zhu haircut. |
+
+### `vpts.data` — provider‑agnostic, survivorship‑aware
+`DataSource` (+ `DataSourceCapabilities`) · `SourceRegistry` (ordered, capability‑aware fallback) · `Universe` + `SurvivorshipInjector` (point‑in‑time membership and the injection stress harness) · `audit_coverage` / `KNOWN_DELISTED` (turns the bias into a number) · sources `YFinanceSource` (survivors), `StooqSource` (delisted), `PolygonSource`, `DataLakeSource`, `SyntheticSource` · `ProxyPool` (rotating proxies, per‑proxy cooldown, never‑committed credentials).
+
+### `vpts.harness` — the skeptic's checklist in one call
+`honest_backtest(datasets, …) → HonestReport`. Bundles: pooled **OOS‑IC**, the **block‑permutation** p‑value, the conviction‑bucket curve + flat‑middle long/short net, the **Deflated Sharpe** (on an overlap‑deflated effective sample, selection‑adjusted by `n_trials`), the **PBO**, and an optional **survivorship‑injection sweep** — plus a one‑line `verdict` gated in order: significance → PBO (overfit) → survivorship inversion → DSR.
+
+### `vpts.insight` — the generative‑AI explanation layer (narrates, never decides)
+The *only* place a large language model is used, and it is deliberately sandboxed. The design separates three things (`insight/models.py`): **`Evidence`** (what the harness found — numbers only), **`Verdict`** (what may be claimed — computed in code), and **`Insight`** (the rendered explanation). The model is handed a verdict; it does not get to decide whether an edge exists.
+
+```mermaid
+flowchart TD
+  EVD["Evidence<br/>(numbers only: IC, p, DSR, PBO, injection …)"] --> A["assess(evidence)<br/>verdict — computed IN CODE"]
+  A --> V{"LLM client<br/>configured?"}
+  V -- "no (offline)" --> T["render_template()<br/>deterministic, cannot overclaim"]
+  V -- "yes" --> P["build prompt:<br/>system rules + verdict + ONLY these numbers"]
+  P --> C["client.complete()<br/>Claude narrates the behavioral story"]
+  C -- "error / no key / refusal" --> T
+  C --> S["scan_for_overclaims(text, verdict)"]
+  S -- "overclaim & not VALIDATED" --> B["prepend correction_banner<br/>+ record warning"]
+  S -- "clean" --> OUT
+  B --> OUT["Insight(text, verdict, used_llm, warnings)"]
+  T --> OUT
+  classDef b fill:#221a2e,stroke:#ab47bc,color:#e6edf3;
+  class EVD,A,V,P,C,S,B,T,OUT b;
+```
+
+1. **`assess(evidence)` → `Verdict`** (`guardrails.py`), deterministic and LLM‑free, in strict order: `PBO ≥ 0.5` → **OVERFIT** (dominates everything); `p ≥ 0.05` → **NO_EDGE**; inverts / loses significance under injection → **SURVIVORSHIP_FRAGILE**; significant + survives injection + `DSR ≥ 0.95` → **VALIDATED**; else **WEAK_UNVALIDATED**. Only `VALIDATED` sets `permits_edge_claim`.
+2. **Prompt.** The model gets the finished verdict, its reasons, and the `Evidence` JSON with "use only these numbers". The system prompt forbids claiming a tradeable edge (unless VALIDATED) or inventing any statistic, and asks for the *behavioral‑finance* story behind the result.
+3. **LLM call** (`llm.py` · `AnthropicClient`, default `claude-opus-4-8`; API key resolved from the environment, never hard‑coded). Any failure (missing package/key, refusal, empty text) becomes `InsightLLMError`.
+4. **Output scan** (`scan_for_overclaims`) — a best‑effort regex backstop: on a recognised overclaim with a non‑VALIDATED verdict it prepends a `correction_banner` and records a warning (`Insight.is_clean = False`).
+5. **Fallback** (`render_template`) — with no client *or* on any backend failure, a deterministic template is rendered that cannot overclaim by construction. The layer is therefore always usable and never fabricates numbers.
+
+**Honesty guarantee, in order of strength:** (1) the code‑computed verdict is the hard gate; (2) the LLM is confined to narration; (3) scan + banner visibly neutralise an overclaim; (4) the template guarantees a safe output. The output scan is a heuristic *second* line, not the guarantee.
+
+> The harness emits a `HonestReport`; the insight layer consumes an `Evidence`. There is currently **no** automatic `HonestReport → Evidence` adapter — the two are bridged by hand (shown dashed in the runtime diagram).
 
 ---
 
