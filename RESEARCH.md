@@ -40,7 +40,7 @@ and volume-pattern factors. A single backtest of the breakout style on 2012–20
 ## Methodology (the harness)
 
 Every claim below clears the same bars, implemented in `vpts.validation` and `vpts.ml` and covered
-by 315 unit tests:
+by 318 unit tests:
 
 - **No look-ahead.** Features at bar *t* use only data ≤ *t*; labels are strictly future. The
   dataset/panel builders are unit-tested for this.
@@ -83,6 +83,17 @@ On a synthetic lake (offline) this reproduces the mirage — L/S net **+0.21%/be
 when dead names are added. That is a *sensitivity estimate*, not real history; the headline below
 is **unchanged** and only a keyed/real-lake run can move it. The harness is wired to do exactly
 that the instant the data exists.
+
+### Update (v2.1) — classic indicators, and a small-sample caveat on the one-call harness
+
+The newsletter-staple toolkit (RSI · MACD · MA-crossover · momentum · Fibonacci) was added as a
+no-look-ahead feature family (`build_indicator_dataset`) and run through the harness: on synthetic
+survivors it clears nothing (**NO EDGE**, DSR ≈ 0.1) — the same family experiments 2–6 already
+closed. Validating it surfaced an honest caveat: **`honest_backtest`'s block-permutation p
+over-rejects true i.i.d. nulls in a small-sample regime** (≈45% false-positive at ~48
+samples/dataset; ≈5% — calibrated — at ~170+). It now warns below `MIN_SAMPLES_FOR_PERM`. The
+**eleven experiments below are unaffected** — they use the standalone `block_permutation_test` on
+the full 88-name / ~1,300-bar sample, not the convenience path.
 
 ---
 
@@ -418,7 +429,7 @@ asset. Any new idea plugs in and is judged honestly:
   position and MFE/MAE-XGBoost stress tests.
 - `vpts.data` — provider-agnostic `DataSource` layer, point-in-time `Universe` + survivorship injector,
   and `audit_coverage` (a one-call survivorship audit that measures a feed's delisted coverage).
-- 315 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- 318 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 

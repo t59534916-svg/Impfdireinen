@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from vpts.features import behavioral
 from vpts.features.dataset import behavioral_feature_frame, build_behavioral_dataset
+from vpts.features.indicators import build_indicator_dataset
 from vpts.features.models import (
     BEHAVIORAL_FEATURES,
     BehavioralConfig,
@@ -38,6 +39,7 @@ __all__ = [
     "feature_spec",
     "behavioral_feature_frame",
     "build_behavioral_dataset",
+    "build_indicator_dataset",
     "resample_ohlcv",
     "align_to_base",
     "multi_timeframe_feature",

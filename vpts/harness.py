@@ -48,6 +48,9 @@ logger = logging.getLogger(__name__)
 DSR_BAR = 0.95
 #: PBO at or above this means selecting the best "config" is overfitting (Bailey et al.).
 PBO_BAR = 0.5
+#: Below this many samples/dataset the block-permutation p over-rejects true nulls
+#: (small-sample OOS-IC instability) — significance is flagged as unreliable, not trusted.
+MIN_SAMPLES_FOR_PERM = 120
 
 
 def _verdict(*, sig: bool, overfit: bool, inverts: bool, dsr_ok: bool, pbo: float) -> str:
@@ -399,6 +402,14 @@ def honest_backtest(
     # ---- verdict ---------------------------------------------------------- #
     n_samples = sum(len(ds) for ds in ds_list)
     sig = bool(np.isfinite(p) and p < 0.05)
+    med_n = float(np.median([len(d) for d in ds_list]))
+    if sig and med_n < MIN_SAMPLES_FOR_PERM:
+        logger.warning(
+            "honest_backtest: ~%.0f samples/dataset is a small-sample regime — the "
+            "block-permutation p=%.3f over-rejects true nulls here (small-sample OOS-IC "
+            "instability). Widen history/universe before trusting this significance.",
+            med_n, p,
+        )
     overfit = bool(np.isfinite(pbo) and pbo >= PBO_BAR)
     dsr_ok = bool(np.isfinite(dsr) and dsr >= DSR_BAR)
     inverts = bool(_sweep_inverts(sweep))

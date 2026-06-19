@@ -8,6 +8,10 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ## Act IV — data-first
 
+### `2.1.0` — Classic indicators on trial + a harness small-sample calibration guard
+- **Added** `build_indicator_dataset` (`vpts.features`) — the newsletter-staple swing toolkit (**RSI, MACD, a moving-average crossover, momentum, a Fibonacci-retracement position**) as a no-look-ahead `FactorDataset`, plus `examples/indicator_swing_eval.py` to run it through the same harness (CPCV OOS IC · block-permutation p · DSR · PBO · survivorship sweep). On synthetic survivors it clears nothing (**NO EDGE**, DSR ≈ 0.1) — the same class of input experiments 2–6 already showed doesn't beat the wall. No-look-ahead unit-tested.
+- **Found & guarded (honesty):** validating the above surfaced that `honest_backtest`'s block-permutation p **over-rejects true i.i.d. nulls in a small-sample regime** — ≈45% false-positive at ~48 samples/dataset, because the small-sample OOS IC is biased/unstable; it is well-calibrated at ~170+ samples/dataset (false-positive ≈ 5%). Added `MIN_SAMPLES_FOR_PERM` (120): below it, a "significant" result is flagged as **unreliable** with a warning. **This does *not* affect the eleven published experiments** — those use the standalone, review-verified `block_permutation_test` on the full 88-name / ~1,300-bar sample, not this convenience path.
+
 ### `2.0.0` — The delisted-inclusive ingestion backbone
 The study's binding constraint is survivorship-free data, **not** the model. v2.0 builds the production path to feed the harness real delisted names the instant a source exists — and re-confirms the wall with a fresh live probe.
 - **Added** `FMPSource` (`vpts.data`) — a real `DataSource` over Financial Modeling Prep's stable EOD API. Survivor history on the free tier; **delisted on a paid tier**, opt-in via `FMPSource(delisted_capable=True)` (or `VPTS_FMP_DELISTED=1`). Key from `FMP_API_KEY`, injectable HTTP, surfaces FMP's plan-gate message, added to `default_registry()` when the key is set. Offline-tested.
