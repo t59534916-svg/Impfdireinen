@@ -38,6 +38,7 @@ from vpts.data.fetcher import (
     MarketDataFetcher,
     NoVolumeError,
 )
+from vpts.data.lake import LakeBuildReport, materialize_lake
 from vpts.data.proxy import (
     AllProxiesCoolingError,
     DataFetchProxyError,
@@ -46,6 +47,7 @@ from vpts.data.proxy import (
 from vpts.data.registry import SourceRegistry, default_registry
 from vpts.data.sources import (
     DataLakeSource,
+    FMPSource,
     PolygonSource,
     StooqSource,
     SyntheticSource,
@@ -75,12 +77,16 @@ __all__ = [
     "PolygonSource",
     "DataLakeSource",
     "StooqSource",
+    "FMPSource",
     "SourceRegistry",
     "default_registry",
     # rotating proxy pool (avoid rate-limit blocks on free feeds)
     "ProxyPool",
     "AllProxiesCoolingError",
     "DataFetchProxyError",
+    # delisted-inclusive lake ingestion (the data-first backbone)
+    "materialize_lake",
+    "LakeBuildReport",
     # survivorship-coverage audit (measure the bias on a live feed)
     "audit_coverage",
     "audit_known_delisted",

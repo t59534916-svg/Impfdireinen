@@ -70,6 +70,20 @@ def test_behavioral_ai_demo_runs_offline() -> None:
         sys.argv = old
 
 
+def test_v2_survivorship_free_runs_offline() -> None:
+    """The v2.0 ingestion-backbone re-run runs end-to-end offline (synthetic lake)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
+    import v2_survivorship_free as demo
+
+    argv = ["prog", "--perms", "3", "--n-survivors", "3", "--n-delisted", "2"]
+    old = sys.argv
+    sys.argv = argv
+    try:
+        assert demo.main() == 0
+    finally:
+        sys.argv = old
+
+
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     passed = failed = 0

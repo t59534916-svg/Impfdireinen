@@ -114,18 +114,27 @@ def default_registry(cache_dir: str = ".cache/vpts") -> SourceRegistry:
     """Production-sensible default chain.
 
     If ``POLYGON_API_KEY`` is set, a :class:`~vpts.data.sources.PolygonSource` is
-    placed **first** — it is the only source that can serve delisted / point-in-time
-    history, so it makes the chain survivorship-capable. Otherwise the chain is
-    yfinance (free, survivor-only) → synthetic (offline fallback for demos/tests),
-    which is **not** survivorship-free for real tickers.
+    placed **first** — it is delisted/point-in-time-capable, so it makes the chain
+    survivorship-capable. If ``FMP_API_KEY`` is set, an
+    :class:`~vpts.data.sources.FMPSource` is added next (survivor history by default;
+    set ``VPTS_FMP_DELISTED=1`` to advertise delisted when your plan includes it).
+    The chain then falls back to yfinance (free, survivor-only) → synthetic (offline
+    demos/tests), which is **not** survivorship-free for real tickers.
     """
     import os
 
-    from vpts.data.sources import PolygonSource, SyntheticSource, YFinanceSource
+    from vpts.data.sources import (
+        FMPSource,
+        PolygonSource,
+        SyntheticSource,
+        YFinanceSource,
+    )
 
     sources: list = []
     if os.environ.get("POLYGON_API_KEY"):
         sources.append(PolygonSource())          # delisted-capable → goes first
+    if os.environ.get("FMP_API_KEY"):
+        sources.append(FMPSource(delisted_capable=bool(os.environ.get("VPTS_FMP_DELISTED"))))
     sources.append(YFinanceSource(cache_dir=cache_dir))
     sources.append(SyntheticSource())
     return SourceRegistry(sources)
