@@ -5,7 +5,7 @@
 **A free, explainable Volume‑Profile trading system — and an honest, adversarial study of whether it actually has an edge.**
 
 ![version](https://img.shields.io/badge/version-2.0.0-blue)
-![tests](https://img.shields.io/badge/tests-308%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-315%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![deps](https://img.shields.io/badge/core%20deps-numpy%20·%20pandas%20·%20scipy-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -63,7 +63,7 @@ Run any phase or experiment directly — every demo is a single file in [`exampl
 ```bash
 python examples/phase4_demo.py AAPL 1y 1d reversion    # the product (needs internet)
 python examples/structural_swing_rater.py              # the research (a swing setup-rater)
-python -m pytest -q                                    # 308 offline, deterministic tests
+python -m pytest -q                                    # 315 offline, deterministic tests
 ```
 
 ### Optional: rotating proxies (avoid rate-limit blocks)
@@ -99,9 +99,13 @@ reads), and a one-command **survivors-only vs survivors+delisted** re-run:
 
 ```bash
 python examples/v2_survivorship_free.py                  # offline (synthetic lake) — proves the pipeline
+python examples/v2_survivorship_free.py --csv-dir ./exports   # YOUR CSVs (broker / vendor / logged-in export)
 python examples/v2_survivorship_free.py --lake /data/eod # a REAL delisted-inclusive lake
 FMP_API_KEY=... python examples/v2_survivorship_free.py --source fmp --materialize /tmp/lake
 ```
+
+[`CsvSource`](vpts/data/csv_source.py) ingests CSVs you have the rights to (`,`/`;`, decimal-comma,
+`DD.MM.YY`, English/German columns) — the clean way to bring delisted history a feed won't give you.
 
 > Re-probed live: free feeds still **paywall delisted history** (FMP serves AAPL/MSFT but denies
 > LEH/SIVB; Stooq-live is JS-walled; Polygon-delisted is paid). The backbone is built and tested;
@@ -328,7 +332,7 @@ vpts/                      core library — lightweight (numpy · pandas · scip
 └─ insight/                Act III — LLM explanation layer with edge-claim guardrails
 
 examples/                  one runnable file per phase, per experiment, + behavioral_ai_demo
-tests/                     308 offline, deterministic tests
+tests/                     315 offline, deterministic tests
 docs/                      ARCHITECTURE.md · img/ (committed figures + generator)
 RESEARCH.md                the eleven-experiment validation log
 streamlit_app.py           dashboard entry point
@@ -341,7 +345,7 @@ streamlit_app.py           dashboard entry point
 ## Testing
 
 ```bash
-python -m pytest -q            # 308 tests, all offline & deterministic (no network)
+python -m pytest -q            # 315 tests, all offline & deterministic (no network)
 python tests/test_phase1.py    # or run any file directly
 ```
 

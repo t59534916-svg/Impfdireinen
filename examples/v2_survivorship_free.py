@@ -96,7 +96,10 @@ def main() -> int:
     ap.add_argument("--lake", default=None, help="path to an existing parquet data lake")
     ap.add_argument("--source", default=None, choices=["fmp", "polygon"],
                     help="materialize a lake from a paid feed first")
-    ap.add_argument("--materialize", default=None, help="lake root to write when using --source")
+    ap.add_argument("--csv-dir", default=None,
+                    help="directory of OHLCV CSVs to ingest (e.g. ariva/broker exports)")
+    ap.add_argument("--materialize", default=None,
+                    help="lake root to write when using --source/--csv-dir")
     ap.add_argument("--n-survivors", type=int, default=6)
     ap.add_argument("--n-delisted", type=int, default=4)
     ap.add_argument("--start", default="2004-01-01")
@@ -113,6 +116,17 @@ def main() -> int:
         surv, dead = _frames_from_lake(_materialize_real(args.source, root, args.n_survivors,
                                                          args.start, args.end))
         provenance = f"REAL feed via {args.source} → lake {root}"
+    elif args.csv_dir:
+        from vpts.data import CsvSource
+        root = args.materialize or tempfile.mkdtemp(prefix="vpts_lake_")
+        csv_src = CsvSource(args.csv_dir)
+        known_dead = [t.symbol for t in KNOWN_DELISTED]
+        caps = {t.symbol: f"{t.year}-12-31" for t in KNOWN_DELISTED}
+        rep = materialize_lake(root, csv_src, csv_src.available_symbols(),
+                               delist_caps=caps, delisted=known_dead)
+        print(rep.summary(), "\n")
+        surv, dead = _frames_from_lake(root)
+        provenance = f"CSV dir {args.csv_dir} → lake {root}"
     elif args.lake:
         surv, dead = _frames_from_lake(args.lake)
         provenance = f"REAL parquet lake {args.lake}"

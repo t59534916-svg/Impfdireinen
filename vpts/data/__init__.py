@@ -38,6 +38,7 @@ from vpts.data.fetcher import (
     MarketDataFetcher,
     NoVolumeError,
 )
+from vpts.data.csv_source import CsvSource, read_ohlcv_csv
 from vpts.data.lake import LakeBuildReport, materialize_lake
 from vpts.data.proxy import (
     AllProxiesCoolingError,
@@ -87,6 +88,8 @@ __all__ = [
     # delisted-inclusive lake ingestion (the data-first backbone)
     "materialize_lake",
     "LakeBuildReport",
+    "CsvSource",
+    "read_ohlcv_csv",
     # survivorship-coverage audit (measure the bias on a live feed)
     "audit_coverage",
     "audit_known_delisted",
