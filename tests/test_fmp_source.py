@@ -64,6 +64,21 @@ def test_plan_gated_error_is_surfaced() -> None:
         raise AssertionError("expected DataFetchError surfacing FMP's plan message")
 
 
+def test_http_402_maps_to_plan_message() -> None:
+    import urllib.error
+
+    def boom(url: str):
+        raise urllib.error.HTTPError(url, 402, "Payment Required", {}, None)
+
+    src = FMPSource(api_key="d", http_get=boom)
+    try:
+        src.get_bars("LEH", start="2008-01-01", end="2008-09-15")
+    except DataFetchError as exc:
+        assert "higher FMP plan" in str(exc) and "402" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("expected a plan-gate DataFetchError on HTTP 402")
+
+
 def test_requires_api_key() -> None:
     import os
 

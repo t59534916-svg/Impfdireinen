@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 import urllib.request
 from typing import Callable, Optional
 
@@ -129,6 +130,14 @@ class FMPSource(DataSource):
             payload = self._http_get(url)
         except DataFetchError:
             raise
+        except urllib.error.HTTPError as exc:
+            if exc.code in (402, 403):
+                # The plan gate: delisted/old history needs a higher FMP tier.
+                raise DataFetchError(
+                    f"{symbol}: FMP {exc.code} — this data (e.g. delisted history) requires a "
+                    "higher FMP plan than the current key provides."
+                ) from exc
+            raise DataFetchError(f"{symbol}: FMP request failed: {exc}") from exc
         except Exception as exc:  # noqa: BLE001 - normalize transport errors
             raise DataFetchError(f"{symbol}: FMP request failed: {exc}") from exc
 
