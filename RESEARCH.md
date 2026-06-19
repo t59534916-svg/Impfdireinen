@@ -90,8 +90,9 @@ The newsletter-staple toolkit (RSI · MACD · MA-crossover · momentum · Fibona
 no-look-ahead feature family (`build_indicator_dataset`) and run through the harness: on synthetic
 survivors it clears nothing (**NO EDGE**, DSR ≈ 0.1) — the same family experiments 2–6 already
 closed. Validating it surfaced an honest caveat: **`honest_backtest`'s block-permutation p
-over-rejects true i.i.d. nulls in a small-sample regime** (≈45% false-positive at ~48
-samples/dataset; ≈5% — calibrated — at ~170+). It now warns below `MIN_SAMPLES_FOR_PERM`. The
+over-rejects true i.i.d. nulls in a small-sample regime** (≈⅓ false-positive at ~48
+samples/dataset — ~6× the nominal 5% — returning to near-nominal, ≈7%, at ~170+). It now warns
+below `MIN_SAMPLES_FOR_PERM`. The
 **eleven experiments below are unaffected** — they use the standalone `block_permutation_test` on
 the full 88-name / ~1,300-bar sample, not the convenience path.
 
