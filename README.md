@@ -4,8 +4,8 @@
 
 **A free, explainable Volume‑Profile trading system — and an honest, adversarial study of whether it actually has an edge.**
 
-![version](https://img.shields.io/badge/version-1.16.0-blue)
-![tests](https://img.shields.io/badge/tests-294%20passing-brightgreen)
+![version](https://img.shields.io/badge/version-2.0.0-blue)
+![tests](https://img.shields.io/badge/tests-307%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![deps](https://img.shields.io/badge/core%20deps-numpy%20·%20pandas%20·%20scipy-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -63,7 +63,7 @@ Run any phase or experiment directly — every demo is a single file in [`exampl
 ```bash
 python examples/phase4_demo.py AAPL 1y 1d reversion    # the product (needs internet)
 python examples/structural_swing_rater.py              # the research (a swing setup-rater)
-python -m pytest -q                                    # 294 offline, deterministic tests
+python -m pytest -q                                    # 307 offline, deterministic tests
 ```
 
 ### Optional: rotating proxies (avoid rate-limit blocks)
@@ -88,6 +88,24 @@ YFinanceSource(proxy_pool=pool).get_bars("AAPL", period="1y")
 > git-ignored `proxies.txt`. Two caveats: a proxy changes your *IP*, so it helps against
 > rate-limiting (Yahoo/yfinance) but **does not** bypass a JavaScript wall such as Stooq's live
 > CSV; and datacenter IPs are sometimes challenged *more*, not less.
+
+### v2.0 — survivorship-free ingestion backbone
+
+The study's binding constraint is *survivorship-free data*. v2.0 ships the production path to
+feed the harness real delisted names — [`FMPSource`](vpts/data/sources/fmp_source.py) (survivor
+history free, **delisted on a paid plan**), [`materialize_lake()`](vpts/data/lake.py) (pull any
+source's universe into the parquet lake [`DataLakeSource`](vpts/data/sources/datalake_source.py)
+reads), and a one-command **survivors-only vs survivors+delisted** re-run:
+
+```bash
+python examples/v2_survivorship_free.py                  # offline (synthetic lake) — proves the pipeline
+python examples/v2_survivorship_free.py --lake /data/eod # a REAL delisted-inclusive lake
+FMP_API_KEY=... python examples/v2_survivorship_free.py --source fmp --materialize /tmp/lake
+```
+
+> Re-probed live: free feeds still **paywall delisted history** (FMP serves AAPL/MSFT but denies
+> LEH/SIVB; Stooq-live is JS-walled; Polygon-delisted is paid). The backbone is built and tested;
+> it produces the *real* survivorship-free verdict the instant a paid key or local lake is supplied.
 
 ---
 
@@ -310,7 +328,7 @@ vpts/                      core library — lightweight (numpy · pandas · scip
 └─ insight/                Act III — LLM explanation layer with edge-claim guardrails
 
 examples/                  one runnable file per phase, per experiment, + behavioral_ai_demo
-tests/                     294 offline, deterministic tests
+tests/                     307 offline, deterministic tests
 docs/                      ARCHITECTURE.md · img/ (committed figures + generator)
 RESEARCH.md                the eleven-experiment validation log
 streamlit_app.py           dashboard entry point
@@ -323,7 +341,7 @@ streamlit_app.py           dashboard entry point
 ## Testing
 
 ```bash
-python -m pytest -q            # 294 tests, all offline & deterministic (no network)
+python -m pytest -q            # 307 tests, all offline & deterministic (no network)
 python tests/test_phase1.py    # or run any file directly
 ```
 

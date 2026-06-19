@@ -6,6 +6,17 @@ The canonical research narrative is [`RESEARCH.md`](RESEARCH.md); experiment num
 
 ---
 
+## Act IV — data-first
+
+### `2.0.0` — The delisted-inclusive ingestion backbone
+The study's binding constraint is survivorship-free data, **not** the model. v2.0 builds the production path to feed the harness real delisted names the instant a source exists — and re-confirms the wall with a fresh live probe.
+- **Added** `FMPSource` (`vpts.data`) — a real `DataSource` over Financial Modeling Prep's stable EOD API. Survivor history on the free tier; **delisted on a paid tier**, opt-in via `FMPSource(delisted_capable=True)` (or `VPTS_FMP_DELISTED=1`). Key from `FMP_API_KEY`, injectable HTTP, surfaces FMP's plan-gate message, added to `default_registry()` when the key is set. Offline-tested.
+- **Added** `materialize_lake()` + `LakeBuildReport` (`vpts.data.lake`) — pull a universe (survivors + `KNOWN_DELISTED`) from **any** `DataSource` and write the Hive-partitioned parquet lake `DataLakeSource` reads, capping each name at its delist date (pre-delisting history only) and reporting death-leg coverage. Source-agnostic; offline round-trip tested through `DataLakeSource`.
+- **Added** `examples/v2_survivorship_free.py` — one command: materialize/read a lake → structural `honest_backtest` **survivors-only vs survivors+delisted**, printing the IC / long-short-net delta and whether the signal inverts. Runs offline on a synthetic lake today (reproduces the mirage: L/S +0.21% → −0.46%/bet); becomes the real survivorship-free verdict the instant `--lake`/`--source` points at real data.
+- **Probe (fresh evidence):** FMP serves survivors (AAPL 2017, MSFT 2023 ✓) but **paywalls delisted** (LEH, SIVB → "requires a higher plan") and the delisted screener. The wall stands — real delisted OHLCV needs a paid Polygon/FMP plan or a local lake. The backbone is built, tested, and ready for it; **the headline conclusion is unchanged.**
+
+---
+
 ## Act III — production hardening
 
 ### `1.16.0` — Rotating proxies, a free delisted feed, the one-call harness, and the external-review hardening

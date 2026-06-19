@@ -40,7 +40,7 @@ and volume-pattern factors. A single backtest of the breakout style on 2012–20
 ## Methodology (the harness)
 
 Every claim below clears the same bars, implemented in `vpts.validation` and `vpts.ml` and covered
-by 294 unit tests:
+by 307 unit tests:
 
 - **No look-ahead.** Features at bar *t* use only data ≤ *t*; labels are strictly future. The
   dataset/panel builders are unit-tested for this.
@@ -61,6 +61,28 @@ Free, no-API-key, network-restriction-friendly: split/dividend-adjusted daily OH
 large-caps, 2012–2017**, committed to the public [`stocknet-dataset`](https://github.com/yumoxu/stocknet-dataset)
 (`vpts.data` back-adjusts via Adj Close / Close). **Every name is a 2017 survivor** — the dominant,
 unavoidable confound throughout. There is no delisted/point-in-time data in this source.
+
+### Update (v2.0) — the ingestion backbone, and the wall re-probed
+
+The binding constraint is *survivorship-free data*, so v2.0 builds the production path to feed
+the harness real delisted names — and re-probes whether such data is reachable for free. **Fresh
+evidence (live):** Financial Modeling Prep serves *survivors* on the free tier (AAPL 2017, MSFT
+2023 ✓) but **paywalls delisted history** (LEH, SIVB → *"requires a higher plan"*) and the
+delisted screener. So the wall stands, now triangulated across Yahoo (survivors only), Stooq-live
+(JS-walled), Polygon-delisted (paid), SEC (identifiers only), and FMP (delisted paywalled): **real
+delisted OHLCV requires a paid plan or a local lake.** What v2.0 *does* deliver is the
+survivorship-free **machinery**, validated end-to-end on reachable data:
+
+- `FMPSource` — a real `DataSource` (survivors now; delisted on a paid plan, opt-in);
+- `materialize_lake()` — pull any source's universe into the Hive parquet lake `DataLakeSource`
+  reads, capping each name at its delist date (pre-delisting history only);
+- `examples/v2_survivorship_free.py` — one command: structural `honest_backtest` **survivors-only
+  vs survivors+delisted**, reporting the IC / long-short-net delta and whether the signal inverts.
+
+On a synthetic lake (offline) this reproduces the mirage — L/S net **+0.21%/bet → −0.46%/bet**
+when dead names are added. That is a *sensitivity estimate*, not real history; the headline below
+is **unchanged** and only a keyed/real-lake run can move it. The harness is wired to do exactly
+that the instant the data exists.
 
 ---
 
@@ -396,7 +418,7 @@ asset. Any new idea plugs in and is judged honestly:
   position and MFE/MAE-XGBoost stress tests.
 - `vpts.data` — provider-agnostic `DataSource` layer, point-in-time `Universe` + survivorship injector,
   and `audit_coverage` (a one-call survivorship audit that measures a feed's delisted coverage).
-- 294 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- 307 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 
