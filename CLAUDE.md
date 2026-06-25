@@ -20,7 +20,12 @@ python tests/test_harness.py                     # each test file also has a __m
 # Run the product / research demos (one file per phase & experiment in examples/)
 python examples/phase4_demo.py AAPL 1y 1d reversion   # the product (needs internet)
 python examples/honest_harness_demo.py                # the harness (offline, <20-line core)
+python examples/v2_survivorship_free.py               # v2 data-first: survivors vs survivors+delisted
+python examples/indicator_swing_eval.py               # classic RSI/MACD/Fib indicators on trial
 streamlit run streamlit_app.py                        # Phase 5 dashboard
+
+# Regenerate the study PDF from RESEARCH.md (markdown → HTML → PDF)
+pip install markdown weasyprint && python docs/build_research_pdf.py
 ```
 
 Python ≥ 3.10. No linter is configured in-repo; follow PEP 8 and keep/refresh docstrings when modifying modules.
@@ -31,7 +36,8 @@ Read `docs/ARCHITECTURE.md` for the module-by-module map and `RESEARCH.md` for t
 
 - **Act I — product pipeline (rule-based):** `data → profile → regime → scoring → signals → backtest / dashboard`. Each stage is a self-contained module returning an immutable result.
 - **Acts II–III — validation/AI stack:** `features · structure · ml` build a no-look-ahead `FactorDataset` → `validation` (purged CPCV) → OOS-IC + **block-permutation** p-value → `stats` (DSR · PBO) + `SurvivorshipInjector` stress sweep → `harness.honest_backtest()` → `HonestReport` + one-line verdict → `insight` (LLM *narrates* a verdict that was computed in code).
-- **Data layer (`vpts.data`):** one `DataSource` contract with an honest `provides_delisted` capability flag; `SourceRegistry` is an ordered, capability-aware fallback; `validate_ohlcv` normalises and drops structurally-invalid bars. Sources: `YFinanceSource` (survivors), `StooqSource`/`PolygonSource`/`DataLakeSource` (delisted-capable), `SyntheticSource`. A rotating `ProxyPool` avoids per-IP rate limits.
+- **Data layer (`vpts.data`):** one `DataSource` contract with an honest `provides_delisted` capability flag; `SourceRegistry` is an ordered, capability-aware fallback; `validate_ohlcv` normalises and drops structurally-invalid bars. Sources: `YFinanceSource` (survivors), `FMPSource`/`StooqSource`/`PolygonSource`/`DataLakeSource` (delisted only on a paid plan / local lake), `CsvSource` (bring-your-own export — `,`/`;`, decimal-comma, DD.MM.YY), `SyntheticSource`. A rotating `ProxyPool` avoids per-IP rate limits.
+- **Data-first ingestion (v2 — the binding constraint).** `RESEARCH.md`'s wall is *survivorship-free data*, not the model. `materialize_lake()` pulls any source's universe (survivors + `KNOWN_DELISTED`) into the Hive parquet lake `DataLakeSource` reads; `examples/v2_survivorship_free.py` re-runs survivors-only vs survivors+delisted the instant a real key/lake exists. Free feeds still **paywall delisted history** (re-probed live), so the real verdict awaits a paid `FMP_API_KEY`/`POLYGON_API_KEY` or a `--lake`/`--csv-dir`.
 
 `structure` depends on `ml`, never the reverse — there are no import cycles. `insight` depends on `harness`, never the reverse (`evidence_from_report`/`explain_report` bridge the two).
 
@@ -43,13 +49,16 @@ Read `docs/ARCHITECTURE.md` for the module-by-module map and `RESEARCH.md` for t
 - **Network is injectable.** Data sources/fetchers accept an injectable transport (`http_get` / `transport` / `opener_factory`) so the parsing, fallback and rate-limit logic are unit-tested with **no network**. Any new source must follow this seam.
 - **One evaluation contract.** A new feature family = build a `FactorDataset` (features → forward return) or `MetaDataset` (→ triple-barrier win) with no look-ahead, then run `cpcv_factor_eval` / `cpcv_meta_eval` + the matching `permutation_test_*`. Significance is always a **label-shuffle permutation p-value**; use the **block-permutation null** when labels overlap (`stride < horizon`) — a per-row shuffle over-rejects.
 - **The verdict is code, not the model.** In `vpts.insight`, `assess()` computes the verdict (no_edge / overfit / survivorship_fragile / weak_unvalidated / validated); the LLM only explains it and is scanned for overclaims, with a deterministic template fallback. Never let the LLM decide whether an edge exists.
+- **`honest_backtest()` is the convenience wrapper, not the validated evaluator.** The 11 published experiments use the per-experiment `cpcv_factor_eval` + the standalone, review-verified `block_permutation_test`. The one-call `honest_backtest()` re-implements a pooled block-permutation p that **over-rejects true nulls in small-sample regimes** (~⅓ false-positive at ~48 samples/dataset; calibrated at ~170+) — it warns below `MIN_SAMPLES_FOR_PERM`. Don't trust its significance on thin samples; widen the history/universe.
 - **Survivorship is the confound.** Before trusting any positive result, run it through the survivorship-injection sweep (`examples/structural_survivorship.py`, or `frames=`/`feature_builder=` in `honest_backtest`). That is where every promising signal here has died.
 - **Honesty discipline.** Disconfirm by default: report new numbers *beside* the old, and do **not** edit a conclusion sentence in `RESEARCH.md` until the new numbers are in. Every evaluator keeps a *signal* test (finds a planted edge) **and** a *null-clearing* test (reports nothing on random input).
 
 ## Secrets & config
 
-Credentials are read from the environment, never committed: `ANTHROPIC_API_KEY` (insight LLM), `POLYGON_API_KEY` (Polygon source), `VPTS_PROXIES` / `VPTS_PROXY_FILE` (proxy pool). `proxies.txt` is git-ignored — copy `proxies.example.txt` to create one. With nothing configured, every layer degrades gracefully (offline template, direct fetch).
+Credentials are read from the environment, never committed: `ANTHROPIC_API_KEY` (insight LLM), `POLYGON_API_KEY` (Polygon source), `FMP_API_KEY` (FMP source — delisted needs a paid plan), `VPTS_PROXIES` / `VPTS_PROXY_FILE` (proxy pool). `proxies.txt` is git-ignored — copy `proxies.example.txt` to create one. With nothing configured, every layer degrades gracefully (offline template, direct fetch).
 
 ## Workflow
 
-Standard change cycle for a PR: implement → `python -m pytest -q` (must be green) → review the diff → commit (one logical change per commit) → push to the feature branch → open/merge the PR. When you add or remove tests, update the **test-count references** that drift: the README badge, the README quickstart/layout lines, and the two `RESEARCH.md` counts. Keep `README.md` and `docs/ARCHITECTURE.md` in sync whenever behaviour changes.
+Standard change cycle for a PR: implement → `python -m pytest -q` (must be green) → review the diff → commit (one logical change per commit) → push to the feature branch → open/merge the PR. When you add or remove tests, update the **test-count references** that drift: the README badge, the README quickstart/layout lines, and the two `RESEARCH.md` counts. Keep `README.md` and `docs/ARCHITECTURE.md` in sync whenever behaviour changes; when the conclusions/numbers move, regenerate `docs/Quiet-Volume-Research.pdf` (and bump its version in `docs/build_research_pdf.py`).
+
+A project `Stop` hook (`.claude/settings.json` → `.claude/hooks/pytest_changed.sh`) runs pytest **scoped to your uncommitted test changes** when a turn ends — silent on green, a `systemMessage` on red. It activates next session (settings-watcher), and skips entirely when nothing under `vpts/`/`tests/` changed.
