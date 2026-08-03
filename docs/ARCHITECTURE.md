@@ -49,6 +49,9 @@ flowchart TD
     ML["ml<br/>factor · meta · x-sectional · features"]
     STR["structure<br/>analytics · dataset"]
   end
+  subgraph act5["Act V · data analysis"]
+    ANA["analysis<br/>timeseries · fundamentals · dataset"]
+  end
 
   REG --> IND
   PROF --> IND
@@ -58,13 +61,15 @@ flowchart TD
   DASH --> SCORE & SIG & BT & PROF
   ML --> VAL & SCORE
   STR --> PROF & REG & ML
+  ANA --> ML & STR
   classDef f fill:#10202e,stroke:#26a69a,color:#e6edf3;
   classDef a fill:#1b2330,stroke:#42a5f5,color:#e6edf3;
   classDef b fill:#221a2e,stroke:#ab47bc,color:#e6edf3;
-  class DATA,IND,VAL f; class PROF,REG,SCORE,SIG,BT,DASH a; class ML,STR b;
+  classDef e fill:#2e2318,stroke:#ffa726,color:#e6edf3;
+  class DATA,IND,VAL f; class PROF,REG,SCORE,SIG,BT,DASH a; class ML,STR b; class ANA e;
 ```
 
-There are no import cycles: `structure` depends on `ml` (it reuses triple‑barrier labels and the `FactorDataset`/`MetaDataset` containers), never the reverse.
+There are no import cycles: `structure` depends on `ml` (it reuses triple‑barrier labels and the `FactorDataset`/`MetaDataset` containers), never the reverse. `analysis` depends on `ml` and `structure` (it emits the same dataset containers and reuses the cross‑sectional ranking); nothing depends on `analysis`.
 
 ---
 
@@ -227,6 +232,35 @@ flowchart TD
 
 ---
 
+## Act V — `vpts.analysis` (time series & fundamentals)
+
+A self‑contained part with two halves and a strict boundary between describing and claiming.
+
+### `analysis.timeseries` — descriptive diagnostics
+`analyze_timeseries(frame) → TimeSeriesReport`, plus each estimator standalone: `log_returns` · `realized_vol` / `parkinson_vol` / `garman_klass_vol` · `distribution_stats` (skew, excess kurtosis, Jarque–Bera) · `tail_risk` (VaR/CVaR) · `jump_fraction` (MAD‑scaled, so jumps don't inflate their own yardstick) · `autocorrelation` / `ljung_box` · `variance_ratio` (Lo–MacKinlay, **heteroskedasticity‑robust** z — the homoskedastic form rejects a random walk purely on volatility clustering) · `hurst_exponent` (**Anis–Lloyd corrected**; raw R/S returns ≈0.57 on i.i.d. data at these window sizes) · `adf_test` (asymptotic critical values, reported as "beyond/short of 5%" rather than a spuriously precise p) · `arch_lm_test` · `drawdown_stats` (max, longest underwater run, ulcer index).
+
+Every one of these is **in‑sample by construction**, and `TimeSeriesReport.summary()` says so on its last line. The report is a description of the process, never a signal.
+
+### `analysis.fundamentals` — point‑in‑time statements
+`FundamentalsSource` (ABC, mirrors `DataSource`) → `FMPFundamentalsSource` (real `filingDate`/`acceptedDate`, injectable `http_get`, 402/403 surfaced as the plan gate) · `SyntheticFundamentalsSource` (offline, deterministic via CRC32‑derived seeds — *not* Python's per‑process randomised `hash`, which would make "deterministic" a lie). Ratios: `compute_ratios` → 17 `FUNDAMENTAL_FEATURES` (valuation as **yields**, so they stay finite and monotone through zero earnings), plus `piotroski_f_score` (0–9) and `altman_z_score`.
+
+**The point‑in‑time contract**, enforced at three levels:
+
+1. `FundamentalSnapshot` raises if `available_at < period_end`. A filing cannot be known before the period it describes.
+2. `align_asof` / `align_fundamentals` do a backward as‑of merge on `available_at`, never `period_end`, and never back‑fill.
+3. `audit_point_in_time` re‑checks every bar; `fundamental_feature_frame` **raises** on a non‑zero violation count rather than emit a leaked matrix.
+
+A period‑end join would leak the ~75‑day reporting lag into every row — the single most common way a fundamental backtest fools itself, and one that manufactures a large, persuasive edge.
+
+### `analysis.dataset` — into the one evaluation contract
+`build_fundamental_dataset` (per‑name → `FactorDataset`) · `build_combined_dataset` (structural ⊕ fundamental, for the nested "does accounting data add to microstructure?" comparison) · `build_fundamental_panel` (date×name → `CrossSectionalPanel`, reusing `ml.cross_sectional`'s ranking rather than a second scheme).
+
+> **Sampling is load‑bearing.** Accounting features only change on a filing, so daily sampling yields rows that are one observation wearing many hats — and `recommend_block_size` sizes the permutation block from the *label* horizon while the *feature* is constant across ~25 consecutive samples, so the null is far too tight. Measured on fundamentals generated independently of price, daily sampling reported **IC +0.16, p = 0.005** on pure noise. `build_fundamental_dataset` therefore emits **one row per filing** by default and derives `stride` from the realised bar gap, which feeds an honest block size and purge.
+
+> **Which frame to trust.** One row per filing means ~40 rows/name — below the harness's documented `MIN_SAMPLES_FOR_PERM = 120`, so `honest_backtest`'s convenience p‑value is unreliable *by construction* for fundamentals (measured ~17% false‑positive at the 5% level). The **cross‑sectional panel** is both the financially correct frame and the statistically sound one: pooling by date gives ~20× the effective sample and a within‑date shuffle, and it false‑positives at ~the nominal rate (1/10 measured).
+
+---
+
 ## Result‑object catalogue
 
 Every public computation returns one of these frozen dataclasses (all with `summary()` and most with `as_dict()`):
@@ -244,6 +278,9 @@ Every public computation returns one of these frozen dataclasses (all with `summ
 | `MetaCVResult` / `MetaPermutationResult` | `ml.meta_model` | precision/AUC, return lift, `select_top`, p‑value |
 | `CrossSectionalICResult` | `ml.cross_sectional` | within‑date IC distribution, p‑value |
 | `StructuralFeatures` | `structure` | the 13 structural features for one bar |
+| `TimeSeriesReport` | `analysis.timeseries` | return/risk, distribution, tails, memory (VR · Hurst · ADF), vol structure, drawdown |
+| `FundamentalSnapshot` / `FundamentalSeries` | `analysis.fundamentals` | one period's line items + its `available_at` filing date; as‑of queryable |
+| `FundamentalRatios` | `analysis.fundamentals` | the 17 valuation/quality/leverage/growth features + Piotroski F, Altman Z |
 
 ---
 

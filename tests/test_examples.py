@@ -84,6 +84,20 @@ def test_v2_survivorship_free_runs_offline() -> None:
         sys.argv = old
 
 
+def test_act5_analysis_demo_runs_offline() -> None:
+    """Act V's time-series + fundamentals walkthrough runs end-to-end offline."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
+    import act5_analysis_demo as demo
+
+    argv = ["prog", "--names", "6", "--perms", "3"]
+    old = sys.argv
+    sys.argv = argv
+    try:
+        assert demo.main() == 0
+    finally:
+        sys.argv = old
+
+
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     passed = failed = 0
