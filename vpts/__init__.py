@@ -10,6 +10,11 @@ module so the pieces connect seamlessly:
     Phase 5  vpts.dashboard -> Streamlit dashboard
     Phase 6  vpts.backtest  -> Backtester with realistic (free) cost simulation
 
+Later acts add the validation stack (``vpts.validation`` · ``vpts.ml`` ·
+``vpts.structure`` · ``vpts.stats`` · ``vpts.harness``) and, in Act V,
+``vpts.analysis`` — financial time-series diagnostics plus point-in-time
+fundamental data, both wired into the same honest-evaluation contract.
+
 All six phases are implemented. (The Phase 5 dashboard depends on the optional
 ``streamlit``/``plotly`` extras and is therefore imported on demand from
 :mod:`vpts.dashboard`, not at this package root.)
@@ -23,7 +28,7 @@ Typical Phase 1 usage
 """
 from __future__ import annotations
 
-__version__ = "1.15.0"  # + DataLakeSource: parquet data lake (survivor + delisted)
+__version__ = "2.2.0"  # + Act V: vpts.analysis (time-series diagnostics + PIT fundamentals)
 
 # Re-export the public API at the package root for convenience.
 from vpts.data.fetcher import (
@@ -135,6 +140,32 @@ from vpts.insight import (
     InsightGenerator,
     MockLLMClient,
     Verdict,
+)
+from vpts.analysis import (
+    FUNDAMENTAL_FEATURES,
+    FMPFundamentalsSource,
+    FundamentalRatios,
+    FundamentalSeries,
+    FundamentalSnapshot,
+    FundamentalsSource,
+    SyntheticFundamentalsSource,
+    TimeSeriesReport,
+    adf_test,
+    align_fundamentals,
+    altman_z_score,
+    analyze_timeseries,
+    arch_lm_test,
+    audit_point_in_time,
+    build_combined_dataset,
+    build_fundamental_dataset,
+    build_fundamental_panel,
+    compute_ratios,
+    drawdown_stats,
+    fundamental_feature_frame,
+    hurst_exponent,
+    ljung_box,
+    piotroski_f_score,
+    variance_ratio,
 )
 
 __all__ = [
@@ -255,4 +286,29 @@ __all__ = [
     "Verdict",
     "AnthropicClient",
     "MockLLMClient",
+    # analysis (Act V — time-series diagnostics & point-in-time fundamentals)
+    "TimeSeriesReport",
+    "analyze_timeseries",
+    "variance_ratio",
+    "hurst_exponent",
+    "ljung_box",
+    "adf_test",
+    "arch_lm_test",
+    "drawdown_stats",
+    "FundamentalSnapshot",
+    "FundamentalSeries",
+    "FundamentalRatios",
+    "FUNDAMENTAL_FEATURES",
+    "FundamentalsSource",
+    "FMPFundamentalsSource",
+    "SyntheticFundamentalsSource",
+    "compute_ratios",
+    "piotroski_f_score",
+    "altman_z_score",
+    "align_fundamentals",
+    "audit_point_in_time",
+    "fundamental_feature_frame",
+    "build_fundamental_dataset",
+    "build_combined_dataset",
+    "build_fundamental_panel",
 ]

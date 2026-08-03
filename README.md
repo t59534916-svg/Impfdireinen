@@ -5,7 +5,7 @@
 **A free, explainable Volume‑Profile trading system — and an honest, adversarial study of whether it actually has an edge.**
 
 ![version](https://img.shields.io/badge/version-2.1.0-blue)
-![tests](https://img.shields.io/badge/tests-318%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-359%20passing-brightgreen)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![deps](https://img.shields.io/badge/core%20deps-numpy%20·%20pandas%20·%20scipy-lightgrey)
 ![license](https://img.shields.io/badge/license-MIT-green)
@@ -31,6 +31,7 @@
 - [Quick start](#quick-start)
 - [Act I — the system (Phases 1–6)](#act-i--the-system-phases-16)
 - [Act II — the validation (the research)](#act-ii--the-validation-the-research)
+- [Act V — data analysis (time series & fundamentals)](#act-v--data-analysis-time-series--fundamentals)
 - [Key results, in pictures](#key-results-in-pictures)
 - [Version history](#version-history)
 - [Repository layout](#repository-layout)
@@ -63,7 +64,7 @@ Run any phase or experiment directly — every demo is a single file in [`exampl
 ```bash
 python examples/phase4_demo.py AAPL 1y 1d reversion    # the product (needs internet)
 python examples/structural_swing_rater.py              # the research (a swing setup-rater)
-python -m pytest -q                                    # 318 offline, deterministic tests
+python -m pytest -q                                    # 359 offline, deterministic tests
 ```
 
 ### Optional: rotating proxies (avoid rate-limit blocks)
@@ -222,6 +223,56 @@ Every evaluator keeps a **null‑clearing** test — it reports *no edge* on ran
 
 ---
 
+## Act V — data analysis (time series & fundamentals)
+
+[`vpts.analysis`](vpts/analysis) is a **separate part** with two halves and one rule.
+
+**Time-series diagnostics** — what kind of process is this series? Distribution and tails
+(skew, excess kurtosis, Jarque–Bera, VaR/CVaR, jump fraction), memory (autocorrelation,
+Ljung–Box, **Lo–MacKinlay variance ratio** with the heteroskedasticity-robust z, Anis–Lloyd–
+corrected **Hurst**, ADF), volatility structure (clustering, **ARCH‑LM**, Parkinson,
+Garman–Klass) and drawdown (max, longest underwater run, ulcer index).
+
+**Fundamental data** — statements behind a provider-agnostic `FundamentalsSource` with an
+injectable transport (`FMPFundamentalsSource` parses real filing dates; `SyntheticFundamentalsSource`
+runs offline), turned into 17 valuation / quality / leverage / growth features including the
+**Piotroski F‑score** and **Altman Z‑score**.
+
+```python
+from vpts import analyze_timeseries, SyntheticFundamentalsSource, build_fundamental_panel
+
+print(analyze_timeseries(df, symbol="AAPL").summary())     # descriptive — never an edge claim
+
+series = {s: SyntheticFundamentalsSource(seed=i, n_periods=44, freq="Q").get_fundamentals(s)
+          for i, s in enumerate(frames)}
+panel = build_fundamental_panel(frames, series, horizon=20)   # → the same CPCV + permutation path
+```
+
+The rule: **neither half may claim an edge.** Descriptive statistics are in-sample by
+construction, so they describe and stop. Anything that wants to be called a signal emits the
+same `FactorDataset` / `CrossSectionalPanel` as every other feature family here and is judged
+by the same harness.
+
+Two things this part enforces rather than assumes:
+
+- **Point-in-time or nothing.** A snapshot carries `available_at` (the filing date) separately
+  from `period_end`, and `FundamentalSnapshot` *refuses to be constructed* with
+  `available_at < period_end`. Alignment is a backward as-of merge on the filing date, and
+  `audit_point_in_time` re-checks every bar — the dataset builder raises rather than emit a
+  leaked matrix. Joining on the period end would hand a model the ~75-day reporting lag as
+  hindsight, which is the classic way a fundamental backtest fools itself.
+- **One row per filing.** Accounting features only change when a company files. Sampling them
+  daily produces thousands of rows that are one observation wearing many hats — and it breaks
+  the significance test, because the permutation block is sized from the *label* horizon while
+  the *feature* is constant across ~25 consecutive samples. Measured on fundamentals generated
+  independently of price, daily sampling reported **IC +0.16, p = 0.005** — a confident verdict
+  on pure noise. One row per filing clears that null.
+
+Runnable end-to-end (offline): [`examples/act5_analysis_demo.py`](examples/act5_analysis_demo.py)
+— add `--plant-edge` to confirm the harness still finds an edge that is really there.
+
+---
+
 ## Key results, in pictures
 
 <table>
@@ -303,6 +354,7 @@ timeline
 | `1.9` | Pluggable data | `vpts.data` source abstraction + **point‑in‑time universe** + survivorship injector |
 | `1.10` | Behavioral features | `vpts.features` — multi‑timeframe behavioral dynamics (harness‑gated) |
 | `1.11` | **Insight layer** | `vpts.insight` — LLM explanation that *cannot* assert an unvalidated edge |
+| `2.2` | **Act V — data analysis** | `vpts.analysis` — time-series diagnostics + **point-in-time fundamentals**, both wired into the same harness |
 
 > **Act III is engineering, not a new claim.** It hardens the harness (selection‑aware
 > statistics), attacks the documented binding constraint (a data layer that can express
@@ -329,23 +381,24 @@ vpts/                      core library — lightweight (numpy · pandas · scip
 ├─ structure/              microstructure analytics (synthetic delta, shape, decay)
 ├─ stats/                  Act III — DSR · PBO/CSCV · Harvey–Liu–Zhu haircut · Lo Sharpe
 ├─ features/               Act III — multi-timeframe behavioral-dynamics features
-└─ insight/                Act III — LLM explanation layer with edge-claim guardrails
+├─ insight/                Act III — LLM explanation layer with edge-claim guardrails
+└─ analysis/               Act V — time-series diagnostics + point-in-time fundamentals
 
 examples/                  one runnable file per phase, per experiment, + behavioral_ai_demo
-tests/                     318 offline, deterministic tests
+tests/                     359 offline, deterministic tests
 docs/                      ARCHITECTURE.md · img/ (committed figures + generator)
 RESEARCH.md                the eleven-experiment validation log
 streamlit_app.py           dashboard entry point
 ```
 
-~6.8k LOC of library, ~2.6k LOC of tests, ~2.6k LOC of runnable examples.
+~14.7k LOC of library, ~6.4k LOC of tests, ~4.3k LOC of runnable examples.
 
 ---
 
 ## Testing
 
 ```bash
-python -m pytest -q            # 318 tests, all offline & deterministic (no network)
+python -m pytest -q            # 359 tests, all offline & deterministic (no network)
 python tests/test_phase1.py    # or run any file directly
 ```
 

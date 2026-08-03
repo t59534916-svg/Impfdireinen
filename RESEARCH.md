@@ -40,7 +40,7 @@ and volume-pattern factors. A single backtest of the breakout style on 2012–20
 ## Methodology (the harness)
 
 Every claim below clears the same bars, implemented in `vpts.validation` and `vpts.ml` and covered
-by 318 unit tests:
+by 359 unit tests:
 
 - **No look-ahead.** Features at bar *t* use only data ≤ *t*; labels are strictly future. The
   dataset/panel builders are unit-tested for this.
@@ -95,6 +95,50 @@ samples/dataset — ~6× the nominal 5% — returning to near-nominal, ≈7%, at
 below `MIN_SAMPLES_FOR_PERM`. The
 **eleven experiments below are unaffected** — they use the standalone `block_permutation_test` on
 the full 88-name / ~1,300-bar sample, not the convenience path.
+
+### Update (v2.2) — a fundamental-data track, and the sampling trap it walked into
+
+`vpts.analysis` adds the two data-analysis families the study did not have: **time-series
+diagnostics** (distribution, tails, memory, volatility structure, drawdown) and **point-in-time
+fundamentals** (17 valuation/quality/leverage/growth features plus Piotroski F and Altman Z).
+The time-series half is explicitly descriptive and claims nothing. The fundamental half is wired
+into the same evaluation contract as every other feature family here.
+
+**No new finding about markets** — everything below was measured on **synthetic** data, because
+the point-in-time statement history needed to test fundamentals for real is behind the same
+paywall as delisted prices (`FMPFundamentalsSource` is built and offline-tested against canned
+FMP JSON, and produces the real answer the moment a key is supplied). What the work did produce
+is two *methodological* findings, both of which bit before they were caught:
+
+1. **Daily sampling of fundamental features breaks the significance test.** Accounting features
+   only change on a filing; between filings they are constant. `recommend_block_size` sizes the
+   permutation block from the **label** horizon — 3 samples at `horizon=20, stride=10` — while
+   the **feature** is unchanged across ~25 consecutive samples. The null is then far too tight.
+   On fundamentals generated *independently of price* (so the true answer is "no edge"), daily
+   sampling reported **OOS IC +0.156, p = 0.005**: a confident, fully-validated-looking verdict
+   on pure noise. `build_fundamental_dataset` now emits **one row per filing** by default and
+   derives its `stride` from the realised bar gap; the same null then clears (**IC +0.055,
+   p = 0.12**). This generalises beyond fundamentals — *any* slow-moving feature sampled faster
+   than it changes will over-reject, and the block size must cover the slower of (label overlap,
+   feature persistence).
+2. **Honest sampling puts fundamentals below the harness's own reliability floor.** One row per
+   filing gives ~40 rows/name — under `MIN_SAMPLES_FOR_PERM = 120`, the small-sample regime the
+   v2.1 update above documents. Measured over 12 independent noise trials, `honest_backtest`'s
+   convenience p false-positived **2/12 at the 5% level**. The **cross-sectional panel** is both
+   the frame fundamentals are actually deployed in and the statistically sound one: pooling by
+   date gives ~20× the effective sample and a within-date shuffle, false-positiving at
+   **1/10** — the nominal rate — while still detecting a planted edge (**IC +0.097, p = 0.020**).
+   The lesson is the same one experiment 6 taught: breadth of the cross-section, not model
+   sophistication, is what buys statistical power.
+
+Two estimator bugs were caught by the null-clearing tests before release and are worth recording
+because both would have *manufactured* memory that wasn't there: a spurious `√n` in the
+Lo–MacKinlay variance-ratio z (a random walk scored z ≈ +10, p ≈ 0, instead of z ≈ +0.2), and an
+uncorrected R/S Hurst returning ≈0.57 on i.i.d. data (now Anis–Lloyd corrected → ≈0.50).
+
+**The eleven experiments and the headline conclusion are unchanged.** Nothing here tests a real
+fundamental factor on real data; the survivorship wall is untouched, and Altman-Z exists in this
+module precisely to score the failure tail that survivor-only data deletes.
 
 ---
 
@@ -430,7 +474,7 @@ asset. Any new idea plugs in and is judged honestly:
   position and MFE/MAE-XGBoost stress tests.
 - `vpts.data` — provider-agnostic `DataSource` layer, point-in-time `Universe` + survivorship injector,
   and `audit_coverage` (a one-call survivorship audit that measures a feed's delisted coverage).
-- 318 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
+- 359 unit tests, including signal-detection *and* null-clearing checks for every evaluator.
 
 ## Reproduce
 
