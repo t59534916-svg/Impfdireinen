@@ -242,6 +242,51 @@ def test_drawdown_stats_known_path():
     assert np.isnan(drawdown_stats([])[0])
 
 
+def test_log_returns_drops_session_crossing_moves():
+    """An overnight gap is not a one-bar return, and must not be counted as one."""
+    close = np.array([100.0, 101.0, 102.0, 200.0, 202.0, 204.0])   # 102→200 is a gap
+    sess = np.array([0, 0, 0, 1, 1, 1])
+    naive = log_returns(close)
+    split = log_returns(close, sessions=sess)
+    assert naive.size == 5 and split.size == 4                     # the gap is dropped
+    assert np.max(np.abs(naive)) > 0.6                             # the gap dominates
+    assert np.max(np.abs(split)) < 0.02                            # …and is gone
+    with pytest.raises(ValueError, match="sessions has length"):
+        log_returns(close, sessions=np.array([0, 0]))
+
+
+def test_analyze_timeseries_session_split_changes_the_verdict():
+    """Reproduces the real defect: 2 gap bars flip the volatility-clustering call.
+
+    Built to mirror what real 1-minute data does — a small number of overnight
+    jumps among many intraday bars, large enough to swamp the squared-return
+    regression that ARCH-LM depends on.
+    """
+    rng = np.random.default_rng(0)
+    seg, n_days = [], 3
+    level = 100.0
+    for d in range(n_days):                       # clustered intraday vol per session
+        vol = 0.001 * (1.0 + 4.0 * (np.arange(400) < 200))
+        path = level * np.exp(np.cumsum(rng.normal(0, 1, 400) * vol))
+        seg.append(path)
+        level = path[-1] * 3.0                    # a violent overnight gap
+    close = np.concatenate(seg)
+    idx = pd.DatetimeIndex([
+        pd.Timestamp("2023-03-01") + pd.Timedelta(days=d, minutes=i)
+        for d in range(n_days) for i in range(400)])
+    frame = pd.DataFrame({"Close": close}, index=idx)
+
+    naive = analyze_timeseries(frame, symbol="X")
+    split = analyze_timeseries(frame, symbol="X", sessions="date")
+    assert split.extra["session_split"] and not naive.extra["session_split"]
+    assert split.extra["n_returns"] == naive.extra["n_returns"] - (n_days - 1)
+    # The gaps blow up the tails and hide the clustering that is really there.
+    assert naive.excess_kurtosis > 10 * split.excess_kurtosis
+    assert naive.arch_lm_p > 0.05 and split.arch_lm_p < 0.05
+    with pytest.raises(ValueError, match="DatetimeIndex"):
+        analyze_timeseries(pd.DataFrame({"Close": close}), sessions="date")
+
+
 def test_analyze_timeseries_report_contract():
     df = synthetic_survivor_ohlcv(2500, seed=1, start_date="2010-01-04")
     rep = analyze_timeseries(df, symbol="SYN")
